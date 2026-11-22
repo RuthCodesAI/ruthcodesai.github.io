@@ -7,16 +7,45 @@
 <title>Living matter | Ruth</title>
 <link rel="preload" as="image" href="assets/video/gentle-lift-poster.webp" fetchpriority="high">
 <link rel="preload" as="font" type="font/woff2" href="assets/Newsreader-Latin.woff2" crossorigin>
+<link rel="preload" as="script" href="headline.js">
 <link rel="modulepreload" href="living-video.js">
 <link rel="stylesheet" href="study-16.css">
 <script type="module" src="study-16-waitlist.js"></script>
 <script type="module" src="study-16-ascii.js"></script>
-<script type="module" src="study-16-figure-boxes.js"></script>
 </head><body data-video-src="assets/video/gentle-lift.mp4" data-video-poster="assets/video/gentle-lift-poster.webp" data-video-loop="false" data-design="16" data-study="16" data-video-renderer="ascii" data-effect="ascii-wave" data-animate="true" data-ascii-transition="photo-to-code" data-ascii-cell="5.5" data-ascii-cell-mobile="4.1" data-ascii-front="#f5f3ee" data-ascii-back="#111111" data-ascii-light="#f1efea" data-ascii-head-region="0.62,0.33,0.255,0.39">
 <script src="palette.js"></script>
 <a class="skip" href="#signup-cta">Skip to waitlist</a>
 <div class="art" aria-hidden="true"><img fetchpriority="high" decoding="async" class="photo" src="assets/video/gentle-lift-poster.webp" alt="" width="1916" height="1080"><div id="shader"></div><div class="veil"></div></div>
-<div class="page"><header class="masthead"><a class="ruth-home" href="./" aria-label="Ruth"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1831 714" aria-hidden="true" focusable="false">
+<div class="page"><header class="masthead"><div class="waitlist">
+  <button type="button" class="join waitlist-close" id="signup-cta" aria-expanded="false" aria-controls="waitlist-panel">
+    <span class="join-label">Join the waitlist</span><span class="join-mark" aria-hidden="true"></span>
+  </button>
+  <section class="waitlist-panel" id="waitlist-panel" aria-labelledby="waitlist-title" inert aria-hidden="true">
+    <div class="waitlist-sheet">
+      <h2 id="waitlist-title">Join the waitlist</h2>
+      <form id="waitlist-form" novalidate>
+        <div class="waitlist-field">
+          <label for="waitlist-email">Email address</label>
+          <input id="waitlist-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" required maxlength="254" aria-describedby="waitlist-email-error waitlist-privacy">
+          <p id="waitlist-email-error" class="field-error" role="alert" hidden></p>
+        </div>
+        <label class="waitlist-consent"><input id="waitlist-consent" type="checkbox" required aria-describedby="waitlist-consent-error"><span>Email me when Ruth launches.</span></label>
+        <p id="waitlist-consent-error" class="field-error" role="alert" hidden></p>
+        <div class="waitlist-actions">
+          <p id="waitlist-privacy">Preview only. Your email stays in this tab.</p>
+          <button class="waitlist-submit paper-action" type="submit" aria-keyshortcuts="Meta+Enter Control+Enter">Join<svg class="action-arrow" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5"/></svg></button>
+        </div>
+      </form>
+      <div class="waitlist-result" hidden>
+        <p id="waitlist-status" role="status" aria-live="polite"></p>
+        <button type="button" class="waitlist-done paper-action" aria-describedby="waitlist-title waitlist-status">Done<svg class="action-arrow" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5"/></svg></button>
+      </div>
+    </div>
+  </section>
+</div>
+</header>
+<main class="hero-lockup">
+<a class="ruth-home" href="./" aria-label="Ruth"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1831 714" aria-hidden="true" focusable="false">
 
 <g fill="currentColor">
 <path id="ruth-r" transform="translate(0 0)" fill-rule="evenodd" d="M0 0H267C417 0 505 70 505 185C505 283 439 344 340 369L484 598C508 636 535 673 563 700H421L222 379H126V576C126 627 135 671 149 700H0C14 671 23 627 23 576V124C23 74 14 30 0 0ZM126 58V321H255C350 321 405 272 405 185C405 103 350 58 250 58Z"/>
@@ -24,8 +53,10 @@
 <path id="ruth-t" transform="translate(1042 0)" d="M0 230H64V124L162 89C155 127 152 159 152 195V230H292V286H152V566C152 624 171 653 212 653C246 653 273 640 301 616L324 646C283 692 242 714 188 714C107 714 60 664 60 579V286H0Z"/>
 <path id="ruth-h" transform="translate(1386 0)" d="M0 0H125C114 33 109 72 109 121V286C146 240 191 214 251 214C358 214 411 279 411 388V587C411 635 418 672 433 700H298C311 672 316 635 316 587V404C316 322 287 279 230 279C182 279 138 311 109 354V587C109 635 116 672 131 700H0C13 672 18 635 18 587V121C18 72 12 33 0 0Z"/>
 </g>
-</svg></a></header>
-<main><h1 aria-label="Building the infrastructure for next-generation legal work.">Building the infrastructure for next-generation <span class="legal-phrase">legal work.</span></h1></main>
-<footer><section class="waitlist" aria-label="Join the waitlist"><button class="join" id="signup-cta" type="button" aria-expanded="false" aria-controls="waitlist-panel">Join the waitlist</button><div class="waitlist-panel" id="waitlist-panel" inert aria-hidden="true"><form id="waitlist-form" novalidate><label class="visually-hidden" for="waitlist-email">Email address</label><div class="waitlist-field"><input id="waitlist-email" name="email" type="email" placeholder="Email address" autocomplete="email" inputmode="email" required maxlength="254" aria-describedby="waitlist-privacy waitlist-status"><button class="waitlist-submit" type="submit" aria-label="Join the waitlist" aria-keyshortcuts="Meta+Enter Control+Enter" title="Join the waitlist (Command + Enter)"><span class="waitlist-keycap" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" focusable="false"><path d="M6.5 6.5H4.25A2.25 2.25 0 1 1 6.5 4.25V15.75A2.25 2.25 0 1 1 4.25 13.5H15.75A2.25 2.25 0 1 1 13.5 15.75V4.25A2.25 2.25 0 1 1 15.75 6.5H6.5Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Enter</span></span></button></div><label class="waitlist-consent"><input id="waitlist-consent" type="checkbox" required><span>Receive launch updates.</span></label><div class="waitlist-info"><p id="waitlist-privacy"><span>Privacy.</span> This preview does not save or send your address.</p><button class="waitlist-close" type="button">Close</button></div><p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p></form></div></section></footer></div>
+</svg></a>
+  <h1><span class="headline-lead">Building the <span class="headline-noun">infrastructure</span></span> <span class="headline-end">for <span class="keep">next-generation</span> <span class="keep headline-legal">legal work.</span></span></h1>
+  <script src="headline.js"></script>
+</main>
+</div>
 <noscript><p class="nojs">Enable JavaScript to join the waitlist.</p></noscript>
 </body></html>

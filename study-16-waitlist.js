@@ -1,55 +1,115 @@
-const body=document.body;
-const toggle=document.querySelector('#signup-cta');
-const panel=document.querySelector('#waitlist-panel');
-const form=document.querySelector('#waitlist-form');
-const email=document.querySelector('#waitlist-email');
-const consent=document.querySelector('#waitlist-consent');
-const close=document.querySelector('.waitlist-close');
-const status=document.querySelector('#waitlist-status');
-let opened=false;
-function syncViewport(){
- const height=Math.round(window.visualViewport?.height||window.innerHeight);
- body.style.setProperty('--waitlist-viewport',height+'px');
- body.dataset.waitlistCompact=String(opened&&height<430);
+const waitlist = document.querySelector('.waitlist');
+const trigger = document.querySelector('#signup-cta');
+const triggerLabel = trigger.querySelector('.join-label');
+const panel = document.querySelector('#waitlist-panel');
+const title = document.querySelector('#waitlist-title');
+const form = document.querySelector('#waitlist-form');
+const email = document.querySelector('#waitlist-email');
+const consent = document.querySelector('#waitlist-consent');
+const emailError = document.querySelector('#waitlist-email-error');
+const consentError = document.querySelector('#waitlist-consent-error');
+const result = document.querySelector('.waitlist-result');
+const status = document.querySelector('#waitlist-status');
+const done = document.querySelector('.waitlist-done');
+const invitation = triggerLabel.textContent;
+let open = false;
+
+function syncViewport() {
+  const height = Math.round(window.visualViewport?.height || window.innerHeight);
+  document.body.style.setProperty('--waitlist-viewport', height + 'px');
+  document.body.dataset.waitlistCompact = String(open && height < 430);
 }
-function setOpen(value){
- opened=value;
- body.dataset.waitlistOpen=String(value);
- toggle.setAttribute('aria-expanded',String(value));
- // The trigger yields its exact typographic area to the field. It stays in
- // the DOM for a reliable focus return, without remaining an invisible tab stop.
- toggle.tabIndex=value?-1:0;
- panel.inert=!value;
- panel.setAttribute('aria-hidden',String(!value));
- syncViewport();
- if(value)email.focus({preventScroll:true});
- else toggle.focus({preventScroll:true});
+
+function setError(control, message, text = '') {
+  message.textContent = text;
+  message.hidden = !text;
+  if (text) control.setAttribute('aria-invalid', 'true');
+  else control.removeAttribute('aria-invalid');
 }
-toggle.addEventListener('click',()=>setOpen(true));
-close.addEventListener('click',()=>setOpen(false));
-panel.addEventListener('keydown',event=>{
- if(event.key==='Escape'){event.preventDefault();setOpen(false);}
- else if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)&&!event.isComposing){
-  event.preventDefault();if(!event.repeat)form.requestSubmit();
- }
+
+function openWaitlist() {
+  if (!result.hidden) {
+    form.reset();
+    form.hidden = false;
+    result.hidden = true;
+    title.textContent = invitation;
+    status.textContent = '';
+  }
+  open = true;
+  document.body.dataset.waitlistOpen = 'true';
+  trigger.setAttribute('aria-expanded', 'true');
+  triggerLabel.textContent = 'Close';
+  trigger.setAttribute('aria-label', 'Close waitlist');
+  panel.inert = false;
+  panel.setAttribute('aria-hidden', 'false');
+  panel.scrollTop = 0;
+  syncViewport();
+  email.focus({preventScroll:true});
+}
+
+function closeWaitlist(restoreFocus = true) {
+  if (!open) return;
+  open = false;
+  document.body.dataset.waitlistOpen = 'false';
+  trigger.setAttribute('aria-expanded', 'false');
+  triggerLabel.textContent = invitation;
+  trigger.removeAttribute('aria-label');
+  if (restoreFocus) trigger.focus({preventScroll:true});
+  panel.inert = true;
+  panel.setAttribute('aria-hidden', 'true');
+  syncViewport();
+}
+
+trigger.addEventListener('click', () => open ? closeWaitlist() : openWaitlist());
+done.addEventListener('click', () => closeWaitlist());
+document.addEventListener('pointerdown', event => {
+  if (open && !waitlist.contains(event.target)) closeWaitlist(false);
 });
-form.addEventListener('submit',event=>{
- event.preventDefault();status.textContent='';
- email.removeAttribute('aria-invalid');consent.removeAttribute('aria-invalid');
- if(!email.value.trim()||!email.validity.valid){
-  status.textContent='Enter a valid email address.';
-  email.setAttribute('aria-invalid','true');email.focus({preventScroll:true});return;
- }
- if(!consent.checked){
-  status.textContent='Please confirm that you would like to hear from us.';
-  consent.setAttribute('aria-invalid','true');consent.focus({preventScroll:true});return;
- }
- status.textContent='Preview complete. Your address has not been saved or sent.';
+waitlist.addEventListener('focusout', event => {
+  if (open && event.relatedTarget && !waitlist.contains(event.relatedTarget)) closeWaitlist(false);
 });
-document.querySelector('.skip')?.addEventListener('click',event=>{
- if(!opened)return;event.preventDefault();email.focus({preventScroll:true});
+document.addEventListener('keydown', event => {
+  if (open && event.key === 'Escape') {
+    event.preventDefault();
+    closeWaitlist();
+  }
 });
-window.visualViewport?.addEventListener('resize',syncViewport);
-window.addEventListener('resize',syncViewport);
-window.addEventListener('pageshow',syncViewport);
+form.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !event.isComposing) {
+    event.preventDefault();
+    if (!event.repeat) form.requestSubmit();
+  }
+});
+
+email.addEventListener('input', () => setError(email, emailError));
+consent.addEventListener('change', () => setError(consent, consentError));
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  if (!open || form.hidden) return;
+  if (!email.value.trim() || !email.validity.valid) {
+    setError(email, emailError, email.value.trim() ? 'Check the email address.' : 'Enter your email address.');
+    email.focus();
+    return;
+  }
+  if (!consent.checked) {
+    setError(consent, consentError, 'Confirm you’d like to receive launch updates.');
+    consent.focus();
+    return;
+  }
+  form.hidden = true;
+  title.textContent = 'Preview complete';
+  result.hidden = false;
+  status.textContent = 'Your address was checked. No signup was submitted.';
+  panel.scrollTop = 0;
+  done.focus({preventScroll:true});
+});
+
+document.querySelector('.skip')?.addEventListener('click', event => {
+  event.preventDefault();
+  if (!open) openWaitlist();
+  else (form.hidden ? done : email).focus({preventScroll:true});
+});
+window.visualViewport?.addEventListener('resize', syncViewport);
+window.addEventListener('resize', syncViewport);
+window.addEventListener('pageshow', syncViewport);
 syncViewport();
