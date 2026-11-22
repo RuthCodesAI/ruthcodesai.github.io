@@ -101,13 +101,12 @@ class Home(unittest.TestCase):
 
     def test_only_visible_objects_get_named_frames(self):
         all_classes = ['JUSTITIA','BLINDFOLD','SCALES']
-        for width, height, crop, expected in [(1440,900,None,all_classes), (390,844,None,all_classes),
-                                               (390,844,'42%',all_classes[:2])]:
-            with self.subTest(width=width):
-                p = self.browser.new_page(viewport={'width':width,'height':height})
+        for width,height,touch in [(1440,900,False),(1366,1024,False),(1366,1024,True),
+                                   (1024,1366,True),(390,844,True),(844,390,True)]:
+            expected = all_classes[:2] if touch else all_classes
+            with self.subTest(width=width,touch=touch):
+                p = self.browser.new_page(viewport={'width':width,'height':height},has_touch=touch,is_mobile=touch,reduced_motion='reduce')
                 self.addCleanup(p.close)
-                if crop:
-                    p.add_init_script(f"document.addEventListener('DOMContentLoaded', () => document.querySelector('.art').style.setProperty('--art-x','{crop}'))")
                 p.goto(self.url)
                 p.wait_for_selector('#shader.ready')
                 labels = p.locator('.art svg text:visible')
@@ -124,6 +123,21 @@ class Home(unittest.TestCase):
                     self.assertLessEqual(box['x'] + box['width'], width)
                     self.assertLess(box['y'] + box['height'], p.locator('#signup-cta').bounding_box()['y'])
                 p.close()
+
+    def test_touch_poster_has_no_balance_even_before_scripts(self):
+        # At this tablet size the beam remains inside the crop. Test displayed
+        # pixels, not just the annotation. No scripts can hide a first-paint leak.
+        from io import BytesIO
+        from PIL import Image
+        p = self.browser.new_page(viewport={'width':1366,'height':1024},has_touch=True,
+                                  is_mobile=True,java_script_enabled=False)
+        self.addCleanup(p.close)
+        p.goto(self.url,wait_until='load')
+        # The sampled strip contains no text or controls.
+        # This strip intersects the bright beam cap before and after the move.
+        img = Image.open(BytesIO(p.screenshot())).convert('L')
+        strip = img.crop((1160,515,1280,550)).tobytes()
+        self.assertLessEqual(max(strip)-min(strip),2)
 
     def test_wordmark_leads_unchanged_tagline(self):
         for w,h,old_size in [(390,844,46.02),(1440,900,112.27),(844,390,56.55)]:
@@ -144,7 +158,7 @@ class Home(unittest.TestCase):
     def test_face_and_balance_share_the_frame(self):
         # Source landmarks: nose, chain attachment, and top of the only pan rim.
         # Observe the renderer sampling the film, independently of the overlay.
-        for w,h,face_range in [(1440,900,(.43,.47)),(390,844,(.08,.24))]:
+        for w,h,face_range in [(1440,900,(.43,.47))]:
             with self.subTest(viewport=(w,h)):
                 p = self.browser.new_page(viewport={'width':w,'height':h})
                 self.addCleanup(p.close)
