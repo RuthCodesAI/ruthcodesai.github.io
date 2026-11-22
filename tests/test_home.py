@@ -116,6 +116,35 @@ class Home(unittest.TestCase):
                 self.assertLess(logo['y']+logo['height'],title.bounding_box()['y'])
                 p.close()
 
+    def test_face_and_balance_share_the_frame(self):
+        # Source landmarks: nose, chain attachment, and top of the only pan rim.
+        # Observe the renderer sampling the film, independently of the overlay.
+        for w,h,face_range in [(1440,900,(.43,.47)),(390,844,(.08,.24))]:
+            with self.subTest(viewport=(w,h)):
+                p = self.browser.new_page(viewport={'width':w,'height':h})
+                self.addCleanup(p.close)
+                p.add_init_script('''const draw = CanvasRenderingContext2D.prototype.drawImage;
+                    CanvasRenderingContext2D.prototype.drawImage = function(source,...args) {
+                        if (source instanceof HTMLVideoElement && args.length === 4) {
+                            window.filmRect = args.map((v,i) => v/(i%2 ? this.canvas.height : this.canvas.width));
+                        }
+                        return draw.call(this, source, ...args);
+                    };''')
+                p.goto(self.url)
+                p.wait_for_function('window.filmRect')
+                x,y,width,height = p.evaluate('''() => {
+                    const r=document.querySelector('#shader').getBoundingClientRect(), [x,y,w,h]=filmRect;
+                    return [r.x+x*r.width,r.y+y*r.height,w*r.width,h*r.height];
+                }''')
+                nose = (x + .50*width)/w
+                with self.subTest(landmark='face'):
+                    self.assertTrue(face_range[0] <= nose <= face_range[1], nose)
+                with self.subTest(landmark='chain'):
+                    self.assertLess(x + .765*width, w-4)
+                with self.subTest(landmark='pan rim'):
+                    self.assertLess(y + .965*height, .93*h)
+                p.close()
+
     def test_waitlist_button(self):
         for w,h in [(320,568),(390,844),(844,390),(1440,900)]:
             with self.subTest(viewport=(w,h)):
