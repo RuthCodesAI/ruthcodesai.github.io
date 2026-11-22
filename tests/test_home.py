@@ -99,6 +99,22 @@ class Home(unittest.TestCase):
         p.wait_for_function("document.querySelector('video')?.ended && document.querySelector('#shader.ready canvas')")
         self.assertEqual(p.evaluate('window.marks'), {'rectangles':0, 'labels':[]})
 
+    def test_only_visible_objects_get_named_frames(self):
+        for width, height, expected in [(1440,900,['JUSTITIA','BLINDFOLD','SCALES']),
+                                        (390,844,['JUSTITIA','BLINDFOLD'])]:
+            with self.subTest(width=width):
+                p = self.browser.new_page(viewport={'width':width,'height':height})
+                self.addCleanup(p.close)
+                p.goto(self.url)
+                p.wait_for_selector('#shader.ready')
+                labels = p.locator('.art svg text:visible')
+                self.assertEqual(labels.all_text_contents(), expected)
+                for label in labels.all():
+                    box = label.bounding_box()
+                    self.assertGreaterEqual(box['x'], 0)
+                    self.assertLessEqual(box['x'] + box['width'], width)
+                    self.assertLess(box['y'] + box['height'], p.locator('#signup-cta').bounding_box()['y'])
+                p.close()
 
     def test_wordmark_leads_unchanged_tagline(self):
         for w,h,old_size in [(390,844,46.02),(1440,900,112.27),(844,390,56.55)]:

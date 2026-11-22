@@ -2,6 +2,7 @@
  * Independent study16: a local contact hint, then one full material change.
  * The original film runs once; source-derived cached glyphs continue afterward.
  */
+import { artClasses } from './art-classes.js';
 const host = document.getElementById('shader');
 if (host && document.body.dataset.study === '16') initializeAscii(host);
 
@@ -17,6 +18,7 @@ async function initializeAscii(host) {
   let disposed = false, failed = false, ready = false, paused = false, manualAllowed = false;
   let intersecting = true, managedPlaying = false, pageSuspended = false, videoController;
   const isStudy16 = body.dataset.study === '16' && hasVideo;
+  const annotations = isStudy16 ? artClasses(host) : null;
   let idleReady = false, idleElapsed = 0, sourceLuma, sampledFilmTime = -1;
   let idlePreparing = false;
   // The material has its own foreground clock. A missed video-end notification
@@ -108,7 +110,7 @@ async function initializeAscii(host) {
   function fallback() {
     
     failed = true; ready = false; stop();
-    videoController?.dispose(); host.classList.remove('ready'); canvas.remove();
+    annotations?.dispose(); videoController?.dispose(); host.classList.remove('ready'); canvas.remove();
     host.dataset.renderer = 'photograph';
     if (button) { button.hidden = preview; button.disabled = true; button.textContent = 'Still image'; }
     reflect();
@@ -118,7 +120,7 @@ async function initializeAscii(host) {
     disposed = true; ready = false; stop();
     if (resizeFrame) cancelAnimationFrame(resizeFrame);
     abort.abort(); resizeObserver?.disconnect(); intersectionObserver?.disconnect();
-    videoController?.dispose(); canvas.remove();
+    annotations?.dispose(); videoController?.dispose(); canvas.remove();
     for (const item of canvases.slice(1)) item.width = item.height = 1;
     if (button) { button.hidden = true; button.disabled = true; }
   }
@@ -211,6 +213,7 @@ async function initializeAscii(host) {
     // Prepare glyphs before the3.00s local hint, so initial image/text paint
     // does not compete with invisible glyph rendering.
     if (!isStudy16 || media?.videoWidth && (media.currentTime>=2.74 || idleReady)) paintGlyphs(media || image);
+    else if (image) updateCover(image);
     makeMask();
   }
 
@@ -467,6 +470,7 @@ async function initializeAscii(host) {
     return 1;
   }
   function render(t) {
+    annotations?.draw(cover,media?.currentTime || 0);
     const living=isStudy16 && idleReady;
     if (!living) ctx.clearRect(0,0,width,height);
     treatmentCtx.globalCompositeOperation = 'source-over'; treatmentCtx.globalAlpha = 1;
