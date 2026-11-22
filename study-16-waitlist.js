@@ -5,9 +5,7 @@ const panel = document.querySelector('#waitlist-panel');
 const title = document.querySelector('#waitlist-title');
 const form = document.querySelector('#waitlist-form');
 const email = document.querySelector('#waitlist-email');
-const consent = document.querySelector('#waitlist-consent');
 const emailError = document.querySelector('#waitlist-email-error');
-const consentError = document.querySelector('#waitlist-consent-error');
 const result = document.querySelector('.waitlist-result');
 const status = document.querySelector('#waitlist-status');
 const done = document.querySelector('.waitlist-done');
@@ -20,11 +18,11 @@ function syncViewport() {
   document.body.dataset.waitlistCompact = String(open && height < 430);
 }
 
-function setError(control, message, text = '') {
-  message.textContent = text;
-  message.hidden = !text;
-  if (text) control.setAttribute('aria-invalid', 'true');
-  else control.removeAttribute('aria-invalid');
+function setEmailError(text = '') {
+  emailError.textContent = text;
+  emailError.hidden = !text;
+  if (text) email.setAttribute('aria-invalid', 'true');
+  else email.removeAttribute('aria-invalid');
 }
 
 function openWaitlist() {
@@ -81,19 +79,13 @@ form.addEventListener('keydown', event => {
   }
 });
 
-email.addEventListener('input', () => setError(email, emailError));
-consent.addEventListener('change', () => setError(consent, consentError));
+email.addEventListener('input', () => setEmailError());
 form.addEventListener('submit', event => {
   event.preventDefault();
   if (!open || form.hidden) return;
   if (!email.value.trim() || !email.validity.valid) {
-    setError(email, emailError, email.value.trim() ? 'Check the email address.' : 'Enter your email address.');
+    setEmailError(email.value.trim() ? 'Check the email address.' : 'Enter your email address.');
     email.focus();
-    return;
-  }
-  if (!consent.checked) {
-    setError(consent, consentError, 'Confirm you’d like to receive launch updates.');
-    consent.focus();
     return;
   }
   form.hidden = true;
