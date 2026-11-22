@@ -2,7 +2,6 @@
  * Independent study16: a local contact hint, then one full material change.
  * The original film runs once; source-derived cached glyphs continue afterward.
  */
-import { artClasses } from './art-classes.js';
 const host = document.getElementById('shader');
 if (host && document.body.dataset.study === '16') initializeAscii(host);
 
@@ -18,13 +17,28 @@ async function initializeAscii(host) {
   let disposed = false, failed = false, ready = false, paused = false, manualAllowed = false;
   let intersecting = true, managedPlaying = false, pageSuspended = false, videoController;
   const isStudy16 = body.dataset.study === '16' && hasVideo;
-  const annotations = isStudy16 ? artClasses(host) : null;
   let idleReady = false, idleElapsed = 0, sourceLuma, sampledFilmTime = -1;
   let idlePreparing = false;
+  let interiorCells;
+  const ramp = ' .,:;=+itIH0#@';
+  // Equal signs and plus signs form parallel bars across flat skin tones.
+  // Use the same density steps, with curved and oblique marks of matched ink.
+  const shapes = { 5: 'csov', 6: 'xnuk' };
+  const inkRatios = new Map();
+  function markAt(level, x, y) {
+    const forms = shapes[level];
+    if (!forms) return ramp[level];
+    let seed = Math.imul(x + 1, 0x9e3779b1) ^ Math.imul(y + 1, 0x85ebca6b);
+    seed = Math.imul(seed ^ (seed >>> 16), 0x7feb352d);
+    return forms[(seed ^ (seed >>> 15)) & 3];
+  }
+  function markAlpha(density, glyph) {
+    return Math.min(1, materialAlpha(density) * (inkRatios.get(glyph) || 1));
+  }
   // The material has its own foreground clock. A missed video-end notification
   // must never leave a successfully decoded, completed figure permanently still.
   const hasDecodedFilm = () => isStudy16 && media?.videoWidth > 0 && media.currentTime > 0;
-  let livingCells = [], livingStrips = [], tileWidth = 1, tileHeight = 1;
+  let livingStrips = [];
   const idleRunning = () => isStudy16 && idleReady && !reduced.matches;
   let frame = 0, resizeFrame = 0, last = 0, elapsed = 0, image, media;
   let resizeObserver, intersectionObserver;
@@ -44,11 +58,12 @@ async function initializeAscii(host) {
       return values.length === 4 && values.every(Number.isFinite) && values[2] > 0 && values[3] > 0 ? values : [.62,.33,.255,.39];
     } catch { return [.62,.33,.255,.39]; }
   })();
-  const canvases = Array.from({ length: isStudy16 ? 6 : 5 }, () => document.createElement('canvas'));
-  const [canvas, ink, mask, treatment, sample, glow] = canvases;
+  const canvases = Array.from({ length: 5 }, () => document.createElement('canvas'));
+  const [canvas, ink, mask, treatment, sample] = canvases;
   const ctx = canvas.getContext('2d'), inkCtx = ink.getContext('2d'), maskCtx = mask.getContext('2d');
   const treatmentCtx = treatment.getContext('2d'), sampleCtx = sample.getContext('2d', { willReadFrequently: true });
-  const glowCtx = glow?.getContext('2d');
+  const matte = isStudy16 ? document.createElement('canvas') : null;
+  const matteCtx = matte?.getContext('2d');
   const permitted = () => optedIn && ready && !failed && !disposed && !preview && !paused &&
     !document.hidden && !pageSuspended && intersecting && (!reduced.matches || manualAllowed || hasVideo && managedPlaying) &&
     (!hasVideo || managedPlaying || idleRunning() || hasDecodedFilm());
@@ -100,7 +115,7 @@ async function initializeAscii(host) {
     if (now-last >= (isStudy16 ? 1000/30-.25 : 50)) {
       const delta = Math.min(now-last, 200)/1000; last = now;
       try {
-        if (hasDecodedFilm() && media.ended && !idleReady) beginLivingCode();
+        if (hasDecodedFilm() && media.ended && !idleReady) { beginLivingCode(); reflect(); }
         if (idleRunning()) idleElapsed += delta;
         elapsed += delta; render(elapsed);
       } catch { fallback(); return; }
@@ -110,7 +125,7 @@ async function initializeAscii(host) {
   function fallback() {
     
     failed = true; ready = false; stop();
-    annotations?.dispose(); videoController?.dispose(); host.classList.remove('ready'); canvas.remove();
+    videoController?.dispose(); host.classList.remove('ready'); canvas.remove();
     host.dataset.renderer = 'photograph';
     if (button) { button.hidden = preview; button.disabled = true; button.textContent = 'Still image'; }
     reflect();
@@ -120,7 +135,7 @@ async function initializeAscii(host) {
     disposed = true; ready = false; stop();
     if (resizeFrame) cancelAnimationFrame(resizeFrame);
     abort.abort(); resizeObserver?.disconnect(); intersectionObserver?.disconnect();
-    annotations?.dispose(); videoController?.dispose(); canvas.remove();
+    videoController?.dispose(); canvas.remove();
     for (const item of canvases.slice(1)) item.width = item.height = 1;
     if (button) { button.hidden = true; button.disabled = true; }
   }
@@ -150,30 +165,77 @@ async function initializeAscii(host) {
     cover = { x:offset(position[0],width-iw),y:offset(position[1],height-ih),width:iw,height:ih };
     return true;
   }
+  function calibrateMarks() {
+    // Measure the actual browser font and pixel ratio once per grid size.
+    const atlas = document.createElement('canvas');
+    const measures = [...'=+csovxnuk'];
+    const w = Math.ceil(cell*dpr)+4, h = Math.ceil(row*dpr)+4;
+    atlas.width = w*measures.length; atlas.height = h;
+    const a = atlas.getContext('2d', {willReadFrequently:true});
+    a.setTransform(dpr,0,0,dpr,0,0);
+    a.font = '500 '+(row*.96)+'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+    a.textAlign = 'center'; a.textBaseline = 'middle';
+    for (let i=0; i<measures.length; i++) a.fillText(measures[i], (i*w+2)/dpr+cell/2, 2/dpr+row/2, cell*1.08);
+    const pixels = a.getImageData(0,0,atlas.width,h).data;
+    const mass = new Map();
+    for (let i=0; i<measures.length; i++) {
+      let sum = 0;
+      for (let y=0; y<h; y++) for (let x=0; x<w; x++) sum += pixels[(y*atlas.width+i*w+x)*4+3];
+      mass.set(measures[i],sum);
+    }
+    for (const [level,forms] of Object.entries(shapes)) {
+      for (const form of forms) inkRatios.set(form, mass.get(ramp[level]) / (mass.get(form) || 1));
+    }
+  }
   function paintGlyphs(value) {
     const previousCover = cover;
     if (!updateCover(value)) return;
     if (previousCover.x !== cover.x || previousCover.y !== cover.y || previousCover.width !== cover.width || previousCover.height !== cover.height) makeMask();
-    sampleCtx.clearRect(0,0,columns,rows);
-    sampleCtx.drawImage(value,cover.x/width*columns,cover.y/height*rows,cover.width/width*columns,cover.height/height*rows);
-    const pixels = sampleCtx.getImageData(0,0,columns,rows).data;
+    // The last cell may extend past the viewport. Sample by its actual pitch
+    // rather than stretching the entire rounded-up grid back into the viewport.
+    const sub = isStudy16 ? 2 : 1;
+    sampleCtx.clearRect(0,0,sample.width,sample.height);
+    sampleCtx.drawImage(value,cover.x/cell*sub,cover.y/row*sub,cover.width/cell*sub,cover.height/row*sub);
+    const samples = sampleCtx.getImageData(0,0,sample.width,sample.height), pixels = samples.data;
+    const lumaAt = i => (pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722)/255;
+    if (isStudy16) {
+      if (sourceLuma?.length !== columns*rows) {
+        sourceLuma = new Float32Array(columns*rows);
+        interiorCells = new Uint8Array(columns*rows);
+      }
+      sourceLuma.fill(0); interiorCells.fill(1);
+      const sw=samples.width, sh=samples.height;
+      for (let y=0; y<sh; y++) for (let x=0; x<sw; x++) {
+        const i = (y*sw+x)*4, bucket = (y>>1)*columns+(x>>1), luma = lumaAt(i);
+        sourceLuma[bucket] += luma*.25;
+        // Clip antialiased letter edges to the moving photographed figure.
+        // Four source positions per cell retain fine chains, fingers and hair.
+        const alpha = smooth((luma-.025)/.035);
+        pixels[i+3] = Math.round(255*alpha);
+        if (alpha<1) interiorCells[bucket]=0;
+      }
+      matteCtx.putImageData(samples,0,0);
+    }
     inkCtx.clearRect(0,0,width,height);
     inkCtx.textAlign = 'center'; inkCtx.textBaseline = 'middle';
     inkCtx.font = (isStudy16 ? '500 ' : '400 ')+(row*.96)+'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
     inkCtx.fillStyle = foreground;
-    const chars = ' .,:;=+itIH0#@';
-    if (isStudy16 && sourceLuma?.length !== columns*rows) sourceLuma = new Float32Array(columns*rows);
     for (let y=0;y<rows;y++) for (let x=0;x<columns;x++) {
-      const index = (y*columns+x)*4;
-      const luminance = (pixels[index]*.2126+pixels[index+1]*.7152+pixels[index+2]*.0722)/255;
-      if (isStudy16) sourceLuma[y*columns+x] = luminance;
+      const index = y*columns+x;
+      const luminance = isStudy16 ? sourceLuma[index] : lumaAt(index*4);
       const density = isStudy16 ? materialDensity(luminance) : Math.pow(luminance,.82);
-      const glyph = chars[Math.min(chars.length-1,Math.floor(density*chars.length))];
-      if (glyph === ' ') continue;
-      inkCtx.globalAlpha = isStudy16 ? materialAlpha(density) : .50+.50*density;
+      const level = Math.min(ramp.length-1,Math.floor(density*ramp.length));
+      if (!level) continue;
+      const glyph = isStudy16 ? markAt(level,x,y) : ramp[level];
+      inkCtx.globalAlpha = isStudy16 ? markAlpha(density,glyph) : .50+.50*density;
       inkCtx.fillText(glyph,(x+.5)*cell,(y+.5)*row,cell*1.08);
     }
     inkCtx.globalAlpha = 1;
+    if (isStudy16) {
+      inkCtx.globalCompositeOperation='destination-in';
+      inkCtx.drawImage(matte,0,0,columns*cell,rows*row);
+      inkCtx.globalCompositeOperation='source-over';
+    }
     if (isStudy16) sampledFilmTime=value.videoWidth ? value.currentTime : -1;
     if (isStudy16 && idleReady) prepareLivingCode();
     host.dataset.asciiColumns = String(columns); host.dataset.asciiRows = String(rows);
@@ -203,17 +265,21 @@ async function initializeAscii(host) {
     width = Math.max(1, Math.round(host.clientWidth)); height = Math.max(1, Math.round(host.clientHeight));
     const budget = mobile.matches ? 850000 : 1600000;
     dpr = Math.min(devicePixelRatio || 1,1.5,Math.sqrt(budget/(width*height)));
-    for (const item of [canvas,ink,mask,treatment,...(glow ? [glow] : [])]) {
+    for (const item of [canvas,ink,mask,treatment]) {
       item.width = Math.max(1,Math.round(width*dpr)); item.height = Math.max(1,Math.round(height*dpr));
     }
-    for (const context of [ctx,inkCtx,maskCtx,treatmentCtx,...(glowCtx ? [glowCtx] : [])]) context.setTransform(dpr,0,0,dpr,0,0);
+    for (const context of [ctx,inkCtx,maskCtx,treatmentCtx]) context.setTransform(dpr,0,0,dpr,0,0);
     cell = mobile.matches ? bounded(body.dataset.asciiCellMobile,4.8,isStudy16?3.4:3.8,9) : bounded(body.dataset.asciiCell,7.2,isStudy16?4.5:5,14);
     row = cell*1.4; columns = Math.ceil(width/cell); rows = Math.ceil(height/row);
-    sample.width = columns; sample.height = rows;
+    const sub = isStudy16 ? 2 : 1;
+    sample.width = columns*sub; sample.height = rows*sub;
+    if (isStudy16) {
+      matte.width=sample.width; matte.height=sample.height;
+      calibrateMarks();
+    }
     // Prepare glyphs before the3.00s local hint, so initial image/text paint
     // does not compete with invisible glyph rendering.
     if (!isStudy16 || media?.videoWidth && (media.currentTime>=2.74 || idleReady)) paintGlyphs(media || image);
-    else if (image) updateCover(image);
     makeMask();
   }
 
@@ -268,8 +334,8 @@ async function initializeAscii(host) {
     tile.eventEnd=tile.eventStart+tile.hold+tile.fade;tile.event++;
   }
   function cacheLivingCode(simple = false) {
-    if (!sourceLuma || !glowCtx) throw new Error('Missing ASCII source');
-    const chars = ' .,:;=+itIH0#@', candidates = [];
+    if (!sourceLuma) throw new Error('Missing ASCII source');
+    const chars = ramp, candidates = [];
     const hash = (x,y) => {
       const value = Math.sin(x*127.1+y*311.7)*43758.5453;
       return value-Math.floor(value);
@@ -278,18 +344,17 @@ async function initializeAscii(host) {
     for (let y=0;y<rows;y++) for (let x=0;x<columns;x++) {
       const luma=sourceLuma[y*columns+x], density=materialDensity(luma);
       const glyph=Math.min(chars.length-1,Math.floor(density*chars.length));
-      if (!glyph) continue;
+      // Edge cells retain their matted source glyph when the atlas changes.
+      if (!glyph || !interiorCells[y*columns+x]) continue;
+      const original=markAt(glyph,x,y);
       const px=(x+.5)*cell, py=(y+.5)*row;
-      // Every source glyph is eligible, including hair, drapery, hands and scale.
-      // The unchanged tone law leaves the clean, non-inked background untouched.
-      candidates.push({x:px,y:py,column:x,row:y,glyph,luma,alpha:materialAlpha(density)});
+      candidates.push({x:px,y:py,column:x,row:y,glyph,original,luma,alpha:markAlpha(density,original)});
     }
     const budget=simple ? 2400 : 7500;
     const font='500 '+(row*.96)+'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
-    livingCells=candidates;
 
     // Rasterise each glyph once inside its owned cell. Atlas states reuse these pixels.
-    const families=[' ','.,:',',;:',':;!=',';:!i','=-~:+','+x*~','il!rjtf','tfjry','ITL7FJ','HNKMEXZ','0ODQ8BCG','#%&8BMW','@WM8B%&'];
+    const families=[' ','.,:',',;:',':;!',';:!i','csov','xnuk','il!rjtf','tfjry','ITL7FJ','HNKMEXZ','0ODQ8BCG','#%&8BMW','@WM8B%&'];
     const palette=[...new Set(families.join(''))].filter(c=>c!==' ');
     const gw=cell*dpr,gh=row*dpr,sw=Math.ceil(gw)+4,sh=Math.ceil(gh)+4;
     const sheet=document.createElement('canvas');sheet.width=sw*palette.length;sheet.height=sh;
@@ -299,10 +364,10 @@ async function initializeAscii(host) {
       sc.save();sc.setTransform(dpr,0,0,dpr,0,0);sc.beginPath();sc.rect((i*sw+2)/dpr,2/dpr,cell,row);sc.clip();
       sc.font=font;sc.fillText(palette[i],(i*sw+2)/dpr+cell*.5,2/dpr+row*.5,cell*1.08);sc.restore();
     }
-    const pixels=simple?null:sc.getImageData(0,0,sheet.width,sheet.height).data,info=new Map(),distances=new Map();
+    const pixels=sc.getImageData(0,0,sheet.width,sheet.height).data,info=new Map(),distances=new Map();
     for(let i=0;i<palette.length;i++){
       const mask=new Uint8Array(Math.ceil(gw)*Math.ceil(gh));let coverage=0;
-      if(!simple)for(let y=0;y<Math.ceil(gh);y++)for(let x=0;x<Math.ceil(gw);x++){
+      for(let y=0;y<Math.ceil(gh);y++)for(let x=0;x<Math.ceil(gw);x++){
         const alpha=pixels[((y+2)*sheet.width+i*sw+x+2)*4+3];mask[y*Math.ceil(gw)+x]=alpha;coverage+=alpha;
       }
       info.set(palette[i],{id:i,sx:i*sw+2,sy:2,coverage:simple?1:coverage,mask});
@@ -316,8 +381,8 @@ async function initializeAscii(host) {
       d/=2*x.coverage;distances.set(key,d);return d;
     };
     const optionsByGlyph=new Map();
-    for(let n=1;n<chars.length;n++){
-      const original=chars[n],base=info.get(original),family=new Set(families[n]);
+    for(let n=1;n<chars.length;n++) for(const original of (shapes[n] || chars[n])){
+      const base=info.get(original),family=new Set(families[n]);
       // Favor the same density ramp and nearby stroke families used by the film.
       // Avoid compensating a much heavier glyph into a faint, blurred substitute.
       const options=base.coverage?palette.filter(g=>{
@@ -332,8 +397,8 @@ async function initializeAscii(host) {
       options.sort((a,b)=>score(a)-score(b));optionsByGlyph.set(original,options);
     }
     let changing=[];
-    for(const item of livingCells){
-      const original=chars[item.glyph],base=info.get(original);if(!base.coverage)continue;
+    for(const item of candidates){
+      const original=item.original,base=info.get(original);if(!base.coverage)continue;
       const target=item.alpha*base.coverage,pool=[original];
       const neighbors=new Set([
         sampleAt(item.column-1,item.row),sampleAt(item.column+1,item.row),
@@ -384,21 +449,34 @@ async function initializeAscii(host) {
     while(groups.length>300){if(tileColumns<=tileRows*2)tileColumns+=4;else tileRows+=2;groups=groupCells();}
     livingStrips=groups;
     const stateCount=8;
-    tileWidth=Math.ceil(tileColumns*cell*dpr);tileHeight=Math.ceil(tileRows*row*dpr);
-    const across=Math.max(1,Math.floor(2048/tileWidth));
-    glow.width=across*tileWidth;glow.height=Math.ceil(groups.length*stateCount/across)*tileHeight;
-    if(glow.width>8192||glow.height>8192)throw new Error('Glyph tile atlas bounds');
-    glowCtx.setTransform(dpr,0,0,dpr,0,0);
-    for(let i=0;i<groups.length;i++){
-      const tile=groups[i];tile.x=tile.column*cell;tile.y=tile.row*row;
-      tile.width=Math.min(tileColumns*cell,width-tile.x);tile.height=Math.min(tileRows*row,height-tile.y);tile.tiles=[];
+    // Pixel-align the tile bounds, then build from one immutable snapshot.
+    // This also avoids sampling neighboring states across fractional atlas seams.
+    maskCtx.globalAlpha=1; maskCtx.fillStyle=background; maskCtx.fillRect(0,0,width,height);
+    maskCtx.drawImage(ink,0,0,ink.width,ink.height,0,0,width,height);
+    const base=maskCtx.getImageData(0,0,mask.width,mask.height);
+    const basePixels=new Uint32Array(base.data.buffer);
+    const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+    const front=rgb(foreground), back=rgb(background);
+    const colors=new Uint8ClampedArray(256*4);
+    for(let alpha=0;alpha<256;alpha++){
+      for(let c=0;c<3;c++) colors[alpha*4+c]=back[c]+(front[c]-back[c])*alpha/255;
+      colors[alpha*4+3]=255;
+    }
+    const tones=new Uint32Array(colors.buffer);
+    let atlasBytes=0;
+    for(const tile of groups){
+      const left=Math.round(tile.column*cell*dpr), top=Math.round(tile.row*row*dpr);
+      const right=Math.min(mask.width,Math.round((tile.column+tileColumns)*cell*dpr));
+      const bottom=Math.min(mask.height,Math.round((tile.row+tileRows)*row*dpr));
+      const tw=right-left, th=bottom-top;
+      tile.x=left/dpr; tile.y=top/dpr; tile.width=tw/dpr; tile.height=th/dpr; tile.tiles=[];
       // Three interleaved cohorts make each cached-state change sparse inside
       // the tile. Source-near alternatives differ per cell, without a moving grid.
       tile.items.sort((a,b)=>hash(a.column+73,a.row+11)-hash(b.column+73,b.row+11));
       tile.groupMask=0;
       tile.items.forEach((item,k)=>{
         item.cohort=k%3;tile.groupMask|=1<<item.cohort;
-        const original=chars[item.glyph],choices=item.forms.slice(1);
+        const original=item.original,choices=item.forms.slice(1);
         const alternate=choices[(item.glyph+Math.round(item.luma*4096))%choices.length];
         item.variants=Array.from({length:stateCount},(_,state)=>(state>>item.cohort)&1?alternate:original);
         item.variantAlpha=item.variants.map(g=>item.targetCoverage/info.get(g).coverage);
@@ -410,32 +488,51 @@ async function initializeAscii(host) {
       scheduleLivingEvent(tile);
       const offset=livingRandom(tile)*(tile.hold+tile.fade);
       tile.eventStart-=offset;tile.eventEnd-=offset;
+      // Each strip contains only this tile's eight immutable variants. Fill the
+      // pixels in one pass, so software compositors never replay a large display
+      // list of nearly identical canvas draws when the native movie ends.
+      const sprite=document.createElement('canvas');
+      sprite.width=tw*stateCount; sprite.height=th; tile.sprite=sprite;
+      const spriteCtx=sprite.getContext('2d'), rgba=spriteCtx.createImageData(sprite.width,th);
+      const out=new Uint32Array(rgba.data.buffer);
+      atlasBytes+=out.byteLength;
       for(let state=0;state<stateCount;state++){
-        const slot=i*stateCount+state,sx=(slot%across)*tileWidth,sy=Math.floor(slot/across)*tileHeight;
-        tile.tiles.push({sx,sy});glowCtx.save();glowCtx.beginPath();glowCtx.rect(sx/dpr,sy/dpr,tile.width,tile.height);glowCtx.clip();
-        glowCtx.globalAlpha=1;glowCtx.fillStyle=background;glowCtx.fillRect(sx/dpr,sy/dpr,tile.width,tile.height);
-        glowCtx.drawImage(ink,tile.x*dpr,tile.y*dpr,tile.width*dpr,tile.height*dpr,sx/dpr,sy/dpr,tile.width,tile.height);
-        for(const item of tile.items){
-          const x=sx/dpr+item.column*cell-tile.x,y=sy/dpr+item.row*row-tile.y,g=info.get(item.variants[state]);
-          glowCtx.globalAlpha=1;glowCtx.fillStyle=background;glowCtx.fillRect(x,y,cell,row);
-          glowCtx.globalAlpha=item.variantAlpha[state];glowCtx.drawImage(sheet,g.sx,g.sy,gw,gh,x,y,cell,row);
+        const sx=state*tw;
+        tile.tiles.push({sx,sy:0});
+        for(let y=0;y<th;y++){
+          const start=(top+y)*base.width+left;
+          out.set(basePixels.subarray(start,start+tw),y*sprite.width+sx);
         }
-        glowCtx.restore();
+        for(const item of tile.items){
+          if(!(state&(1<<item.cohort))) continue;
+          const glyph=info.get(item.variants[state]), alpha=item.variantAlpha[state];
+          const x0=Math.max(0,Math.round(item.column*cell*dpr)-left);
+          const y0=Math.max(0,Math.round(item.row*row*dpr)-top);
+          const x1=Math.min(tw,Math.round((item.column+1)*cell*dpr)-left);
+          const y1=Math.min(th,Math.round((item.row+1)*row*dpr)-top);
+          const glyphWidth=Math.ceil(gw),glyphHeight=Math.ceil(gh);
+          for(let y=y0;y<y1;y++){
+            const gy=Math.min(glyphHeight-1,Math.floor((y-y0+.5)*glyphHeight/(y1-y0)));
+            for(let x=x0;x<x1;x++){
+              const gx=Math.min(glyphWidth-1,Math.floor((x-x0+.5)*glyphWidth/(x1-x0)));
+              out[y*sprite.width+sx+x]=tones[Math.min(255,Math.round(glyph.mask[gy*glyphWidth+gx]*alpha))];
+            }
+          }
+        }
       }
+      spriteCtx.putImageData(rgba,0,0);
     }
-    glowCtx.globalAlpha=1;sheet.width=sheet.height=1;
-    // Use the full original as the static base, including unsupported live candidates.
-    maskCtx.globalAlpha=1;maskCtx.fillStyle=background;maskCtx.fillRect(0,0,width,height);maskCtx.drawImage(ink,0,0,ink.width,ink.height,0,0,width,height);
+    sheet.width=sheet.height=1;
     host.dataset.materialMode=simple?'glyph-tiles-simple':'glyph-tiles';host.dataset.materialBackend='canvas';
     host.dataset.materialChangingCells=String(changing.length);host.dataset.materialGroups=String(groups.length);
-    host.dataset.materialMaxDraws=String(2+groups.length*2);host.dataset.materialAtlasBytes=String(glow.width*glow.height*4);
+    host.dataset.materialMaxDraws=String(2+groups.length*2);host.dataset.materialAtlasBytes=String(atlasBytes);
     host.dataset.materialTileCells=tileColumns+'x'+tileRows;
     host.dataset.materialEligibleCells=String(eligibleCount);
     host.dataset.materialBudgetedCells=String(changing.length);
     host.dataset.materialCohortLimitedTiles=String(groups.filter(tile=>tile.groupMask!==7).length);
   }
   function renderLivingCode(t) {
-    if(!idleReady||!glowCtx)return;
+    if(!idleReady)return;
     treatmentCtx.globalAlpha=1;treatmentCtx.drawImage(mask,0,0,mask.width,mask.height,0,0,width,height);
     for(const tile of livingStrips){
       // The foreground clock stops while hidden or reduced. The minimum event
@@ -447,8 +544,8 @@ async function initializeAscii(host) {
       }
       const blend=smooth((idleElapsed-tile.eventStart-tile.hold)/tile.fade);
       const a=tile.tiles[tile.from],b=tile.tiles[tile.to];
-      treatmentCtx.globalAlpha=1;treatmentCtx.drawImage(glow,a.sx,a.sy,tile.width*dpr,tile.height*dpr,tile.x,tile.y,tile.width,tile.height);
-      if(blend>0){treatmentCtx.globalAlpha=blend;treatmentCtx.drawImage(glow,b.sx,b.sy,tile.width*dpr,tile.height*dpr,tile.x,tile.y,tile.width,tile.height);}
+      treatmentCtx.globalAlpha=1;treatmentCtx.drawImage(tile.sprite,a.sx,a.sy,tile.width*dpr,tile.height*dpr,tile.x,tile.y,tile.width,tile.height);
+      if(blend>0){treatmentCtx.globalAlpha=blend;treatmentCtx.drawImage(tile.sprite,b.sx,b.sy,tile.width*dpr,tile.height*dpr,tile.x,tile.y,tile.width,tile.height);}
     }
     treatmentCtx.globalAlpha=1;
   }
@@ -470,7 +567,6 @@ async function initializeAscii(host) {
     return 1;
   }
   function render(t) {
-    annotations?.draw(cover,media?.currentTime || 0);
     const living=isStudy16 && idleReady;
     if (!living) ctx.clearRect(0,0,width,height);
     treatmentCtx.globalCompositeOperation = 'source-over'; treatmentCtx.globalAlpha = 1;
@@ -524,7 +620,11 @@ async function initializeAscii(host) {
       ctx.drawImage(treatment,0,0,treatment.width,treatment.height,0,0,width,height);
       ctx.globalAlpha = 1;
     }
-
+    // Shares the cover rectangle and film clock with the figure boxes.
+    if (isStudy16) host.dispatchEvent(new CustomEvent('figureframe', { detail: {
+      cover: { ...cover }, time: media?.videoWidth ? media.currentTime : 0,
+      visible: living ? 1 : transition(t), held: living,
+    } }));
   }
 
   function scheduleResize() {
@@ -536,7 +636,7 @@ async function initializeAscii(host) {
   }
 
   try {
-    if (!ctx || !inkCtx || !maskCtx || !treatmentCtx || !sampleCtx || isStudy16 && !glowCtx) throw new Error('Canvas unavailable');
+    if (!ctx || !inkCtx || !maskCtx || !treatmentCtx || !sampleCtx || isStudy16 && !matteCtx) throw new Error('Canvas unavailable');
     image = new Image(); image.decoding = 'async'; image.src = photo?.currentSrc || photo?.src || 'assets/video/gentle-lift-poster.webp';
     await image.decode(); if (disposed) return;
     canvas.setAttribute('aria-hidden','true'); host.append(canvas);
@@ -564,8 +664,6 @@ async function initializeAscii(host) {
         },
         onState(value) {
           managedPlaying = value.playing || value.state === 'loading';
-          if (!disposed && (value.failed || value.blocked || !value.configured || value.preview || value.reducedMotion))
-            
           if (isStudy16 && value.ended && ready && !disposed && !idleReady) beginLivingCode();
           if (value.failed && ready && !disposed) {
             media = image; paintGlyphs(image); render(elapsed);
