@@ -109,9 +109,9 @@ class Home(unittest.TestCase):
                 self.addCleanup(p.close)
                 p.goto(self.url)
                 p.wait_for_selector('#shader.ready')
-                labels = p.locator('.art svg text:visible')
+                labels = p.locator('.art-classes text:visible')
                 self.assertEqual(labels.all_text_contents(), expected)
-                frames = p.locator('.art svg .object-frame:visible')
+                frames = p.locator('.art-classes .object-frame:visible')
                 self.assertEqual(frames.count(), len(expected))
                 if width == 390:
                     # The head extends beyond the crop: its sides must not turn
