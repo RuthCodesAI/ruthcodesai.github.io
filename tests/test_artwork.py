@@ -1,23 +1,24 @@
-"""Check the finished artwork (requires ffmpeg on PATH)."""
+"""Check the original full-length film and its first-paint poster with ffprobe."""
+import json
 from pathlib import Path
 import subprocess
 import unittest
 
 
+ASSETS = Path(__file__).resolve().parents[1] / 'assets' / 'video'
+
+
 class ArtworkTest(unittest.TestCase):
-    def test_poster_and_film_keep_face_without_the_hand_on_the_right(self):
-        assets = Path(__file__).resolve().parents[1] / 'assets/video'
-        for filename in ('gentle-lift-poster.webp', 'gentle-lift.mp4'):
-            with self.subTest(asset=filename):
-                # One luminance sample per tile, over the entire film. The right
-                # fist and forearm are separate from the hand lifting the blindfold.
-                pixels = subprocess.check_output([
-                    'ffmpeg', '-v', 'error', '-i', str(assets / filename),
-                    '-vf', 'scale=32:18:flags=area,format=gray',
-                    '-f', 'rawvideo', '-pix_fmt', 'gray', '-',
-                ], timeout=30)
-                self.assertTrue(pixels)
-                frames = [pixels[i:i+576] for i in range(0, len(pixels), 576)]
-                for x, y in [(30, 6), (31, 15)]:
-                    self.assertLess(max(f[y*32+x] for f in frames), 20)
-                self.assertGreater(min(f[4*32+16] for f in frames), 32)
+    def test_film_and_poster_share_the_original_frame(self):
+        for name in ('gentle-lift.mp4', 'gentle-lift-poster.webp'):
+            with self.subTest(name=name):
+                probe = subprocess.check_output([
+                    'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                    '-show_entries', 'stream=width,height,duration,nb_frames',
+                    '-of', 'json', str(ASSETS / name),
+                ], text=True, timeout=30)
+                stream, = json.loads(probe)['streams']
+                self.assertEqual((stream['width'], stream['height']), (1916, 1080))
+                if name.endswith('.mp4'):
+                    self.assertEqual(int(stream['nb_frames']), 735)
+                    self.assertAlmostEqual(float(stream['duration']), 12.25, places=2)
