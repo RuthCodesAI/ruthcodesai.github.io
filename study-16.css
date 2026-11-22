@@ -60,14 +60,19 @@ h1{
 }
 /* The group rests low and rises to make room for the opened form. */
 body[data-waitlist-open="true"]{--floor:var(--floor-open)}
+/* Reserve the frame inside the closed action row, above the safe-area floor.
+   The open form keeps its existing action height and viewport behavior. */
+body:not([data-waitlist-open="true"]) .page{--action-height:clamp(76px,9svh,88px)}
 .join{
- display:inline-flex;align-items:center;justify-content:flex-start;width:auto;max-width:100%;
- min-height:48px;height:var(--action-height);padding:0 .85em;border:0;background:#000;color:#f2f0eb;
+ position:relative;display:inline-flex;align-items:center;justify-content:center;width:auto;max-width:calc(100% - 12px);
+ align-self:center;min-height:48px;height:calc(var(--action-height) - 12px);padding:0 clamp(38px,5vw,68px);border:0;background:#000;color:#f2f0eb;
  font-size:26px;font-weight:400;line-height:1.1;letter-spacing:-.012em;
  text-align:left;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:9px;
  text-decoration-color:rgb(242 240 235/.439);transition:opacity .3s ease,text-decoration-color .2s;
 }
 .join:hover{text-decoration-color:currentColor}
+.join[aria-expanded="false"]::after{content:"";position:absolute;inset:-6px;border:1px solid rgb(var(--ink-rgb)/.55);pointer-events:none}
+.join:focus-visible{outline:2px solid currentColor;outline-offset:-5px}
 .waitlist-panel{
  position:absolute;left:0;right:0;top:0;opacity:0;visibility:hidden;
  transition:opacity .55s var(--ease),visibility 0s .55s;
