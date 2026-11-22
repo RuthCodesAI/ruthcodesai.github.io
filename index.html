@@ -10,6 +10,30 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/Newsreader-UI.woff2" crossorigin>
 <link rel="modulepreload" href="living-video.js">
 <link rel="stylesheet" href="study-16.css?v=e311c675">
+<style id="touch-art" media="(pointer: coarse)">
+/* Loaded for touch-first devices and iPadOS, independent of orientation. */
+.art{container-type:size;--face-shift:clamp(20px,5vw,64px)}
+.photo,.living-video{object-position:calc(var(--art-x,62%) + var(--face-shift)) 58%}
+.art-classes [data-object="SCALES"]{display:none}
+
+/* The balance overlaps the shoulder: a horizontal crop alone cannot remove it
+   on a wide tablet without losing the face. Pin a feathered matte to the
+   original 1916:1080 plate, above all three media states but below annotations.
+   Use the same cover size and position as the photograph and decoded film. */
+.art::before{
+ content:"";position:absolute;z-index:3;pointer-events:none;
+ width:max(100cqw,calc(100cqh * 1916 / 1080));aspect-ratio:1916/1080;
+ left:calc(var(--art-x,62%) + var(--face-shift));top:58%;
+ translate:calc(-1 * var(--art-x,62%)) -58%;
+ background:linear-gradient(166deg,transparent 59%,var(--ground) 62%);
+ mask-image:linear-gradient(104deg,transparent 67%,#000 70%);
+}
+</style>
+<script>
+// iPadOS can report a fine primary pointer with a trackpad and a desktop UA.
+if (navigator.maxTouchPoints > 1 && /^(MacIntel|iPad)$/.test(navigator.platform))
+  document.getElementById('touch-art').media = 'all';
+</script>
 <script defer src="palette.js"></script>
 <script type="module" src="study-16-waitlist.js"></script>
 <script type="module" src="study-16-ascii.js"></script>
