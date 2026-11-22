@@ -1,0 +1,20 @@
+{
+  "name": "ruth-waitlist-api",
+  "account_id": "4167c336681ba423fbd35a45e86ac5f1",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-22",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ruth-waitlist",
+      "database_id": "7a83836b-a4a2-4737-993a-cda9b2804e10",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    { "name": "SIGNUP_LIMITER", "namespace_id": "263031", "simple": { "limit": 12, "period": 60 } }
+  ]
+}

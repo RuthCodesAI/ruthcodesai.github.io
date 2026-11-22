@@ -9,7 +9,7 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/Newsreader-Latin.woff2" crossorigin>
 <link rel="modulepreload" href="living-video.js">
 <link rel="stylesheet" href="study-16.css?v=lip-clearance">
-<script type="module" src="study-16-waitlist.js?v=email-join"></script>
+<script type="module" src="../waitlist.js?v=1"></script>
 <script type="module" src="study-16-ascii.js"></script>
 </head><body data-video-src="assets/video/gentle-lift.mp4" data-video-poster="assets/video/gentle-lift-poster.webp" data-video-loop="false" data-design="16" data-study="16" data-video-renderer="ascii" data-effect="ascii-wave" data-animate="true" data-ascii-transition="photo-to-code" data-ascii-cell="5.5" data-ascii-cell-mobile="4.1" data-ascii-front="#f5f3ee" data-ascii-back="#111111" data-ascii-light="#f1efea" data-ascii-head-region="0.62,0.33,0.255,0.39">
 <script src="palette.js"></script>
@@ -35,17 +35,17 @@
   <section class="waitlist-panel" id="waitlist-panel" aria-labelledby="waitlist-title" inert aria-hidden="true">
     <div class="waitlist-sheet">
       <h2 id="waitlist-title">Join the waitlist</h2>
-      <form id="waitlist-form" novalidate>
+      <form id="waitlist-form" method="post" action="https://ruth-waitlist-api.waitlist-api.workers.dev/waitlist" novalidate>
         <div class="waitlist-field">
           <label for="waitlist-email">Email address</label>
           <div class="waitlist-entry">
-            <input id="waitlist-email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" enterkeyhint="go" required maxlength="254" aria-describedby="waitlist-email-error waitlist-agreement waitlist-privacy">
+            <input id="waitlist-email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" enterkeyhint="go" required maxlength="254" aria-describedby="waitlist-email-error waitlist-agreement">
             <button class="waitlist-submit paper-action" type="submit" aria-describedby="waitlist-agreement" aria-keyshortcuts="Meta+Enter Control+Enter">Join</button>
           </div>
           <p id="waitlist-email-error" class="field-error" role="alert" hidden></p>
         </div>
         <p id="waitlist-agreement">By joining, you agree to receive Ruth launch updates by email.</p>
-        <p id="waitlist-privacy">Preview only. Your email stays in this tab.</p>
+        <p id="waitlist-request-error" class="field-error" role="alert" hidden></p>
       </form>
       <div class="waitlist-result" hidden>
         <p id="waitlist-status" role="status" aria-live="polite"></p>

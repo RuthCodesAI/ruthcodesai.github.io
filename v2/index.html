@@ -11,7 +11,7 @@
 <link rel="preload" as="font" type="font/woff2" href="../v1/assets/Newsreader-Latin.woff2" crossorigin>
 <link rel="stylesheet" href="../v1/study-16.css?v=lip-clearance">
 <link rel="stylesheet" href="print.css">
-<script type="module" src="../v1/study-16-waitlist.js?v=email-join"></script>
+<script type="module" src="../waitlist.js?v=1"></script>
 <script type="module" src="print.js"></script>
 </head>
 <body class="print-page" data-video-autoinit="false" data-video-src="assets/portrait.mp4" data-video-poster="assets/portrait.webp">
@@ -39,17 +39,17 @@
   <section class="waitlist-panel" id="waitlist-panel" aria-labelledby="waitlist-title" inert aria-hidden="true">
     <div class="waitlist-sheet">
       <h2 id="waitlist-title">Join the waitlist</h2>
-      <form id="waitlist-form" novalidate>
+      <form id="waitlist-form" method="post" action="https://ruth-waitlist-api.waitlist-api.workers.dev/waitlist" novalidate>
         <div class="waitlist-field">
           <label for="waitlist-email">Email address</label>
           <div class="waitlist-entry">
-            <input id="waitlist-email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" enterkeyhint="go" required maxlength="254" aria-describedby="waitlist-email-error waitlist-agreement waitlist-privacy">
+            <input id="waitlist-email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" enterkeyhint="go" required maxlength="254" aria-describedby="waitlist-email-error waitlist-agreement">
             <button class="waitlist-submit paper-action" type="submit" aria-describedby="waitlist-agreement" aria-keyshortcuts="Meta+Enter Control+Enter">Join</button>
           </div>
           <p id="waitlist-email-error" class="field-error" role="alert" hidden></p>
         </div>
         <p id="waitlist-agreement">By joining, you agree to receive Ruth launch updates by email.</p>
-        <p id="waitlist-privacy">Preview only. Your email stays in this tab.</p>
+        <p id="waitlist-request-error" class="field-error" role="alert" hidden></p>
       </form>
       <div class="waitlist-result" hidden>
         <p id="waitlist-status" role="status" aria-live="polite"></p>

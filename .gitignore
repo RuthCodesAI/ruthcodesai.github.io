@@ -1,0 +1,5 @@
+# Local Wrangler state can contain development database rows.
+.wrangler/
+waitlist-api/.dev.vars*
+waitlist-api/.env*
+__pycache__/

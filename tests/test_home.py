@@ -3,6 +3,7 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
+import re
 import unittest
 
 from playwright.sync_api import expect, sync_playwright
@@ -108,46 +109,189 @@ class Home(unittest.TestCase):
         self.assertEqual(page.locator('.art').inner_text().strip(), '')
         expect(page.get_by_role('heading', level=1, name=HEADLINE, exact=True)).to_be_visible()
 
-    def test_email_only_preview_and_keyboard_actions(self):
+    def waitlist_page(self, path=''):
         page = self.new_page(viewport={'width': 390, 'height': 780}, reduced_motion='reduce')
-        page.goto(self.url)
+        page.goto(self.url + path)
+        # Mock responses below are still available offline. An unexpected URL
+        # can never transmit an address, including when testing a production build.
         page.context.set_offline(True)
-        trigger = page.get_by_role('button', name='Join the waitlist', exact=True)
-        trigger.focus()
-        page.keyboard.press('Enter')
+        return page
+
+    def intercept_signup(self, page, endpoint, handler):
+        requests = []
+        headers = {
+            'Access-Control-Allow-Origin': self.url.rstrip('/'),
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+
+        def intercept(route):
+            request = route.request
+            if request.method == 'OPTIONS':
+                route.fulfill(status=204, headers=headers)
+                return
+            requests.append(request)
+            handler(route, headers)
+
+        page.route(lambda url: url == endpoint, intercept)
+        return requests
+
+    def test_email_signup_and_keyboard_actions(self):
+        address = 'ruth-qa@example.invalid'
+        for path in ('', 'v1/', 'v2/', 'v3/'):
+            with self.subTest(path=path):
+                page = self.waitlist_page(path)
+                form = page.locator('#waitlist-form')
+                is_live = form.evaluate("form => form.hasAttribute('action')")
+                trigger = page.locator('#signup-cta')
+                email = page.get_by_role('textbox', name='Email address')
+                join = form.locator('button[type="submit"]')
+                done = page.get_by_role('button', name='Done', exact=True)
+                awaiting_response = []
+                if is_live:
+                    self.assertEqual(form.evaluate('form => form.method'), 'post')
+                    endpoint = form.evaluate('form => form.action')
+                    def hold_response(route, headers):
+                        awaiting_response.append((route, headers))
+
+                    requests = self.intercept_signup(page, endpoint, hold_response)
+                else:
+                    requests = []
+
+                    def record_preview_request(request):
+                        if (request.resource_type in ('fetch', 'xhr', 'ping') or request.method != 'GET'
+                                or request.is_navigation_request()):
+                            requests.append(request)
+
+                    page.on('request', record_preview_request)
+
+                trigger.focus()
+                page.keyboard.press('Enter')
+                expect(email).to_be_focused()
+                expect(page.locator('#waitlist-agreement')).to_have_text('By joining, you agree to receive Ruth launch updates by email.')
+                expect(page.locator('#waitlist-agreement')).to_be_visible()
+                self.assertEqual(form.locator('input:visible').count(), 1)
+                if not is_live:
+                    self.assertFalse(email.get_attribute('name'))
+
+                page.keyboard.press('Tab')
+                expect(join).to_be_focused()
+                page.keyboard.press('Enter')
+                expect(email).to_be_focused()
+                expect(email).to_have_attribute('aria-invalid', 'true')
+                expect(page.locator('#waitlist-email-error')).to_be_visible()
+                self.assertIn('waitlist-email-error', email.get_attribute('aria-describedby').split())
+                email.fill('mistyped')
+                page.keyboard.press('Control+Enter')
+                expect(page.locator('#waitlist-email-error')).to_contain_text('email')
+                self.assertEqual(requests, [])
+
+                email.fill(address)
+                if is_live:
+                    with page.expect_request(lambda req: req.url == endpoint and req.method == 'POST'):
+                        page.keyboard.press('Control+Enter')
+                    expect(form).to_have_attribute('aria-busy', 'true')
+                    expect(join).to_be_disabled()
+                    expect(join).to_have_text('Joining…')
+                    # requestSubmit exercises the same path even with the button disabled.
+                    form.evaluate('form => { form.requestSubmit(); form.requestSubmit(); }')
+                    page.evaluate('new Promise(resolve => requestAnimationFrame(resolve))')
+                    self.assertEqual(len(requests), 1)
+                    if not path:
+                        toggle = page.locator('#ruth-theme-toggle')
+                        if toggle.count():
+                            theme = page.locator('html').get_attribute('data-ruth-theme')
+                            toggle.click()
+                            expect(page.locator('html')).not_to_have_attribute('data-ruth-theme', theme)
+                            expect(email).to_have_value(address)
+                            expect(email).to_be_focused()
+                            expect(join).to_be_disabled()
+                        page.keyboard.press('Escape')
+                        expect(trigger).to_be_focused()
+                        page.keyboard.press('Enter')
+                        expect(email).to_have_value(address)
+                        expect(join).to_be_disabled()
+                        page.keyboard.press('Escape')
+                        expect(trigger).to_be_focused()
+                    self.assertEqual(requests[0].post_data_json, {'email': address, 'consent': True})
+                    self.assertEqual(requests[0].headers['content-type'].split(';')[0], 'application/json')
+                    route, headers = awaiting_response.pop()
+                    route.fulfill(status=200, json={'ok': True}, headers=headers)
+                    if not path:
+                        # Let the real client process the response while the form is closed.
+                        expect(form).to_have_attribute('aria-busy', 'false')
+                        expect(trigger).to_be_focused()
+                        page.keyboard.press('Enter')
+                    expect(page.locator('#waitlist-title')).to_have_text('You’re on the list')
+                    expect(page.get_by_role('status')).to_have_text('We’ll email you when Ruth launches.')
+                else:
+                    page.keyboard.press('Control+Enter')
+                    expect(page.get_by_role('status')).to_contain_text('No signup was submitted.')
+                    self.assertFalse(requests)
+
+                expect(done).to_be_focused()
+                page.keyboard.press('Enter')
+                expect(trigger).to_be_focused()
+                page.keyboard.press('Enter')
+                expect(email).to_have_value('')
+                expect(email).to_be_focused()
+                page.keyboard.press('Escape')
+                expect(trigger).to_be_focused()
+                expect(trigger).to_have_attribute('aria-expanded', 'false')
+                page.close()
+
+    def test_signup_failure_preserves_address_and_allows_retry(self):
+        page = self.waitlist_page()
+        form = page.locator('#waitlist-form')
+        if not form.evaluate("form => form.hasAttribute('action')"):
+            self.skipTest('This release serves the local waitlist preview')
+        endpoint = form.evaluate('form => form.action')
+        outcomes = iter(('network', 'rate', 'html', 'invalid', 'success'))
+
+        def respond(route, headers):
+            outcome = next(outcomes)
+            if outcome == 'network':
+                route.abort('connectionfailed')
+            elif outcome == 'rate':
+                route.fulfill(status=429, json={'ok': False, 'error': 'rate_limited'}, headers={**headers, 'Retry-After': '60'})
+            elif outcome == 'html':
+                route.fulfill(status=200, content_type='text/html', body='<title>Proxy error</title>', headers=headers)
+            elif outcome == 'invalid':
+                route.fulfill(status=400, json={'ok': False, 'error': 'invalid_email'}, headers=headers)
+            else:
+                route.fulfill(status=200, json={'ok': True}, headers=headers)
+
+        requests = self.intercept_signup(page, endpoint, respond)
+        page.locator('#signup-cta').click()
         email = page.get_by_role('textbox', name='Email address')
-        join = page.get_by_role('button', name='Join', exact=True)
-        expect(email).to_be_focused()
-        expect(page.locator('#waitlist-panel')).to_be_visible()
-        expect(page.locator('#waitlist-agreement')).to_have_text('By joining, you agree to receive Ruth launch updates by email.')
-        expect(page.locator('#waitlist-agreement')).to_be_visible()
-        self.assertEqual(page.locator('#waitlist-form input').count(), 1)
-        self.assertFalse(email.get_attribute('name'))
-        page.keyboard.press('Tab')
-        expect(join).to_be_focused()
-        page.keyboard.press('Enter')
-        expect(email).to_be_focused()
-        expect(email).to_have_attribute('aria-invalid', 'true')
-        expect(page.get_by_role('alert')).to_contain_text('email')
-        email.fill('ruth-preview@example.invalid')
-        signup_requests = []
-        def record_signup_request(request):
-            if (request.method != 'GET' or request.resource_type in ('xhr', 'fetch', 'ping')
-                    or request.is_navigation_request()):
-                signup_requests.append(request.url)
-        page.on('request', record_signup_request)
-        page.keyboard.press('Control+Enter')
-        expect(page.get_by_role('status')).to_contain_text('No signup was submitted.')
-        done = page.get_by_role('button', name='Done')
-        expect(done).to_be_focused()
-        page.keyboard.press('Enter')
-        expect(trigger).to_be_focused()
-        page.keyboard.press('Enter')
-        expect(email).to_have_value('')
-        page.keyboard.press('Escape')
-        expect(trigger).to_be_focused()
-        expect(trigger).to_have_attribute('aria-expanded', 'false')
-        self.assertFalse(signup_requests)
+        join = form.locator('button[type="submit"]')
+        address = 'ruth-retry@example.invalid'
+        email.fill(address)
+        for attempt, outcome in enumerate(('network', 'rate', 'html', 'invalid'), start=1):
+            with self.subTest(outcome=outcome):
+                with page.expect_request(lambda req: req.url == endpoint and req.method == 'POST'):
+                    join.click()
+                if outcome == 'invalid':
+                    expect(page.locator('#waitlist-email-error')).to_be_visible()
+                    expect(email).to_have_attribute('aria-invalid', 'true')
+                    expect(email).to_be_focused()
+                else:
+                    error = page.locator('#waitlist-request-error')
+                    expect(error).to_be_visible()
+                    expect(error).to_have_attribute('role', 'alert')
+                    self.assertNotEqual(email.get_attribute('aria-invalid'), 'true')
+                    expect(error).not_to_have_text('')
+                    if outcome == 'rate':
+                        expect(error).to_have_text(re.compile(r'wait|later|many|minute|moment', re.IGNORECASE))
+                expect(join).to_be_enabled()
+                expect(email).to_have_value(address)
+                expect(form).to_be_visible()
+                self.assertEqual(len(requests), attempt)
+        email.fill('ruth-corrected@example.invalid')
+        join.click()
+        expect(page.get_by_role('status')).to_have_text('We’ll email you when Ruth launches.')
+        expect(page.get_by_role('button', name='Done')).to_be_focused()
+        self.assertEqual(len(requests), 5)
 
     def test_content_does_not_wait_for_palette_script(self):
         page = self.new_page()
