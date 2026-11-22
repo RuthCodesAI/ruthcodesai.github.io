@@ -32,14 +32,14 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 #shader canvas{display:block;width:100%;height:100%}
 .veil{z-index:3;background:linear-gradient(90deg,rgb(var(--ground-rgb)/0.333),transparent 54%,rgb(var(--ground-rgb)/0.125) 86%,rgb(var(--ground-rgb)/0.361)),linear-gradient(180deg,rgb(var(--ground-rgb)/0.4),transparent 22%)}
 .page{position:relative;height:100svh;width:100%;isolation:isolate}
-.masthead{
- position:absolute;inset:var(--masthead-top) var(--g) auto;z-index:4;
- display:flex;align-items:center;justify-content:flex-end;pointer-events:none;
-}
 .hero-lockup{
  position:absolute;inset:0;display:grid;justify-items:center;
  grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);
- pointer-events:none;transition:opacity .25s ease;
+ pointer-events:none;
+}
+.hero-details{
+ grid-row:3;align-self:start;display:flex;flex-direction:column;align-items:center;width:100%;
+ margin-top:clamp(15px,3svh,32px);gap:clamp(12px,2.6svh,25px);
 }
 .ruth-home{
  grid-row:2;display:block;width:min(42vw,60svh,640px);
@@ -47,8 +47,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 }
 .ruth-home svg{display:block;width:100%;height:auto}
 h1{
- grid-row:3;align-self:start;position:relative;isolation:isolate;
- width:max-content;max-width:calc(100% - 2 * var(--g));margin:clamp(15px,3svh,32px) 0 0;
+ position:relative;isolation:isolate;
+ width:max-content;max-width:calc(100% - 2 * var(--g));margin:0;
  font-size:min(clamp(20px,calc(15px + 1.65vw),44px),max(16px,5.2svh));
  font-weight:420;font-style:normal;font-variation-settings:"opsz" 32;
  text-align:center;line-height:1.12;letter-spacing:-.026em;
@@ -56,19 +56,10 @@ h1{
 h1::before{
  content:"";position:absolute;z-index:-1;inset:-.7em -1.55em;
  background:radial-gradient(ellipse closest-side,rgb(var(--ground-rgb)/.62) 28%,rgb(var(--ground-rgb)/.42) 68%,transparent);
- transition:opacity .25s ease;
 }
-h1[data-reveal="waiting"]::before{opacity:0}
 .headline-lead,.headline-end{display:block}
 h1 .keep{white-space:nowrap}
-::highlight(ruth-pending-letters){color:transparent;text-shadow:none}
-.headline-caret{
- position:absolute;top:0;left:0;width:clamp(1.5px,.024em,2.5px);background:currentColor;
- pointer-events:none;animation:headline-blink .72s steps(1,end) infinite;
-}
-@keyframes headline-blink{0%,100%{opacity:1}69%{opacity:0}}
-.headline-caret[data-return]{animation:none}
-body[data-waitlist-open="true"] .hero-lockup{opacity:0;visibility:hidden}
+body[data-waitlist-open="true"] :is(.ruth-home,h1){visibility:hidden}
 
 .waitlist{
  position:relative;pointer-events:auto;
@@ -101,12 +92,12 @@ body[data-waitlist-open="true"] .hero-lockup{opacity:0;visibility:hidden}
 .join[aria-expanded="true"]::before,.join[aria-expanded="true"]::after{opacity:0}
 .join[aria-expanded="true"] .join-mark{transform:rotate(45deg)}
 .waitlist-panel{
- position:absolute;right:0;top:100%;width:min(376px,calc(100vw - 2 * var(--g)));
- max-height:calc(var(--waitlist-viewport,100svh) - var(--masthead-top) - 58px - max(12px,env(safe-area-inset-bottom)));
+ position:absolute;left:50%;bottom:100%;transform:translateX(-50%);width:min(376px,calc(100vw - 2 * var(--g)));
+ max-height:calc(var(--waitlist-viewport,100svh) * .6);
  overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--sheet-rule) var(--sheet-bg);
  color-scheme:light;background:var(--sheet-bg);color:var(--sheet-ink);
  font:450 15px/1.4 InterTight,Arial,sans-serif;
- visibility:hidden;opacity:0;clip-path:inset(0 0 100% 0);
+ visibility:hidden;opacity:0;clip-path:inset(100% 0 0);
  transition:clip-path .21s var(--ease),opacity .14s ease,visibility 0s .21s;
 }
 .waitlist-panel[aria-hidden="false"]{
@@ -119,37 +110,24 @@ body[data-waitlist-open="true"] .hero-lockup{opacity:0;visibility:hidden}
 }
 #waitlist-form{margin:0}
 .waitlist-field label{display:block;margin-bottom:5px;font-size:13px;font-weight:580}
+.waitlist-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px}
 .waitlist-field input{
- display:block;width:100%;height:46px;margin:0;padding:0 0 4px;
+ display:block;width:100%;min-width:0;height:46px;margin:0;padding:0 0 4px;
  border:0;border-bottom:1px solid var(--sheet-rule);outline:none;background:transparent;
  color:var(--sheet-ink);font:420 24px/1.1 Newsreader,Georgia,serif;letter-spacing:-.015em;caret-color:currentColor;
 }
 .waitlist-field input:focus{border-bottom-color:var(--sheet-ink);box-shadow:0 1px 0 var(--sheet-ink)}
 .waitlist-field input::placeholder{color:#6d6962;opacity:1}
 .waitlist-field input:-webkit-autofill{-webkit-text-fill-color:var(--sheet-ink)}
-.waitlist-consent{
- display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:7px;
- color:var(--sheet-ink);font-size:14px;line-height:1.35;cursor:pointer;
-}
-.waitlist-consent input{
- appearance:none;-webkit-appearance:none;display:grid;place-content:center;flex:none;
- width:17px;height:17px;margin:0;border:1px solid #726f68;background:transparent;border-radius:1px;
-}
-.waitlist-consent input:checked{background:var(--sheet-ink);border-color:var(--sheet-ink)}
-.waitlist-consent input:checked::before{
- content:"";display:block;width:8px;height:4px;border-left:1.5px solid var(--sheet-bg);border-bottom:1.5px solid var(--sheet-bg);
- transform:translateY(-1px) rotate(-45deg);
-}
 .field-error{margin:6px 0 0;color:var(--sheet-ink);font-size:13px;font-weight:570;line-height:1.4}
-.waitlist-actions{
- display:flex;align-items:center;justify-content:space-between;gap:17px;margin-top:20px;
-}
-#waitlist-privacy{margin:0;max-width:19ch;color:var(--sheet-muted);font-size:12px;line-height:1.45}
+#waitlist-agreement{margin:16px 0 0;color:var(--sheet-ink);font-size:13px;line-height:1.4}
+#waitlist-privacy{margin:6px 0 0;color:var(--sheet-muted);font-size:12px;line-height:1.45}
 .paper-action{
  display:inline-flex;align-items:center;justify-content:space-between;gap:21px;min-height:44px;
  padding:0 15px;border:1px solid transparent;background:var(--sheet-ink);color:var(--sheet-bg);
  font:530 15px/1 InterTight,Arial,sans-serif;letter-spacing:.005em;
 }
+.waitlist-entry .paper-action{min-width:62px;justify-content:center}
 .action-arrow{display:block;width:17px;height:12px;fill:none;stroke:currentColor;stroke-width:1.4;transition:transform .18s var(--ease)}
 @media(hover:hover){.paper-action:hover .action-arrow{transform:translateX(2px)}}
 .paper-action:active{background:#48453f}
@@ -178,7 +156,7 @@ body[data-waitlist-open="true"] .palette{visibility:hidden}
 }
 body[data-waitlist-compact="true"] .waitlist-sheet{padding:16px 20px}
 body[data-waitlist-compact="true"] .waitlist-sheet h2{font-size:29px;margin-bottom:12px}
-body[data-waitlist-compact="true"] .waitlist-actions{margin-top:4px}
+body[data-waitlist-compact="true"] #waitlist-agreement{margin-top:10px}
 @media(max-width:480px){
  .join{min-width:143px;min-height:44px;gap:17px;font-size:17px}
  .waitlist-sheet{padding:23px 22px 21px}
@@ -190,6 +168,24 @@ body[data-waitlist-compact="true"] .waitlist-actions{margin-top:4px}
 }
 @media(max-aspect-ratio:1/1){
  .ruth-home{width:min(63vw,46svh,520px)}
+}
+@media(max-width:960px) and (orientation:portrait),(max-width:960px) and (max-height:560px) and (orientation:landscape){
+ .hero-lockup{
+  --stack-bottom:max(clamp(14px,2.6svh,28px),calc(env(safe-area-inset-bottom) + 8px));
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:var(--stack-bottom);
+ }
+ .ruth-home{width:min(56vw,28svh,310px);flex:none}
+ .hero-details{margin-top:clamp(7px,1.6svh,14px);gap:clamp(9px,2svh,18px);flex:none}
+ h1{font-size:clamp(18px,min(calc(15px + 1.65vw),3.3svh),28px)}
+ body[data-waitlist-open="true"] .waitlist{position:absolute;bottom:var(--stack-bottom);left:50%;transform:translateX(-50%)}
+ .waitlist-panel{max-height:calc(var(--waitlist-viewport,100svh) - var(--stack-bottom) - 48px - max(10px,env(safe-area-inset-top)))}
+}
+@media(max-width:960px) and (max-height:560px) and (orientation:landscape){
+ .hero-lockup{--stack-bottom:max(8px,env(safe-area-inset-bottom))}
+ .ruth-home{width:min(30svh,150px)}
+ .hero-details{margin-top:5px;gap:4px}
+ h1{font-size:clamp(15px,4.8svh,21px)}
+ .headline-lead,.headline-end{display:inline}
 }
 @media(max-width:600px) and (orientation:portrait){
  :root{--g:clamp(18px,calc(10vw - 14px),24px)}
@@ -207,6 +203,4 @@ body[data-waitlist-compact="true"] .waitlist-actions{margin-top:4px}
  .join-mark::before,.join-mark::after{background:ButtonText;forced-color-adjust:none}
  .paper-action{border:1px solid ButtonText}
  .waitlist-field input:focus-visible{outline:2px solid Highlight}
- .waitlist-consent input,.waitlist-consent input:checked{appearance:auto;-webkit-appearance:auto}
- .waitlist-consent input:checked::before{content:none}
 }
