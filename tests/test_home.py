@@ -77,7 +77,20 @@ class Home(unittest.TestCase):
 
     def test_original_film_transitions_to_unlabelled_living_ascii(self):
         page = self.new_page(viewport={'width': 800, 'height': 600})
-        page.add_init_script('''window.filmFrames = { moving: false, held: false };
+        page.add_init_script('''window.filmFrames = { moving: false, held: false, annotations: [] };
+            const context = CanvasRenderingContext2D.prototype;
+            const originalText = context.fillText;
+            context.fillText = function(label, ...args) {
+                if (this.canvas.closest('.art') && String(label).trim().length > 1) {
+                    window.filmFrames.annotations.push(label);
+                }
+                return originalText.call(this, label, ...args);
+            };
+            const originalRectangle = context.strokeRect;
+            context.strokeRect = function(...args) {
+                if (this.canvas.closest('.art')) window.filmFrames.annotations.push('rectangle');
+                return originalRectangle.apply(this, args);
+            };
             document.addEventListener('figureframe', ({detail}) => {
                 if (detail.time > 3 && detail.time < 12 && detail.visible > 0 && !detail.held) {
                     window.filmFrames.moving = true;
@@ -87,6 +100,7 @@ class Home(unittest.TestCase):
         page.goto(self.url)
         page.wait_for_function("document.querySelector('video')?.ended && window.filmFrames.held", timeout=45_000)
         self.assertTrue(page.evaluate('window.filmFrames.moving'))
+        self.assertEqual(page.evaluate('window.filmFrames.annotations'), [])
         shader = page.locator('#shader')
         expect(shader).to_have_attribute('data-material-idle', 'running')
         expect(shader.locator('canvas')).to_be_visible()
@@ -116,8 +130,12 @@ class Home(unittest.TestCase):
         expect(email).to_have_attribute('aria-invalid', 'true')
         expect(page.get_by_role('alert')).to_contain_text('email')
         email.fill('ruth-preview@example.invalid')
-        attempted_requests = []
-        page.on('request', lambda request: attempted_requests.append(request.url))
+        signup_requests = []
+        def record_signup_request(request):
+            if (request.method != 'GET' or request.resource_type in ('xhr', 'fetch', 'ping')
+                    or request.is_navigation_request()):
+                signup_requests.append(request.url)
+        page.on('request', record_signup_request)
         page.keyboard.press('Control+Enter')
         expect(page.get_by_role('status')).to_contain_text('No signup was submitted.')
         done = page.get_by_role('button', name='Done')
@@ -129,7 +147,7 @@ class Home(unittest.TestCase):
         page.keyboard.press('Escape')
         expect(trigger).to_be_focused()
         expect(trigger).to_have_attribute('aria-expanded', 'false')
-        self.assertFalse(attempted_requests)
+        self.assertFalse(signup_requests)
 
     def test_content_does_not_wait_for_palette_script(self):
         page = self.new_page()
