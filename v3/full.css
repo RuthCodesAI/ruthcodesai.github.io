@@ -1,0 +1,70 @@
+.print-page {
+  --copy-axis: 50%;
+  --ink-center: 74.5%;
+  --pale-width: min(79vw, 550px);
+  --pale-height: 20dvh;
+  --crop-x: 54%;
+  --crop-y: 56.25%;
+}
+
+.print-plate {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  aspect-ratio: auto;
+  overflow: hidden;
+  pointer-events: none;
+  /* The lighter patch of ink stays local to the black lettering. */
+  mask-image: radial-gradient(ellipse var(--pale-width) var(--pale-height) at var(--copy-axis) var(--ink-center),
+    rgb(0 0 0 / .16) 0%, rgb(0 0 0 / .23) 58%, rgb(0 0 0 / .6) 81%, black 100%);
+}
+
+.print-plate > .portrait, .print-plate > .living-video {
+  object-fit: cover;
+  /* Keep both frames registered, including when the player realigns itself. */
+  object-position: var(--crop-x) var(--crop-y) !important;
+}
+
+.print-layout { position: relative; }
+
+.print-heading {
+  padding-top: 0;
+  gap: 0;
+}
+
+.print-heading .ruth-home {
+  /* The guarded lower lip reaches source row 606 of 1080. */
+  width: auto;
+  height: min(calc(var(--wordmark-width) * 714 / 1831), max(0px, calc(100% - 56.25dvh - max(5px, 1.05dvh))));
+}
+
+.print-heading .ruth-home svg { width: auto; height: 100%; }
+body[data-waitlist-open="true"] .print-plate { mask-image: none; }
+
+@media (min-width: 640px) and (min-aspect-ratio: 4/3) {
+  .print-page {
+    --copy-axis: 23%;
+    --ink-center: 52%;
+    --pale-width: min(25vw, 510px);
+    --pale-height: min(30dvh, 310px);
+    --crop-x: 22%;
+  }
+  .print-layout {
+    --wordmark-width: min(32vw, 41dvh, 420px);
+    width: calc(2 * var(--copy-axis));
+    grid-template-rows: 16% minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .print-heading { padding-bottom: clamp(10px, 1.9dvh, 22px); }
+  .print-heading .ruth-home { width: var(--wordmark-width); height: auto; }
+  .print-heading .ruth-home svg { width: 100%; height: auto; }
+  .print-layout h1 { max-width: 92%; }
+  .headline-lead, .headline-end { display: block; }
+}
+
+@media (min-aspect-ratio: 8/3) { .print-page { --crop-y: 36%; } }
+@media (min-aspect-ratio: 17/5) { .print-page { --crop-y: 32%; } }
+/* Anchor the mouth inside even the shortest ultrawide crop. */
+@media (min-aspect-ratio: 17/4) { .print-page { --crop-y: calc(56.25% + 35dvh); } }
+
+@media (forced-colors: active) { .print-plate { visibility: hidden; } }
