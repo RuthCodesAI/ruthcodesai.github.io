@@ -1,5 +1,7 @@
+import { readJsonBody } from "./request-body.mjs";
+import { handleNotificationRequest } from "./notification-api.mjs";
+
 const allowedOrigins = new Set(["https://ruth.codes", "https://ruthcodesai.github.io"]);
-const maxBodyBytes = 2048;
 const consentVersion = "launch-updates-v1";
 const consentNotice = "By joining, you agree to receive Ruth launch updates by email.";
 
@@ -28,35 +30,6 @@ function preflight(request, origin) {
   });
 }
 
-async function readSignup(request) {
-  if (Number(request.headers.get("Content-Length")) > maxBodyBytes) {
-    return { status: 413, error: "body_too_large" };
-  }
-  if (!request.body) return { status: 400, error: "invalid_request" };
-
-  const bytes = new Uint8Array(maxBodyBytes);
-  const reader = request.body.getReader();
-  let length = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value.byteLength > bytes.length - length) {
-        await reader.cancel();
-        return { status: 413, error: "body_too_large" };
-      }
-      bytes.set(value, length);
-      length += value.byteLength;
-    }
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes.subarray(0, length));
-    return { data: JSON.parse(text) };
-  } catch {
-    return { status: 400, error: "invalid_request" };
-  } finally {
-    reader.releaseLock();
-  }
-}
-
 function emailAddress(value) {
   if (typeof value !== "string") return null;
   const email = value.trim();
@@ -72,8 +45,10 @@ function emailAddress(value) {
 
 export default {
   async fetch(request, env) {
+    const path = new URL(request.url).pathname;
+    if (path.startsWith("/internal/notifications/")) return handleNotificationRequest(request, env);
     const origin = request.headers.get("Origin");
-    if (new URL(request.url).pathname !== "/waitlist") return respond(origin, 404, "not_found");
+    if (path !== "/waitlist") return respond(origin, 404, "not_found");
     if (!allowedOrigins.has(origin)) return respond(origin, 403, "forbidden");
     if (request.method === "OPTIONS") return preflight(request, origin);
     if (request.method !== "POST") {
@@ -90,7 +65,7 @@ export default {
       const rate = await env.SIGNUP_LIMITER.limit({ key });
       if (!rate.success) return respond(origin, 429, "rate_limited", { "Retry-After": "60" });
 
-      const { data, status, error } = await readSignup(request);
+      const { data, status, error } = await readJsonBody(request);
       if (error) return respond(origin, status, error);
       if (!data || typeof data !== "object" || Array.isArray(data) ||
           Object.keys(data).length !== 2 || !Object.hasOwn(data, "email") || !Object.hasOwn(data, "consent")) {
