@@ -23,7 +23,7 @@ def missing_outline_pixels(page):
     finally:
         style.evaluate('el => el.remove()')
     l,t,r,b = page.locator(FRAME).evaluate('''e => {
-        const q=e.getBoundingClientRect(), s=parseFloat(getComputedStyle(e).strokeWidth)/2;
+
         const m=e.getScreenCTM(), box=e.getBBox();
         return [m.e+box.x*m.a,m.f+box.y*m.d,m.e+(box.x+box.width)*m.a,m.f+(box.y+box.height)*m.d];
     }''')
