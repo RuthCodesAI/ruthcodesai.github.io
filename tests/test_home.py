@@ -109,6 +109,12 @@ class Home(unittest.TestCase):
                 p.wait_for_selector('#shader.ready')
                 labels = p.locator('.art svg text:visible')
                 self.assertEqual(labels.all_text_contents(), expected)
+                frames = p.locator('.art svg .object-frame:visible')
+                self.assertEqual(frames.count(), len(expected))
+                if width == 390:
+                    # The head extends beyond the crop: its sides must not turn
+                    # into a decorative frame along both viewport edges.
+                    self.assertGreater(frames.first.bounding_box()['width'], width)
                 for label in labels.all():
                     box = label.bounding_box()
                     self.assertGreaterEqual(box['x'], 0)

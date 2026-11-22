@@ -62,11 +62,14 @@ export function artClasses(host) {
       // Do not turn a sliver at the crop edge into a labeled detection.
       const w = objects[i][0].length*7+4, h = 15;
       const enough = r-l>=w+10 && b-t>=h+10 && (r-l)*(b-t)>.12*(obj[2]-obj[0])*(obj[3]-obj[1]);
-      const spots = [[l+5,t+4],[r-w-5,t+4],[l+5,b-h-4],[r-w-5,b-h-4]];
+      // Prefer the nearest real horizontal edge for the label. A crop is
+      // not an object boundary: leave any off-screen frame edges off-screen.
+      const rows = t-obj[1] <= obj[3]-b ? [t+4,b-h-4] : [b-h-4,t+4];
+      const spots = rows.flatMap(y=>[[l+5,y],[r-w-5,y]]);
       const place = enough && spots.find(([x,y])=>!keepClear.some(q=>crosses([x,y,x+w,y+h],q)));
       group.style.display = place ? '' : 'none';
       if (!place) return;
-      bounds(frame,[l,t,r,b]);
+      bounds(frame,obj);
       const [x,y] = place; text.setAttribute('x',x); text.setAttribute('y',y+11);
       keepClear.push([x-2,y-2,x+w+2,y+h+2]);
     });
