@@ -213,6 +213,32 @@ class Home(unittest.TestCase):
                 self.assertTrue(btn.evaluate('e=>document.activeElement===e'))
                 p.close()
 
+    def test_framed_waitlist_target(self):
+        for w,h,touch in [(1440,900,False),(820,1180,True),(390,844,True),(320,568,True),(844,390,True)]:
+            with self.subTest(viewport=(w,h)):
+                p = self.browser.new_page(viewport={'width':w,'height':h},has_touch=touch,is_mobile=touch,reduced_motion='reduce')
+                self.addCleanup(p.close)
+                p.goto(self.url)
+                p.evaluate('document.fonts.ready')
+                btn = p.locator('#signup-cta')
+                box = btn.bounding_box()
+                self.assertGreaterEqual(box['width'],210)
+                self.assertGreaterEqual(box['height'],64)
+                # Points just inside the expanded surface activate the real button.
+                self.assertTrue(btn.evaluate('''e=>{let r=e.getBoundingClientRect();return [r.left+2,r.right-2].every(x=>[r.top+2,r.bottom-2].every(y=>document.elementFromPoint(x,y)===e))}'''))
+                frame = btn.evaluate('''e=>{let s=getComputedStyle(e,'::after');return [s.content,s.top,s.borderTopStyle,s.borderTopWidth]}''')
+                self.assertEqual(frame,['""','-6px','solid','1px'])
+                self.assertGreaterEqual(min(box['x'], w-box['x']-box['width'], h-box['y']-box['height'])-6,10)
+                self.assertGreater(box['y']-6,p.locator('h1').evaluate('e=>e.getBoundingClientRect().bottom'))
+                for _ in range(3):
+                    p.keyboard.press('Tab')
+                self.assertTrue(btn.evaluate("e=>e.matches(':focus-visible') && parseFloat(getComputedStyle(e).outlineOffset)<0"))
+                p.keyboard.press('Enter')
+                self.assertEqual(btn.evaluate("e=>getComputedStyle(e,'::after').content"),'none')
+                p.keyboard.press('Escape')
+                self.assertTrue(btn.evaluate("e=>e===document.activeElement && getComputedStyle(e,'::after').content!=='none'"))
+                p.close()
+
     def test_content_does_not_wait_for_palette_script(self):
         p = self.browser.new_page()
         self.addCleanup(p.close)
