@@ -1,0 +1,103 @@
+:root[data-ruth-theme="day"] { color-scheme: light; }
+:root[data-ruth-theme="day"] body {
+  --ink-rgb: 15 15 14;
+  --ground-rgb: 241 237 234;
+  --muted-rgb: 79 76 72;
+  --ink: rgb(var(--ink-rgb));
+  --muted: rgb(var(--muted-rgb));
+  --ground: rgb(var(--ground-rgb));
+  background: var(--ground) url("./v2/assets/paper.webp") repeat;
+  background-size: 512px 448px;
+}
+
+.ruth-day-art {
+  position: fixed;
+  inset: calc(var(--view-height) - var(--art-height)) 0 auto;
+  height: var(--art-height);
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: multiply;
+  /* Keep the face dark up to the wordmark. Thin the ink underneath the letters. */
+  mask-image:
+    linear-gradient(black calc(var(--reading-top, 56%) - 18px), transparent calc(var(--reading-top, 56%) + 12px)),
+    radial-gradient(ellipse var(--reading-rx, min(78vw, 520px)) var(--reading-ry, 26dvh)
+      at 50% var(--reading-y, 75%), rgb(0 0 0 / .13) 0%,
+      rgb(0 0 0 / .19) 59%, rgb(0 0 0 / .57) 81%, black 100%);
+}
+
+.ruth-day-art > :is(img, video) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--day-x, 58%) var(--day-y, calc(100% * var(--mouth-level))) !important;
+}
+.ruth-day-art > .living-video { opacity: 0; filter: none !important; }
+.ruth-day-art > .living-video.is-ready { opacity: 1; }
+@media (min-width: 961px) and (max-width: 1199px) and (min-height: 651px) and (orientation: landscape) {
+  .ruth-day-art { --day-x: 35%; }
+}
+/* At billboard widths the upper lip comes within a few pixels of the top
+   edge. Keep the full smile in frame and above the fixed wordmark. */
+@media (min-aspect-ratio: 5/1) and (min-height: 651px) {
+  .ruth-day-art { --day-y: calc(56.25% + 1.2dvh); }
+}
+@media (max-aspect-ratio: 47/100) {
+  .ruth-day-art { --day-x: 54%; }
+}
+
+:root[data-ruth-theme="day"] :is(h1, .join)::before { background: none; }
+:root[data-ruth-theme="day"] .join { text-shadow: none; }
+body[data-waitlist-open="true"] .ruth-day-art { mask-image: none; }
+
+:root[data-ruth-theme="night"] .ruth-day-art,
+:root[data-ruth-theme="day"] .art { display: none; }
+/* Load and seek the next film before revealing it. A laid-out transparent
+   layer allows both native media and the night canvas to prepare a frame. */
+:root[data-ruth-preparing="day"][data-ruth-theme="night"] .ruth-day-art,
+:root[data-ruth-preparing="night"][data-ruth-theme="day"] .art {
+  display: block;
+  opacity: 0;
+}
+
+#ruth-theme-toggle {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ink);
+  /* Thin the halftone dots immediately under the mark, keeping its outline
+     legible when the coat or hand crosses this corner. */
+  background: radial-gradient(circle, rgb(var(--ground-rgb) / .96) 6px,
+    rgb(var(--ground-rgb) / .91) 9px, rgb(var(--ground-rgb) / .46) 12px, transparent 16px);
+}
+#ruth-theme-toggle::before {
+  content: "";
+  width: 19px;
+  height: 19px;
+  background: currentColor;
+  opacity: .78;
+  mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.45 1.45m11.1 11.1L19 19M5 19l1.45-1.45m11.1-11.1L19 5'/%3E%3C/svg%3E");
+}
+#ruth-theme-toggle[aria-pressed="true"]::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M19.5 15.1a8.1 8.1 0 0 1-10.6-10.6 8.2 8.2 0 1 0 10.6 10.6Z'/%3E%3C/svg%3E");
+}
+#ruth-theme-toggle:is(:hover, :focus-visible)::before { opacity: 1; }
+#ruth-theme-toggle:focus-visible { outline-offset: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ruth-day-art > .living-video { display: none; }
+}
+@media (forced-colors: active) {
+  .ruth-day-art { visibility: hidden; }
+  :root[data-ruth-theme="day"] body { --ink: CanvasText; --ground: Canvas; background: Canvas; }
+  #ruth-theme-toggle::before { forced-color-adjust: none; background: ButtonText; }
+}

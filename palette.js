@@ -17,9 +17,13 @@
     verdigris: { name: 'Verdigris', ground: [11, 20, 17],    ink: [233, 239, 234], muted: [181, 196, 188], paper: [255, 255, 255], paperInk: [11, 20, 17], accent: [31, 92, 77] },
   };
   const KEY = 'ruth-palette', root = document.documentElement, body = document.body;
-  let chosen = new URLSearchParams(location.search).get('palette');
-  try { if (palettes[chosen]) localStorage.setItem(KEY, chosen); else chosen = localStorage.getItem(KEY); } catch {}
-  if (!palettes[chosen]) chosen = 'night';
+  const query = new URLSearchParams(location.search);
+  let chosen = query.get('palette');
+  try {
+    if (Object.hasOwn(palettes, chosen)) localStorage.setItem(KEY, chosen);
+    else if (!root.hasAttribute('data-ruth-theme') || query.has('palettes')) chosen = localStorage.getItem(KEY);
+  } catch {}
+  if (!Object.hasOwn(palettes, chosen)) chosen = 'night';
   const p = palettes[chosen], hex = c => '#'+c.map(v => v.toString(16).padStart(2, '0')).join('');
   for (const [token, value] of [['--ground-rgb', p.ground], ['--ink-rgb', p.ink], ['--muted-rgb', p.muted], ['--paper-rgb', p.paper], ['--paper-ink-rgb', p.paperInk], ['--accent-rgb', p.accent]])
     root.style.setProperty(token, value.join(' '));
