@@ -140,7 +140,8 @@ class Home(unittest.TestCase):
         self.assertLessEqual(max(strip)-min(strip),2)
 
     def test_wordmark_leads_unchanged_tagline(self):
-        for w,h,old_size in [(390,844,46.02),(1440,900,112.27),(844,390,56.55)]:
+        # Published sizes before the requested ~10% increase.
+        for w,h,old_size in [(390,844,28.47),(820,1180,38),(1440,900,57.6),(844,390,19.5)]:
             with self.subTest(viewport=(w,h)):
                 p = self.browser.new_page(viewport={'width':w,'height':h})
                 self.addCleanup(p.close)
@@ -150,7 +151,8 @@ class Home(unittest.TestCase):
                 size = title.evaluate('e=>parseFloat(getComputedStyle(e).fontSize)')
                 logo = p.locator('.ruth-home svg').bounding_box()
                 self.assertGreater(logo['height'], 2*size)
-                self.assertLess(size, old_size)
+                self.assertGreaterEqual(size, 1.08*old_size)
+                self.assertLessEqual(size, 1.12*old_size)
                 self.assertGreaterEqual(size,18)
                 self.assertLess(logo['y']+logo['height'],title.bounding_box()['y'])
                 p.close()
@@ -211,6 +213,33 @@ class Home(unittest.TestCase):
                 self.assertTrue(p.get_by_role('textbox',name='Email address').evaluate('e=>document.activeElement===e'))
                 p.keyboard.press('Escape')
                 self.assertTrue(btn.evaluate('e=>document.activeElement===e'))
+                p.close()
+
+    def test_waitlist_label_is_large_bold_newsreader_without_underline(self):
+        for w,h,min_size in [(1440,900,32),(820,1180,30),(390,844,30),(320,568,26)]:
+            with self.subTest(width=w):
+                p = self.browser.new_page(viewport={'width':w,'height':h},reduced_motion='reduce')
+                self.addCleanup(p.close)
+                p.goto(self.url)
+                p.evaluate('document.fonts.ready')
+                btn = p.locator('#signup-cta')
+                self.assertGreaterEqual(btn.evaluate('e=>parseFloat(getComputedStyle(e).fontSize)'),min_size)
+                self.assertEqual(btn.evaluate('e=>getComputedStyle(e).fontWeight'),'700')
+                session = p.context.new_cdp_session(p)
+                session.send('DOM.enable'); session.send('CSS.enable')
+                doc = session.send('DOM.getDocument')['root']['nodeId']
+                node = session.send('DOM.querySelector',{'nodeId':doc,'selector':'#signup-cta'})['nodeId']
+                faces = session.send('CSS.getPlatformFontsForNode',{'nodeId':node})['fonts']
+                self.assertEqual(len(faces),1)
+                self.assertTrue(faces[0]['isCustomFont'])
+                self.assertIn('Newsreader',faces[0]['postScriptName'])
+                self.assertIn('Bold',faces[0]['postScriptName'])
+                decoration = lambda: btn.evaluate('e=>getComputedStyle(e).textDecorationLine')
+                self.assertEqual(decoration(),'none')
+                btn.hover(); self.assertEqual(decoration(),'none')
+                p.mouse.down(); self.assertEqual(decoration(),'none'); p.mouse.up()
+                p.keyboard.press('Escape'); self.assertEqual(decoration(),'none')
+                self.assertTrue(btn.evaluate("e=>e.matches(':focus-visible')"))
                 p.close()
 
     def test_framed_waitlist_target(self):
