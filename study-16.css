@@ -1,4 +1,6 @@
 @font-face{font-family:Newsreader;src:url('assets/Newsreader-Latin.woff2') format('woff2');font-weight:200 800;font-display:swap}
+/* Serve the current UI from a smaller slice; other characters retain the full face. */
+@font-face{font-family:Newsreader;src:url('assets/Newsreader-UI.woff2') format('woff2');font-weight:320 400;unicode-range:U+0020-007E;font-display:swap}
 :root{
  /* Palette tokens. palette.js may replace them; these are the Night values. */
  color-scheme:dark;--ink-rgb:242 240 235;--ground-rgb:16 16 16;--muted-rgb:201 198 192;--photo-light:1;
