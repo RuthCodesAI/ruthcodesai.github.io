@@ -100,11 +100,14 @@ class Home(unittest.TestCase):
         self.assertEqual(p.evaluate('window.marks'), {'rectangles':0, 'labels':[]})
 
     def test_only_visible_objects_get_named_frames(self):
-        for width, height, expected in [(1440,900,['JUSTITIA','BLINDFOLD','SCALES']),
-                                        (390,844,['JUSTITIA','BLINDFOLD'])]:
+        all_classes = ['JUSTITIA','BLINDFOLD','SCALES']
+        for width, height, crop, expected in [(1440,900,None,all_classes), (390,844,None,all_classes),
+                                               (390,844,'42%',all_classes[:2])]:
             with self.subTest(width=width):
                 p = self.browser.new_page(viewport={'width':width,'height':height})
                 self.addCleanup(p.close)
+                if crop:
+                    p.add_init_script(f"document.addEventListener('DOMContentLoaded', () => document.querySelector('.art').style.setProperty('--art-x','{crop}'))")
                 p.goto(self.url)
                 p.wait_for_selector('#shader.ready')
                 labels = p.locator('.art svg text:visible')
