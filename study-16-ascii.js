@@ -520,11 +520,7 @@ async function initializeAscii(host) {
       ctx.drawImage(treatment,0,0,treatment.width,treatment.height,0,0,width,height);
       ctx.globalAlpha = 1;
     }
-    // Shares the cover rectangle and film clock with the figure boxes.
-    if (isStudy16) host.dispatchEvent(new CustomEvent('figureframe', { detail: {
-      cover: { ...cover }, time: media?.videoWidth ? media.currentTime : 0,
-      visible: living ? 1 : transition(t), held: living,
-    } }));
+
   }
 
   function scheduleResize() {
