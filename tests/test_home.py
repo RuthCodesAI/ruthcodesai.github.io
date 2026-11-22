@@ -55,7 +55,9 @@ class Home(unittest.TestCase):
                 self.assertGreaterEqual(box['width'],44)
                 self.assertGreaterEqual(box['y'],0)
                 self.assertLessEqual(box['y']+box['height'],h)
-                self.assertEqual(btn.evaluate('e=>getComputedStyle(e).backgroundColor'), 'rgba(0, 0, 0, 0)')
+                self.assertEqual(btn.evaluate('e=>getComputedStyle(e).backgroundColor'), 'rgb(0, 0, 0)')
+                self.assertEqual(btn.evaluate('e=>getComputedStyle(e).color'), 'rgb(242, 240, 235)')
+                self.assertEqual(btn.evaluate('e=>getComputedStyle(e).borderRadius'), '0px')
                 heading = p.get_by_role('heading',level=1).bounding_box()
                 center = box['x']+box['width']/2
                 self.assertAlmostEqual(center, heading['x']+heading['width']/2,delta=1)
