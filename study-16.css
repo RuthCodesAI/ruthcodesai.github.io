@@ -27,7 +27,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .art>.living-video{z-index:1;display:block;opacity:0;border:0;pointer-events:none}
 .art>.living-video.is-ready{opacity:1}
 .art>.living-video-source,.art>.living-video-source.is-ready{opacity:0}
-.figure-boxes{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}
+
 #shader{z-index:2;opacity:0}#shader.ready{opacity:1}
 #shader canvas{display:block;width:100%;height:100%}
 .veil{z-index:3;background:linear-gradient(0deg,rgb(var(--ground-rgb)) 0%,rgb(var(--ground-rgb)/0.922) 17%,rgb(var(--ground-rgb)/0.333) 42%,transparent 66%),linear-gradient(90deg,rgb(var(--ground-rgb)/0.333),transparent 54%,rgb(var(--ground-rgb)/0.125) 86%,rgb(var(--ground-rgb)/0.361)),linear-gradient(180deg,rgb(var(--ground-rgb)/0.4),transparent 22%)}

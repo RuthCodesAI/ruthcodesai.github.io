@@ -45,6 +45,7 @@ class Home(unittest.TestCase):
         cls.addClassCleanup(cls.browser.close)
         cls.url = f'http://127.0.0.1:{cls.server.server_port}/'
 
+
     def test_tagline_rendered_lines(self):
         page = self.browser.new_page(reduced_motion='reduce')
         self.addCleanup(page.close)
@@ -74,6 +75,30 @@ class Home(unittest.TestCase):
                         natural.dispose()
                 self.assertEqual(heading.text_content(), ' '.join(desktop))
                 self.assertEqual(page.get_by_role('heading', name=' '.join(desktop), exact=True).count(), 1)
+
+    def test_animated_hero_paints_without_tracking_boxes_or_labels(self):
+        p = self.browser.new_page(viewport={'width':1440,'height':900})
+        self.addCleanup(p.close)
+        # Canvas annotations are not DOM text. Observe the painted hero from
+        # the first frame through the film and the subsequent animated grid.
+        p.add_init_script(r"""window.marks = {rectangles: 0, labels: []};
+            const ctx = CanvasRenderingContext2D.prototype;
+            const stroke = ctx.strokeRect, text = ctx.fillText;
+            ctx.strokeRect = function(...args) {
+                if (this.canvas.closest('.art')) marks.rectangles++;
+                return stroke.apply(this, args);
+            };
+            ctx.fillText = function(value, ...args) {
+                if (this.canvas.closest('.art') && /^(?:[ABC]-0[123]|X\s+\d+\s+Y\s+\d+|GO|REVIEW|APPROVED|CLEARED|CONFIRMED)$/.test(value)
+                    && !marks.labels.includes(value)) marks.labels.push(value);
+                return text.call(this, value, ...args);
+            };""")
+        p.goto(self.url)
+        p.wait_for_function("document.querySelector('video')?.currentTime > 6")
+        p.mouse.move(1160,190,steps=12)
+        p.wait_for_function("document.querySelector('video')?.ended && document.querySelector('#shader.ready canvas')")
+        self.assertEqual(p.evaluate('window.marks'), {'rectangles':0, 'labels':[]})
+
 
     def test_wordmark_leads_unchanged_tagline(self):
         for w,h,old_size in [(390,844,46.02),(1440,900,112.27),(844,390,56.55)]:
