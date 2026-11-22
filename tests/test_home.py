@@ -9,6 +9,24 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def rendered_lines(heading):
+    """Read actual glyph rows, including wraps inside hyphenated words."""
+    return heading.evaluate('''h => {
+        const rows = new Map(), range = document.createRange();
+        const walker = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            for (let i = 0; i < node.length; i++) {
+                range.setStart(node, i);
+                range.setEnd(node, i + 1);
+                const box = range.getBoundingClientRect();
+                if (box.width) rows.set(box.top, (rows.get(box.top) || '') + node.data[i]);
+            }
+        }
+        return [...rows.values()].map(s => s.trim());
+    }''')
+
+
 class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -26,6 +44,36 @@ class Home(unittest.TestCase):
         cls.browser = cls.pw.chromium.launch(channel='chrome', headless=True)
         cls.addClassCleanup(cls.browser.close)
         cls.url = f'http://127.0.0.1:{cls.server.server_port}/'
+
+    def test_tagline_rendered_lines(self):
+        page = self.browser.new_page(reduced_motion='reduce')
+        self.addCleanup(page.close)
+        page.goto(self.url)
+        heading = page.get_by_role('heading', level=1)
+        desktop = ['Building the infrastructure for', 'next-generation legal work.']
+        for w, h in [(320, 640), (390, 844), (961, 700), (1024, 768), (1280, 800), (1440, 900)]:
+            with self.subTest(viewport=(w, h)):
+                page.set_viewport_size({'width': w, 'height': h})
+                page.evaluate('document.fonts.ready')
+                lines = rendered_lines(heading)
+                if w >= 961:
+                    self.assertEqual(lines, desktop)
+                else:
+                    # The compact layout must match the same text without a desktop break.
+                    natural = heading.evaluate_handle('''h => {
+                        const copy = h.cloneNode(false);
+                        copy.append('Building the infrastructure for next-generation ');
+                        copy.append(h.querySelector('.legal-phrase').cloneNode(true));
+                        h.after(copy);
+                        return copy;
+                    }''')
+                    try:
+                        self.assertEqual(lines, rendered_lines(natural))
+                    finally:
+                        natural.evaluate('h => h.remove()')
+                        natural.dispose()
+                self.assertEqual(heading.text_content(), ' '.join(desktop))
+                self.assertEqual(page.get_by_role('heading', name=' '.join(desktop), exact=True).count(), 1)
 
     def test_wordmark_leads_unchanged_tagline(self):
         for w,h,old_size in [(390,844,46.02),(1440,900,112.27),(844,390,56.55)]:
