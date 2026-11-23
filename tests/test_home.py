@@ -37,38 +37,37 @@ class Home(unittest.TestCase):
         return page
 
     def test_system_theme_follows_light_and_dark_with_reduced_motion(self):
-        for path in ('', 'v3/'):
-            for initial in ('light', 'dark'):
-                with self.subTest(path=path, initial=initial):
-                    page = self.new_page(color_scheme=initial, reduced_motion='reduce')
-                    films = []
+        for initial in ('light', 'dark'):
+            with self.subTest(initial=initial):
+                page = self.new_page(color_scheme=initial, reduced_motion='reduce')
+                films = []
 
-                    def record_film(request):
-                        if re.search(r'\.mp4(?:[?#]|$)', request.url):
-                            films.append(request.url)
+                def record_film(request):
+                    if re.search(r'\.mp4(?:[?#]|$)', request.url):
+                        films.append(request.url)
 
-                    page.on('request', record_film)
-                    page.goto(self.url + path)
-                    opposite = 'dark' if initial == 'light' else 'light'
-                    for scheme in (initial, opposite):
-                        if scheme != initial:
-                            page.emulate_media(color_scheme=scheme, reduced_motion='reduce')
-                        day = scheme == 'light'
-                        theme = 'day' if day else 'night'
-                        visible, hidden = ('.ruth-day-art', '.art') if day else ('.art', '.ruth-day-art')
-                        expect(page.locator('html')).to_have_attribute('data-ruth-theme', theme)
-                        expect(page.locator(visible)).to_be_visible()
-                        expect(page.locator(hidden)).to_be_hidden()
-                        page.wait_for_function(
-                            '([selector, width]) => document.querySelector(selector + " img")?.naturalWidth === width',
-                            arg=[visible, 1638 if day else 1916])
-                        self.assertTrue(page.locator('video').evaluate_all(
-                            'videos => videos.every(video => video.paused && video.currentTime === 0)'))
-                        expect(page.locator('#ruth-theme-toggle')).to_have_count(0)
-                        expect(page.get_by_role('heading', name=HEADLINE, exact=True)).to_be_visible()
-                        expect(page.locator('#signup-cta')).to_have_attribute('aria-expanded', 'false')
-                    self.assertEqual(films, [])
-                    page.close()
+                page.on('request', record_film)
+                page.goto(self.url)
+                opposite = 'dark' if initial == 'light' else 'light'
+                for scheme in (initial, opposite):
+                    if scheme != initial:
+                        page.emulate_media(color_scheme=scheme, reduced_motion='reduce')
+                    day = scheme == 'light'
+                    theme = 'day' if day else 'night'
+                    visible, hidden = ('.ruth-day-art', '.art') if day else ('.art', '.ruth-day-art')
+                    expect(page.locator('html')).to_have_attribute('data-ruth-theme', theme)
+                    expect(page.locator(visible)).to_be_visible()
+                    expect(page.locator(hidden)).to_be_hidden()
+                    page.wait_for_function(
+                        '([selector, width]) => document.querySelector(selector + " img")?.naturalWidth === width',
+                        arg=[visible, 1638 if day else 1916])
+                    self.assertTrue(page.locator('video').evaluate_all(
+                        'videos => videos.every(video => video.paused && video.currentTime === 0)'))
+                    expect(page.locator('#ruth-theme-toggle')).to_have_count(0)
+                    expect(page.get_by_role('heading', name=HEADLINE, exact=True)).to_be_visible()
+                    expect(page.locator('#signup-cta')).to_have_attribute('aria-expanded', 'false')
+                self.assertEqual(films, [])
+                page.close()
 
     def test_responsive_lockup_clears_the_moving_lips_in_both_editions(self):
         for scheme, photo in [('dark', '.art img'), ('light', '.ruth-day-art img')]:
@@ -174,9 +173,9 @@ class Home(unittest.TestCase):
         self.assertTrue(canvas.evaluate('canvas => canvas.width > 1 && canvas.height > 1'))
         self.assertTrue(page.locator('.art video').evaluate('film => film.ended'))
 
-    def waitlist_page(self, path=''):
+    def waitlist_page(self):
         page = self.new_page(viewport={'width': 390, 'height': 780}, color_scheme='dark', reduced_motion='reduce')
-        page.goto(self.url + path)
+        page.goto(self.url)
         # Mock responses below are still available offline. An unexpected URL
         # can never transmit an address, including when testing a production build.
         page.context.set_offline(True)
@@ -203,111 +202,86 @@ class Home(unittest.TestCase):
 
     def test_email_signup_and_keyboard_actions(self):
         address = 'ruth-qa@example.invalid'
-        for path in ('', 'v1/', 'v2/', 'v3/'):
-            with self.subTest(path=path):
-                page = self.waitlist_page(path)
-                form = page.locator('#waitlist-form')
-                is_live = form.evaluate("form => form.hasAttribute('action')")
-                trigger = page.locator('#signup-cta')
-                email = page.get_by_role('textbox', name='Email address')
-                join = form.locator('button[type="submit"]')
-                done = page.get_by_role('button', name='Done', exact=True)
-                awaiting_response = []
-                if is_live:
-                    self.assertEqual(form.evaluate('form => form.method'), 'post')
-                    endpoint = form.evaluate('form => form.action')
-                    def hold_response(route, headers):
-                        awaiting_response.append((route, headers))
+        page = self.waitlist_page()
+        form = page.locator('#waitlist-form')
+        trigger = page.locator('#signup-cta')
+        email = page.get_by_role('textbox', name='Email address')
+        join = form.locator('button[type="submit"]')
+        done = page.get_by_role('button', name='Done', exact=True)
+        awaiting_response = []
+        self.assertEqual(form.evaluate('form => form.method'), 'post')
+        endpoint = form.evaluate('form => form.action')
 
-                    requests = self.intercept_signup(page, endpoint, hold_response)
-                else:
-                    requests = []
+        def hold_response(route, headers):
+            awaiting_response.append((route, headers))
 
-                    def record_preview_request(request):
-                        if (request.resource_type in ('fetch', 'xhr', 'ping') or request.method != 'GET'
-                                or request.is_navigation_request()):
-                            requests.append(request)
+        requests = self.intercept_signup(page, endpoint, hold_response)
+        trigger.focus()
+        page.keyboard.press('Enter')
+        expect(email).to_be_focused()
+        expect(page.locator('#waitlist-agreement')).to_have_text('By joining, you agree to receive Ruth launch updates by email.')
+        expect(page.locator('#waitlist-agreement')).to_be_visible()
+        self.assertEqual(form.locator('input:visible').count(), 1)
+        page.keyboard.press('Tab')
+        expect(join).to_be_focused()
+        page.keyboard.press('Enter')
+        expect(email).to_be_focused()
+        expect(email).to_have_attribute('aria-invalid', 'true')
+        expect(page.locator('#waitlist-email-error')).to_be_visible()
+        self.assertIn('waitlist-email-error', email.get_attribute('aria-describedby').split())
+        email.fill('mistyped')
+        page.keyboard.press('Control+Enter')
+        expect(page.locator('#waitlist-email-error')).to_contain_text('email')
+        self.assertEqual(requests, [])
 
-                    page.on('request', record_preview_request)
-
-                trigger.focus()
-                page.keyboard.press('Enter')
-                expect(email).to_be_focused()
-                expect(page.locator('#waitlist-agreement')).to_have_text('By joining, you agree to receive Ruth launch updates by email.')
-                expect(page.locator('#waitlist-agreement')).to_be_visible()
-                self.assertEqual(form.locator('input:visible').count(), 1)
-                if not is_live:
-                    self.assertFalse(email.get_attribute('name'))
-
-                page.keyboard.press('Tab')
-                expect(join).to_be_focused()
-                page.keyboard.press('Enter')
-                expect(email).to_be_focused()
-                expect(email).to_have_attribute('aria-invalid', 'true')
-                expect(page.locator('#waitlist-email-error')).to_be_visible()
-                self.assertIn('waitlist-email-error', email.get_attribute('aria-describedby').split())
-                email.fill('mistyped')
-                page.keyboard.press('Control+Enter')
-                expect(page.locator('#waitlist-email-error')).to_contain_text('email')
-                self.assertEqual(requests, [])
-
-                email.fill(address)
-                if is_live:
-                    with page.expect_request(lambda req: req.url == endpoint and req.method == 'POST'):
-                        page.keyboard.press('Control+Enter')
-                    expect(form).to_have_attribute('aria-busy', 'true')
-                    expect(join).to_be_disabled()
-                    expect(join).to_have_text('Joining…')
-                    # requestSubmit exercises the same path even with the button disabled.
-                    form.evaluate('form => { form.requestSubmit(); form.requestSubmit(); }')
-                    page.evaluate('new Promise(resolve => requestAnimationFrame(resolve))')
-                    self.assertEqual(len(requests), 1)
-                    if path in ('', 'v3/'):
-                        expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'night')
-                        page.emulate_media(color_scheme='light', reduced_motion='reduce')
-                        expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'day')
-                        expect(email).to_have_value(address)
-                        expect(email).to_be_focused()
-                        expect(join).to_be_disabled()
-                        page.keyboard.press('Escape')
-                        expect(trigger).to_be_focused()
-                        page.keyboard.press('Enter')
-                        expect(email).to_have_value(address)
-                        expect(join).to_be_disabled()
-                        page.keyboard.press('Escape')
-                        expect(trigger).to_be_focused()
-                    self.assertEqual(requests[0].post_data_json, {'email': address, 'consent': True})
-                    self.assertEqual(requests[0].headers['content-type'].split(';')[0], 'application/json')
-                    route, headers = awaiting_response.pop()
-                    route.fulfill(status=200, json={'ok': True}, headers=headers)
-                    if path in ('', 'v3/'):
-                        # Let the real client process the response while the form is closed.
-                        expect(form).to_have_attribute('aria-busy', 'false')
-                        expect(trigger).to_be_focused()
-                        page.keyboard.press('Enter')
-                    expect(page.locator('#waitlist-title')).to_have_text('You’re on the list')
-                    expect(page.get_by_role('status')).to_have_text('We’ll email you when Ruth launches.')
-                else:
-                    page.keyboard.press('Control+Enter')
-                    expect(page.get_by_role('status')).to_contain_text('No signup was submitted.')
-                    self.assertFalse(requests)
-
-                expect(done).to_be_focused()
-                page.keyboard.press('Enter')
-                expect(trigger).to_be_focused()
-                page.keyboard.press('Enter')
-                expect(email).to_have_value('')
-                expect(email).to_be_focused()
-                page.keyboard.press('Escape')
-                expect(trigger).to_be_focused()
-                expect(trigger).to_have_attribute('aria-expanded', 'false')
-                page.close()
+        email.fill(address)
+        with page.expect_request(lambda req: req.url == endpoint and req.method == 'POST'):
+            page.keyboard.press('Control+Enter')
+        expect(form).to_have_attribute('aria-busy', 'true')
+        expect(join).to_be_disabled()
+        expect(join).to_have_text('Joining…')
+        # requestSubmit exercises the same path even with the button disabled.
+        form.evaluate('form => { form.requestSubmit(); form.requestSubmit(); }')
+        page.evaluate('new Promise(resolve => requestAnimationFrame(resolve))')
+        self.assertEqual(len(requests), 1)
+        expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'night')
+        page.emulate_media(color_scheme='light', reduced_motion='reduce')
+        expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'day')
+        expect(email).to_have_value(address)
+        expect(email).to_be_focused()
+        expect(join).to_be_disabled()
+        page.keyboard.press('Escape')
+        expect(trigger).to_be_focused()
+        page.keyboard.press('Enter')
+        expect(email).to_have_value(address)
+        expect(join).to_be_disabled()
+        page.keyboard.press('Escape')
+        expect(trigger).to_be_focused()
+        self.assertEqual(requests[0].post_data_json, {'email': address, 'consent': True})
+        self.assertEqual(requests[0].headers['content-type'].split(';')[0], 'application/json')
+        route, headers = awaiting_response.pop()
+        route.fulfill(status=200, json={'ok': True}, headers=headers)
+        # Let the real client process the response while the form is closed.
+        expect(form).to_have_attribute('aria-busy', 'false')
+        expect(trigger).to_be_focused()
+        page.keyboard.press('Enter')
+        expect(page.locator('#waitlist-title')).to_have_text('You’re on the list')
+        expect(page.get_by_role('status')).to_have_text('We’ll email you when Ruth launches.')
+        expect(done).to_be_focused()
+        page.keyboard.press('Enter')
+        expect(trigger).to_be_focused()
+        page.keyboard.press('Enter')
+        expect(email).to_have_value('')
+        expect(email).to_be_focused()
+        page.keyboard.press('Escape')
+        expect(trigger).to_be_focused()
+        expect(trigger).to_have_attribute('aria-expanded', 'false')
+        page.close()
 
     def test_signup_failure_preserves_address_and_allows_retry(self):
         page = self.waitlist_page()
         form = page.locator('#waitlist-form')
-        if not form.evaluate("form => form.hasAttribute('action')"):
-            self.skipTest('This release serves the local waitlist preview')
+        self.assertTrue(form.evaluate("form => form.hasAttribute('action')"))
         endpoint = form.evaluate('form => form.action')
         outcomes = iter(('network', 'rate', 'html', 'invalid', 'success'))
 
