@@ -46,22 +46,28 @@ class Pages(unittest.TestCase):
         self.assertEqual(page.url, url)
         return page
 
-    def assert_navigation(self, page):
-        links = page.get_by_role('navigation').get_by_role('link')
+    def assert_navigation(self, page, *, home=False):
+        navigation = page.get_by_role('navigation', name='Site', exact=True)
+        links = navigation.get_by_role('link')
         self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in links.all()], ROUTES)
 
         brand = page.get_by_role('banner').get_by_role('link', name='Ruth', exact=True)
-        self.assertEqual(brand.get_attribute('href'), '/')
+        if home:
+            self.assertEqual(brand.count(), 0)
+        else:
+            self.assertEqual(brand.get_attribute('href'), '/')
         for width in (240, 320, 390, 768, 1440):
             with self.subTest(width=width):
                 page.set_viewport_size({'width': width, 'height': 900})
+                right = navigation.bounding_box()
+                self.assertGreater(right['x'] + right['width'] / 2, width / 2)
+                self.assertLessEqual(right['x'] + right['width'], width)
+                if home:
+                    continue
                 left = brand.bounding_box()
-                right = page.get_by_role('navigation').bounding_box()
                 self.assertGreaterEqual(left['x'], 0)
                 self.assertLess(left['x'] + left['width'], width / 2)
-                self.assertGreater(right['x'] + right['width'] / 2, width / 2)
                 self.assertLess(left['x'] + left['width'], right['x'])
-                self.assertLessEqual(right['x'] + right['width'], width)
                 self.assertAlmostEqual(left['y'] + left['height'] / 2,
                                        right['y'] + right['height'] / 2, delta=1)
 
@@ -110,8 +116,13 @@ class Pages(unittest.TestCase):
 
     def test_home_has_site_navigation(self):
         page = self.visit('/', 200)
-        self.assert_navigation(page)
-        self.assertEqual(page.locator('header [aria-current="page"]').inner_text(), 'Ruth')
+        self.assert_navigation(page, home=True)
+        self.assertEqual(page.get_by_role('link', name='Ruth', exact=True).count(), 1)
+        self.assertEqual(page.get_by_role('main').get_by_role('link', name='Ruth', exact=True).get_attribute('href'), '/')
+        for title in ('Skip to waitlist', 'About', 'Team', 'Ruth'):
+            page.keyboard.press('Tab')
+            self.assertTrue(page.get_by_role('link', name=title, exact=True).evaluate(
+                'a => a === document.activeElement && a.matches(":focus-visible")'), title)
 
     def test_about_and_team_have_permanent_addresses(self):
         for title, route in ROUTES:
@@ -124,6 +135,43 @@ class Pages(unittest.TestCase):
     def test_about_anniversary(self):
         page = self.visit('/about/', 200)
         self.assertIn('the sixth anniversary of her passing.', page.locator('main').inner_text())
+
+    def test_about_print_follows_the_reader_color_scheme(self):
+        page = self.visit('/about/', 200)
+        image = page.locator('main picture img')
+        self.assertEqual(image.get_attribute('alt'), '')
+        for mode, pathname in [('light', '/v2/assets/portrait.webp'),
+                               ('dark', '/assets/video/gentle-lift-poster.webp')]:
+            with self.subTest(mode=mode):
+                page.emulate_media(color_scheme=mode)
+                page.wait_for_function('''path => {
+                  const image = document.querySelector('main picture img');
+                  return image.complete && image.naturalWidth > 0 &&
+                         image.currentSrc === location.origin + path;
+                }''', arg=pathname)
+
+    def test_founder_navigation_follows_the_single_column_layout(self):
+        page = self.visit('/team/', 200)
+        index = page.get_by_role('navigation', name='Jump to a founder', include_hidden=True)
+        sections = page.get_by_role('main').get_by_role('region')
+        self.assertEqual(sections.count(), 2)
+        for width in (320, 768, 1440):
+            with self.subTest(width=width):
+                page.set_viewport_size({'width': width, 'height': 800})
+                first, second = [section.bounding_box() for section in sections.all()]
+                single_column = second['y'] >= first['y'] + first['height'] - 1
+                self.assertEqual(index.is_visible(), single_column)
+                if width in (320, 1440):
+                    self.assertEqual(single_column, width == 320)
+        page.set_viewport_size({'width': 390, 'height': 780})
+        for name, fragment in [('Jonas Hertner', '#jonas-hertner'), ('Joel Niklaus', '#joel-niklaus')]:
+            jump = index.get_by_role('link', name=name, exact=True)
+            self.assertEqual(jump.get_attribute('href'), fragment)
+            jump.focus()
+            page.keyboard.press('Enter')
+            self.assertEqual(page.url, self.origin + '/team/' + fragment)
+            destination = page.get_by_role('region', name=name, exact=True)
+            self.assertTrue(destination.evaluate('section => section === document.activeElement'))
 
     def test_founder_portraits_beside_name_and_role(self):
         page = self.visit('/team/', 200)

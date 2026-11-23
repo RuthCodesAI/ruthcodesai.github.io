@@ -40,16 +40,103 @@ body[data-design] > .masthead {
   position: fixed;
   z-index: 5;
   top: max(.4rem, env(safe-area-inset-top));
-  left: max(.65rem, env(safe-area-inset-left));
   right: max(.65rem, env(safe-area-inset-right));
   pointer-events: none;
 }
-body[data-design] > .masthead :is(.imprint, .site-nav) {
+body[data-design] > .masthead .site-nav {
   pointer-events: auto;
   background-color: var(--ground);
 }
-body[data-design] .imprint {
-  padding-inline: .45rem;
-  font-size: 1.6rem;
-}
 body[data-waitlist-open="true"] > .masthead { display: none; }
+
+@font-face {
+  font-family: Ruth Sans;
+  src: url('/assets/InterTight-Latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.reading-edition {
+  --quiet: #57534f;
+  --line: #b6afa6;
+  --sans: 'Ruth Sans', system-ui, sans-serif;
+  --gutter: clamp(1.25rem, 5vw, 5.5rem);
+  font-optical-sizing: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .reading-edition { --quiet: #c0bab1; --line: #514e49; }
+}
+.reading-edition :is(.masthead, main) {
+  width: min(calc(100% - 2 * var(--gutter)), 78rem);
+  margin-inline: auto;
+}
+.reading-edition .masthead {
+  flex-wrap: wrap;
+  padding-block: clamp(.65rem, 1.4vw, 1.25rem);
+  border-bottom: 1px solid var(--line);
+}
+.reading-edition .imprint { font-size: clamp(2rem, 3vw, 2.7rem); line-height: 1; }
+.reading-edition .site-nav { gap: clamp(.25rem, 1vw, .9rem); margin-inline-start: auto; }
+.reading-edition .site-nav a { font-family: var(--sans); font-size: 1rem; }
+.reading-edition main { padding-block: clamp(2.25rem, 5vw, 5rem) clamp(3rem, 6vw, 6rem); }
+.reading-edition main a {
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+  text-underline-offset: .16em;
+}
+.reading-edition main a:is(:hover, :focus-visible) { text-decoration-color: currentColor; }
+
+.about-opening {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(2rem, 6vw, 6rem);
+}
+.about h1 {
+  margin: 0 0 clamp(1.25rem, 2.8vw, 2.5rem);
+  font: 530 1rem/1.3 var(--sans);
+  letter-spacing: -.01em;
+}
+.about .mission {
+  margin: 0;
+  font-size: clamp(2.7rem, 5.25vw, 5.25rem);
+  line-height: 1.02;
+  letter-spacing: -.045em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.about .practice {
+  max-width: 40ch;
+  margin: clamp(1.3rem, 2.7vw, 2.4rem) 0 0;
+  font-size: clamp(1.3rem, 1.8vw, 1.65rem);
+  line-height: 1.38;
+}
+.about-print {
+  display: block;
+  aspect-ratio: 1 / 1.04;
+  mix-blend-mode: multiply;
+}
+.about-print img { display: block; width: 100%; height: 100%; object-fit: cover; }
+@media (prefers-color-scheme: dark) {
+  .about-print { mix-blend-mode: screen; }
+  .about-print img { filter: grayscale(1); object-position: 69% center; }
+}
+.about .origin {
+  margin-top: clamp(2rem, 3.75vw, 4rem);
+  padding-top: clamp(1.25rem, 2vw, 1.75rem);
+  border-top: 1px solid var(--line);
+  color: var(--quiet);
+  font-size: clamp(1.15rem, 1.45vw, 1.4rem);
+  line-height: 1.45;
+}
+.origin p { max-width: 60ch; margin: 0; }
+.about time { display: inline-block; max-inline-size: 100%; }
+@media (max-width: 43rem) {
+  .about-opening { grid-template-columns: minmax(0, 1fr); gap: 1.8rem; }
+  .about-print { aspect-ratio: 1.95; }
+  .about-print img { object-position: 50% 38%; }
+}
+@media (max-width: 22rem) {
+  .reading-edition { --gutter: 1rem; }
+  .about .mission { font-size: 2.35rem; }
+}
