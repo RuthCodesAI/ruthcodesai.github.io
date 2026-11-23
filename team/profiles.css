@@ -46,7 +46,7 @@
 /* Use the same stepped line length for both approved biographies. */
 .founder > p {
   max-inline-size: 52ch;
-  inline-size: min(100%, max(26ch, round(down, 100%, 4ch)));
+  inline-size: min(100%, max(24ch, round(down, 100%, 4ch)));
   margin: clamp(1.4rem, 2.7vw, 2.5rem) 0 0;
 }
 @media (max-width: 56rem) {
