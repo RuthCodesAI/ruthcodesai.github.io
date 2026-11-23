@@ -192,16 +192,23 @@ class Pages(unittest.TestCase):
                 self.assertIn(work, opening)
                 self.assertNotIn('at Ruth', opening)
 
-    def test_joel_resources_and_collaborative_paper_awards(self):
+    def test_joel_career_benchmarks_and_shared_awards(self):
         page = self.visit('/team/', 200)
         section = page.locator('section').filter(has=page.get_by_role('heading', name='Joel Niklaus'))
-        bio = section.locator('p').last.inner_text()
-        for resource in ('LEXam', 'SwiLTra-Bench', 'LEXTREME', 'LegalBench', 'MultiLegalPile'):
-            self.assertEqual(section.get_by_role('link', name=resource, exact=True).count(), 1, resource)
-        self.assertIn('co-authors', bio)
-        self.assertIn('Outstanding Paper', bio)
-        self.assertRegex(bio, r'MultiLegalPile[^.]*ACL 2024')
-        self.assertRegex(bio, r'FinePhrase[^.]*COLM 2026')
+        paragraph = section.locator('p').last
+        bio = paragraph.inner_text()
+        self.assertIn('Hugging Face', bio.partition('.')[0])
+        for fact in ('Harvey', 'Thomson Reuters Labs', 'PhD', 'University of Bern', 'Stanford',
+                     'co-developed', 'contributed to LegalBench', 'co-authors',
+                     'Outstanding Paper Awards', 'ACL 2024', 'COLM 2026'):
+            self.assertIn(fact, bio)
+        self.assertNotIn('FinePhrase', bio)
+        links = paragraph.get_by_role('link').all()
+        self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in links], [
+            ('LEXam', 'https://arxiv.org/abs/2505.12864'),
+            ('SwiLTra-Bench', 'https://arxiv.org/abs/2503.01372'),
+            ('LegalBench', 'https://arxiv.org/abs/2308.11462'),
+        ])
 
     def test_home_uses_root_relative_site_files(self):
         page = self.visit('/', 200)
