@@ -42,7 +42,6 @@
   inline-size: min(clamp(4.5rem, 8vw, 7.5rem), 24vw);
   block-size: auto;
   border-radius: 50%;
-  filter: grayscale(1);
 }
 /* Use the same stepped line length for both approved biographies. */
 .founder > p {
