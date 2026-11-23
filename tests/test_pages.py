@@ -74,6 +74,40 @@ class Pages(unittest.TestCase):
             target = el.get_attribute('href') or el.get_attribute('src')
             self.assertTrue(target.startswith('/'), target)
 
+    def test_missing_volume_is_static_with_reduced_motion(self):
+        page = self.visit('/no/such/volume/', 404)
+        art = page.locator('main svg[aria-hidden="true"]')
+        self.assertEqual(art.count(), 1)
+        self.assertEqual(art.locator('text').all_text_contents().count('404'), 1)
+        self.assertEqual(art.evaluate('(svg) => svg.getAnimations({subtree:true}).length'), 0)
+        left, missing, right = [art.get_by_text(label, exact=True).bounding_box()
+                                for label in ('403', '404', '405')]
+        self.assertLess(left['x'] + left['width'], missing['x'])
+        self.assertLess(missing['x'] + missing['width'], right['x'])
+
+    def test_missing_volume_opens_once(self):
+        page = self.browser.new_page(reduced_motion='no-preference')
+        self.addCleanup(page.close)
+        self.assertEqual(page.goto(self.origin + '/no/such/volume/', wait_until='domcontentloaded').status, 404)
+        frames = page.locator('main svg').evaluate('''svg => {
+          const animations = svg.getAnimations({subtree: true});
+          const left = svg.querySelector('.left'), right = svg.querySelector('.right');
+          const gap = () => right.getBoundingClientRect().left - left.getBoundingClientRect().right;
+          const snapshot = time => {
+            for (const a of animations) { a.pause(); a.currentTime = time; }
+            return [gap(), Number(getComputedStyle(svg.querySelector('.ghost')).opacity)];
+          };
+          return { frames: [0, 650, 1310, 2620].map(snapshot),
+                   iterations: animations.map(a => a.effect.getTiming().iterations) };
+        }''')
+        start, moving, final, later = frames['frames']
+        self.assertEqual(start, [0, 0])
+        self.assertLess(start[0], moving[0])
+        self.assertLess(moving[0], final[0])
+        self.assertEqual(final, [46, 1])
+        self.assertEqual(later, final)
+        self.assertEqual(frames['iterations'], [1, 1, 1])
+
     def test_home_has_site_navigation(self):
         page = self.visit('/', 200)
         self.assert_navigation(page)
