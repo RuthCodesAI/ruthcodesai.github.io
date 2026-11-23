@@ -18,15 +18,43 @@ let open = false;
 let pending = false;
 let resetOnOpen = false;
 
+function revealInPanel(target, preceding) {
+  if (!open || !panel.contains(target) || panel.scrollHeight <= panel.clientHeight) return;
+  const visibleTop = panel.getBoundingClientRect().top + panel.clientTop + 6;
+  const available = panel.clientHeight - 12;
+  const box = target.getBoundingClientRect();
+  let top = box.top;
+  // Keep the field with its error, or the confirmation with Done, when both fit.
+  if (preceding) {
+    const start = preceding.getBoundingClientRect().top;
+    if (box.bottom - start <= available) top = Math.min(top, start);
+  }
+  if (top < visibleTop || box.bottom - top > available) {
+    panel.scrollTop += Math.floor(top - visibleTop);
+  } else if (box.bottom > visibleTop + available) {
+    panel.scrollTop += Math.ceil(box.bottom - visibleTop - available);
+  }
+}
+
+function revealPanelState() {
+  if (!open) return;
+  if (!result.hidden) revealInPanel(done, status);
+  else if (!emailError.hidden) revealInPanel(emailError, email);
+  else if (!requestError.hidden) revealInPanel(requestError, email);
+  else revealInPanel(document.activeElement);
+}
+
 function syncViewport() {
   const height = Math.round(window.visualViewport?.height || window.innerHeight);
   document.body.style.setProperty('--waitlist-viewport', height + 'px');
   document.body.dataset.waitlistCompact = String(open && height < 430);
+  revealPanelState();
 }
 
 function showError(node, message = '') {
   node.hidden = !message;
   node.textContent = message;
+  if (message) revealInPanel(node, email);
 }
 
 function clearErrors() {
@@ -68,8 +96,8 @@ function openWaitlist() {
   panel.inert = false;
   panel.setAttribute('aria-hidden', 'false');
   panel.scrollTop = 0;
-  syncViewport();
   (result.hidden ? email : done).focus({preventScroll: true});
+  syncViewport();
 }
 
 function closeWaitlist(restoreFocus = true) {
@@ -80,10 +108,13 @@ function closeWaitlist(restoreFocus = true) {
   trigger.setAttribute('aria-expanded', 'false');
   triggerLabel.textContent = invitation;
   trigger.removeAttribute('aria-label');
-  if (restoreFocus) trigger.focus({preventScroll: true});
   panel.inert = true;
   panel.setAttribute('aria-hidden', 'true');
   syncViewport();
+  if (restoreFocus) {
+    trigger.focus({preventScroll: true});
+    trigger.scrollIntoView({block: 'nearest', inline: 'nearest'});
+  }
 }
 
 function setPending(value) {
@@ -104,6 +135,7 @@ function showConfirmation() {
   status.textContent = 'We’ll email you when Ruth launches.';
   panel.scrollTop = 0;
   focusPanelControl(done);
+  revealInPanel(done, status);
 }
 
 form.addEventListener('submit', async event => {
@@ -179,7 +211,11 @@ form.addEventListener('keydown', event => {
     if (!event.repeat && !pending) form.requestSubmit();
   }
 });
-email.addEventListener('input', clearErrors);
+email.addEventListener('input', () => {
+  if (emailError.hidden && requestError.hidden) return;
+  clearErrors();
+  revealInPanel(email);
+});
 document.querySelector('.skip')?.addEventListener('click', event => {
   event.preventDefault();
   if (!open) openWaitlist();

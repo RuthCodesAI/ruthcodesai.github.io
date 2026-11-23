@@ -77,14 +77,14 @@ class Home(unittest.TestCase):
                                    arg=[photo, 1916 if scheme == 'dark' else 1638])
             headline = page.get_by_role('heading', level=1, name=HEADLINE, exact=True)
             cta = page.locator('#signup-cta')
-            for w, h in [(320, 568), (350, 349), (390, 844), (844, 390), (768, 1024),
+            for w, h in [(240, 320), (320, 568), (350, 349), (390, 844), (568, 320), (844, 390),
+                         (768, 1024), (960, 1280), (961, 1280), (1024, 1366),
                          (899, 550), (900, 540), (900, 550), (900, 675), (900, 676),
                          (961, 651), (1024, 480), (1280, 800), (1500, 500), (2560, 900)]:
                 with self.subTest(scheme=scheme, viewport=(w, h)):
                     page.set_viewport_size({'width': w, 'height': h})
                     page.evaluate('document.fonts.ready')
                     side = w >= 900 and w * 3 >= h * 4 and (h >= 550 or w >= 1024)
-                    lower_third = (w <= 960 and w <= h) or (h <= 560 and w >= h)
                     logo = page.locator('.ruth-home svg').bounding_box()
                     title = headline.bounding_box()
                     button = cta.bounding_box()
@@ -93,12 +93,19 @@ class Home(unittest.TestCase):
                         self.assertGreater(box['height'], 0)
                         self.assertGreaterEqual(min(box['x'], box['y']), -0.1)
                         self.assertLessEqual(box['x'] + box['width'], w + 0.1)
-                        self.assertLessEqual(box['y'] + box['height'], h + 0.1)
+                        if (w, h) not in ((240, 320), (350, 349)):
+                            self.assertLessEqual(box['y'] + box['height'], h + 0.1)
                         self.assertAlmostEqual(box['x'] + box['width'] / 2, w * (.23 if side else .5), delta=1)
                     self.assertLessEqual(logo['y'] + logo['height'], title['y'])
                     self.assertLessEqual(title['y'] + title['height'], label['y'])
-                    if lower_third and not side:
+                    if w <= h and h > 400:
                         self.assertAlmostEqual(title['y'] + title['height'] / 2, h * .75, delta=.1)
+                    if (w, h) in ((960, 1280), (961, 1280)):
+                        self.assertAlmostEqual(logo['width'], 320, delta=1)
+                    if (w, h) in ((568, 320), (844, 390)):
+                        size = headline.evaluate('e => parseFloat(getComputedStyle(e).fontSize)')
+                        self.assertGreaterEqual(size, 20)
+                        self.assertEqual(cta.evaluate('e => getComputedStyle(e).fontSize'), '18px')
                     self.assertGreaterEqual(button['width'], 160)
                     self.assertGreaterEqual(button['height'], 46)
 
@@ -120,6 +127,10 @@ class Home(unittest.TestCase):
                         self.assertGreaterEqual(boundary - max(box['x'] + box['width'] for box in (logo, title, button)), 1)
                     else:
                         self.assertGreaterEqual(logo['y'] - boundary, 1)
+                    if (w, h) in ((240, 320), (350, 349)):
+                        cta.scroll_into_view_if_needed()
+                        expect(cta).to_be_in_viewport(ratio=1)
+                        page.evaluate('window.scrollTo(0, 0)')
             page.close()
 
     def test_original_film_transitions_to_unlabelled_living_ascii(self):
@@ -329,6 +340,32 @@ class Home(unittest.TestCase):
         expect(page.get_by_role('status')).to_have_text('We’ll email you when Ruth launches.')
         expect(page.get_by_role('button', name='Done')).to_be_focused()
         self.assertEqual(len(requests), 5)
+
+    def test_short_waitlist_reveals_feedback_and_done(self):
+        for w, h in ((844, 210), (320, 200)):
+            with self.subTest(viewport=(w, h)):
+                page = self.waitlist_page()
+                page.set_viewport_size({'width': w, 'height': h})
+                endpoint = page.locator('#waitlist-form').evaluate('form => form.action')
+                self.intercept_signup(page, endpoint, lambda route, headers:
+                                      route.fulfill(status=200, json={'ok': True}, headers=headers))
+                trigger = page.locator('#signup-cta')
+                trigger.click()
+                join = page.get_by_role('button', name='Join', exact=True)
+                join.click()
+                expect(page.locator('#waitlist-email-error')).to_be_in_viewport(ratio=1)
+                page.get_by_role('textbox', name='Email address').fill('reflow@example.invalid')
+                join.click()
+                done = page.get_by_role('button', name='Done')
+                expect(done).to_be_focused()
+                expect(done).to_be_in_viewport(ratio=1)
+                page.keyboard.press('Enter')
+                expect(trigger).to_be_focused()
+                # Nearest-edge scrolling rounds the offset to a CSS pixel.
+                box = trigger.bounding_box()
+                self.assertGreaterEqual(box['y'], -.5)
+                self.assertLessEqual(box['y'] + box['height'], h + .5)
+                page.close()
 
     def test_system_poster_and_copy_render_while_theme_module_is_delayed(self):
         for scheme, visible, hidden in [('dark', '.art', '.ruth-day-art'), ('light', '.ruth-day-art', '.art')]:
