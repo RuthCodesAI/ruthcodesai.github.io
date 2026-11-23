@@ -53,34 +53,25 @@ body[data-design], .reading-edition {
 /* Align the floating links to the reading pages' text margin. */
 body[data-design] > .masthead {
   --nav-top: max(var(--masthead-padding), env(safe-area-inset-top));
-  --nav-margin: max(var(--reading-gutter), calc((100vw - var(--reading-width)) / 2));
-  --nav-right: max(var(--nav-margin), env(safe-area-inset-right));
   position: fixed;
   z-index: 5;
   inset-block-start: var(--nav-top);
-  inset-inline-end: var(--nav-right);
+  inset-inline-end: max(var(--reading-gutter), calc((100vw - var(--reading-width)) / 2), env(safe-area-inset-right));
   isolation: isolate;
   pointer-events: none;
 }
 body[data-design] > .masthead .site-nav { pointer-events: auto; }
+/* Soften the halftone from the top edge, centered above the two links. */
 body[data-design] > .masthead::before {
   content: '';
   position: absolute;
   z-index: -1;
-  inset-block-start: calc(-1 * var(--nav-top));
-  inset-inline-end: calc(-1 * var(--nav-right));
-  inline-size: calc(var(--nav-margin) + 13rem);
-  block-size: 7.6rem;
-  background: radial-gradient(ellipse 100% 100% at right top,
-    rgb(var(--ground-rgb) / .95) 0%, rgb(var(--ground-rgb) / .9) 48%,
-    rgb(var(--ground-rgb) / .72) 67%, rgb(var(--ground-rgb) / .16) 85%, transparent 100%);
-}
-@media (min-width: 89rem) {
-  body[data-design] > .masthead::before {
-    inset-inline-end: -5.5rem;
-    inline-size: 18.5rem;
-    mask-image: linear-gradient(to left, transparent, black 5rem);
-  }
+  inset: calc(-1 * var(--nav-top)) -6rem -4rem;
+  background: rgb(var(--ground-rgb) / .78);
+  backdrop-filter: blur(2.5px);
+  mask-image: radial-gradient(ellipse 50% 100% at center top,
+    black 0% 32%, rgb(0 0 0 / .96) 50%, rgb(0 0 0 / .8) 62%,
+    rgb(0 0 0 / .5) 74%, rgb(0 0 0 / .2) 86%, transparent 100%);
 }
 @media (forced-colors: active) {
   body[data-design] > .masthead .site-nav { background: Canvas; }
