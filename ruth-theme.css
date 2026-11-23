@@ -1,14 +1,35 @@
-:root[data-ruth-theme="day"] { color-scheme: light; }
-:root[data-ruth-theme="day"] body {
-  --ink-rgb: 15 15 14;
-  --ground-rgb: 241 237 234;
-  --muted-rgb: 79 76 72;
-  --ink: rgb(var(--ink-rgb));
-  --muted: rgb(var(--muted-rgb));
-  --ground: rgb(var(--ground-rgb));
-  background: var(--ground) url("./v2/assets/paper.webp") repeat;
-  background-size: 512px 448px;
+.art > picture, .ruth-day-art > picture { display: contents; }
+.art .photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
+.ruth-day-art { display: none; }
+@media (prefers-color-scheme: light) {
+  :root { color-scheme: light; }
+  :root body {
+    --ink-rgb: 15 15 14;
+    --ground-rgb: 241 237 234;
+    --muted-rgb: 79 76 72;
+    --ink: rgb(var(--ink-rgb));
+    --muted: rgb(var(--muted-rgb));
+    --ground: rgb(var(--ground-rgb));
+    background: var(--ground) url("./v2/assets/paper.webp") repeat;
+    background-size: 512px 448px;
+  }
+  .art { display: none; }
+  .ruth-day-art { display: block; }
+  :is(h1, .join)::before { background: none; }
+  .join { text-shadow: none; }
+}
+@media (prefers-color-scheme: light) and (forced-colors: active) {
+  :root body { --ink: CanvasText; --ground: Canvas; background: Canvas; }
+}
+
+/* The system-selected poster remains visible until its film is registered to the outgoing frame. */
+:root[data-ruth-preparing="day"] .ruth-day-art .living-video,
+:root[data-ruth-preparing="night"] .art :is(.living-video, #shader) { visibility: hidden; }
 
 .ruth-day-art {
   position: fixed;
@@ -25,7 +46,7 @@
       rgb(0 0 0 / .19) 59%, rgb(0 0 0 / .57) 81%, black 100%);
 }
 
-.ruth-day-art > :is(img, video) {
+.ruth-day-art :is(img, video) {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -47,57 +68,11 @@
   .ruth-day-art { --day-x: 54%; }
 }
 
-:root[data-ruth-theme="day"] :is(h1, .join)::before { background: none; }
-:root[data-ruth-theme="day"] .join { text-shadow: none; }
 body[data-waitlist-open="true"] .ruth-day-art { mask-image: none; }
-
-:root[data-ruth-theme="night"] .ruth-day-art,
-:root[data-ruth-theme="day"] .art { display: none; }
-/* Load and seek the next film before revealing it. A laid-out transparent
-   layer allows both native media and the night canvas to prepare a frame. */
-:root[data-ruth-preparing="day"][data-ruth-theme="night"] .ruth-day-art,
-:root[data-ruth-preparing="night"][data-ruth-theme="day"] .art {
-  display: block;
-  opacity: 0;
-}
-
-#ruth-theme-toggle {
-  position: fixed;
-  right: max(12px, env(safe-area-inset-right));
-  bottom: max(10px, env(safe-area-inset-bottom));
-  z-index: 5;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  color: var(--ink);
-  /* Thin the halftone dots immediately under the mark, keeping its outline
-     legible when the coat or hand crosses this corner. */
-  background: radial-gradient(circle, rgb(var(--ground-rgb) / .96) 6px,
-    rgb(var(--ground-rgb) / .91) 9px, rgb(var(--ground-rgb) / .46) 12px, transparent 16px);
-}
-#ruth-theme-toggle::before {
-  content: "";
-  width: 19px;
-  height: 19px;
-  background: currentColor;
-  opacity: .78;
-  mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.45 1.45m11.1 11.1L19 19M5 19l1.45-1.45m11.1-11.1L19 5'/%3E%3C/svg%3E");
-}
-#ruth-theme-toggle[aria-pressed="true"]::before {
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M19.5 15.1a8.1 8.1 0 0 1-10.6-10.6 8.2 8.2 0 1 0 10.6 10.6Z'/%3E%3C/svg%3E");
-}
-#ruth-theme-toggle:is(:hover, :focus-visible)::before { opacity: 1; }
-#ruth-theme-toggle:focus-visible { outline-offset: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .ruth-day-art > .living-video { display: none; }
 }
 @media (forced-colors: active) {
   .ruth-day-art { visibility: hidden; }
-  :root[data-ruth-theme="day"] body { --ink: CanvasText; --ground: Canvas; background: Canvas; }
-  #ruth-theme-toggle::before { forced-color-adjust: none; background: ButtonText; }
 }

@@ -3,12 +3,12 @@ import { createLivingVideo } from './living-video.js';
 const root = document.documentElement;
 const dayArt = document.querySelector('.ruth-day-art');
 const nightArt = document.querySelector('.art');
-const button = document.querySelector('#ruth-theme-toggle');
-const waitlist = document.querySelector('.waitlist');
+const light = matchMedia('(prefers-color-scheme: light)');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const preview = new URLSearchParams(location.search).has('preview');
 let day;
 let pending;
+let playingMode = light.matches ? 'day' : 'night';
 
 function frameOf(mode) {
   return (mode === 'day' ? dayArt : nightArt).querySelector('video');
@@ -17,8 +17,7 @@ function frameOf(mode) {
 function start(mode) {
   const layer = mode === 'day' ? dayArt : nightArt;
   const image = layer.querySelector('img');
-  if (!image.hasAttribute('src') && image.dataset.src) image.src = image.dataset.src;
-  if (mode === 'night') return import('./study-16-ascii.js?v=c585933304');
+  if (mode === 'night') return import('./study-16-ascii.js?v=system-poster');
   if (day) return;
   day = createLivingVideo({ root: dayArt, container: dayArt, photo: image, maxFrameRate: 12 });
   trackNarrowCrop(day);
@@ -73,12 +72,6 @@ const readingObserver = new ResizeObserver(setReadingArea);
 [dayArt, ...readables].forEach(node => readingObserver.observe(node));
 document.fonts.ready.then(setReadingArea);
 
-function reflect(mode) {
-  button.setAttribute('aria-pressed', String(mode === 'day'));
-  button.title = mode === 'day' ? 'Switch to night mode' : 'Switch to day mode';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', mode === 'day' ? '#f1edea' : '#101010');
-}
-
 // A slow or unavailable movie must not prevent switching to its poster. Stop
 // waiting immediately if the user changes their mind or selects reduced motion.
 async function until(test, signal, timeout) {
@@ -91,17 +84,20 @@ async function until(test, signal, timeout) {
 }
 
 async function change(mode, signal) {
-  const outgoing = frameOf(root.dataset.ruthTheme);
+  const outgoing = frameOf(playingMode);
+  const previousTime = outgoing?.currentTime || 0;
+  const ended = outgoing?.ended;
   const layer = mode === 'day' ? dayArt : nightArt;
   const image = layer.querySelector('img');
   function align(target) {
     if (!outgoing || reduced.matches || preview || !Number.isFinite(target.duration)) return;
-    const stamp = outgoing.ended ? target.duration : Math.min(outgoing.currentTime, target.duration);
+    const stamp = ended || outgoing.ended ? target.duration :
+      Math.min(Math.max(previousTime, outgoing.currentTime), target.duration);
     if (stamp > 0 && Math.abs(target.currentTime - stamp) > .06) target.currentTime = stamp;
   }
   // Even on a slow connection, the incoming movie starts at the playhead the
   // previous edition reached. This also runs if the poster was shown first.
-  if (!reduced.matches && !preview && outgoing?.currentTime > 0 && !frameOf(mode)?.readyState) {
+  if (!reduced.matches && !preview && previousTime > 0 && !frameOf(mode)?.readyState) {
     layer.addEventListener('loadedmetadata', event => {
       if (root.dataset.ruthTheme === mode || root.dataset.ruthPreparing === mode) align(event.target);
     }, { capture: true, once: true, signal });
@@ -111,7 +107,7 @@ async function change(mode, signal) {
   try {
     Promise.resolve(start(mode)).catch(() => {});
     if (!image.complete) await until(() => image.complete, signal, 1000);
-    if (!reduced.matches && !preview && outgoing?.currentTime > 0) {
+    if (!reduced.matches && !preview && previousTime > 0) {
       const available = await until(() => {
         const film = frameOf(mode);
         return reduced.matches || film?.readyState >= 2 || ['error', 'blocked'].includes(film?.dataset.state);
@@ -128,35 +124,26 @@ async function change(mode, signal) {
     // The selected artwork still has a native image if a media module fails.
   }
   if (signal.aborted) return;
-  root.dataset.ruthTheme = mode;
+  playingMode = mode;
   delete root.dataset.ruthPreparing;
   pending = undefined;
   outgoing?.pause();
-  reflect(mode);
   setReadingArea();
 }
 
-button.addEventListener('click', () => {
-  if (pending) {
-    pending.abort();
-    pending = undefined;
-    delete root.dataset.ruthPreparing;
-    return;
-  }
+function followSystemAppearance() {
+  const mode = light.matches ? 'day' : 'night';
+  root.dataset.ruthTheme = mode;
+  if (root.dataset.ruthPreparing === mode) return;
+  pending?.abort();
+  pending = undefined;
+  delete root.dataset.ruthPreparing;
+  if (mode === playingMode) return;
   pending = new AbortController();
-  change(root.dataset.ruthTheme === 'day' ? 'night' : 'day', pending.signal);
-});
+  change(mode, pending.signal);
+}
 
-// Switching the artwork while typing leaves the form and its caret in place.
-button.addEventListener('pointerdown', event => {
-  if (document.body.dataset.waitlistOpen !== 'true') return;
-  event.stopPropagation();
-  if (waitlist.contains(document.activeElement)) event.preventDefault();
-});
-waitlist.addEventListener('focusout', event => {
-  if (event.relatedTarget === button) event.stopImmediatePropagation();
-}, true);
-
-reflect(root.dataset.ruthTheme);
-button.hidden = false;
-Promise.resolve(start(root.dataset.ruthTheme)).catch(() => {});
+root.dataset.ruthTheme = playingMode;
+light.addEventListener('change', followSystemAppearance);
+window.addEventListener('pageshow', followSystemAppearance);
+Promise.resolve(start(playingMode)).catch(() => {});

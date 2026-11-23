@@ -631,13 +631,16 @@ async function initializeAscii(host) {
     if (!ready || resizeFrame) return;
     resizeFrame = requestAnimationFrame(() => {
       resizeFrame = 0; if (!ready || disposed) return;
+      // A system appearance change hides this layer. Keep its last full-size
+      // glyph atlas until ResizeObserver reports the visible dimensions again.
+      if (!host.clientWidth || !host.clientHeight) return;
       try { resize(); render(elapsed); } catch { fallback(); }
     });
   }
 
   try {
     if (!ctx || !inkCtx || !maskCtx || !treatmentCtx || !sampleCtx || isStudy16 && !matteCtx) throw new Error('Canvas unavailable');
-    image = new Image(); image.decoding = 'async'; image.src = photo?.currentSrc || photo?.src || 'assets/video/gentle-lift-poster.webp';
+    image = new Image(); image.decoding = 'async'; image.src = body.dataset.videoPoster || photo?.currentSrc || photo?.src || 'assets/video/gentle-lift-poster.webp';
     await image.decode(); if (disposed) return;
     canvas.setAttribute('aria-hidden','true'); host.append(canvas);
     elapsed = preview || reduced.matches || !optedIn ? duration : 0;

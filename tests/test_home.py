@@ -36,48 +36,95 @@ class Home(unittest.TestCase):
         self.addCleanup(page.close)
         return page
 
-    def test_layout_keeps_wordmark_below_the_moving_lips(self):
-        page = self.new_page(reduced_motion='reduce')
-        page.goto(self.url)
-        headline = page.get_by_role('heading', level=1, name=HEADLINE, exact=True)
-        expect(headline).to_be_visible()
-        cta = page.get_by_role('button', name='Join the waitlist')
-        for w, h, compact in [(320, 568, True), (350, 349, True), (390, 844, True),
-                              (844, 390, True), (768, 1024, True), (961, 651, False),
-                              (1280, 800, False), (2560, 900, False)]:
-            with self.subTest(viewport=(w, h)):
-                page.set_viewport_size({'width': w, 'height': h})
-                page.evaluate('document.fonts.ready')
-                logo = page.locator('.ruth-home svg').bounding_box()
-                title = headline.bounding_box()
-                button = cta.bounding_box()
-                label = cta.locator('.join-label').bounding_box()
-                for box in (logo, title, button):
-                    self.assertGreater(box['height'], 0)
-                    self.assertGreaterEqual(min(box['x'], box['y']), -0.1)
-                    self.assertLessEqual(box['x'] + box['width'], w + 0.1)
-                    self.assertLessEqual(box['y'] + box['height'], h + 0.1)
-                    self.assertAlmostEqual(box['x'] + box['width'] / 2, w / 2, delta=0.1)
-                self.assertLessEqual(logo['y'] + logo['height'], title['y'])
-                self.assertLessEqual(title['y'] + title['height'], label['y'])
-                if compact:
-                    self.assertAlmostEqual(title['y'] + title['height'] / 2, h * .75, delta=.1)
-                self.assertGreaterEqual(button['width'], 160)
-                self.assertGreaterEqual(button['height'], 46)
-                # Every lip position in the original 1916 x 1080 film is above
-                # source y=606, including the smiling frame and tracking margin.
-                bottom = page.locator('.photo').evaluate('''photo => {
-                    const box = photo.getBoundingClientRect(), style = getComputedStyle(photo);
-                    if (style.objectFit !== 'cover') throw Error('Expected cover image');
-                    const scale = Math.max(box.width / photo.naturalWidth, box.height / photo.naturalHeight);
-                    const [, y] = style.objectPosition.split(' ');
-                    if (!y.endsWith('%')) throw Error('Expected percentage vertical crop');
-                    return box.y + (box.height - photo.naturalHeight * scale) * parseFloat(y) / 100 + 606 * scale;
-                }''')
-                self.assertGreaterEqual(logo['y'] - bottom, 1)
+    def test_system_theme_follows_light_and_dark_with_reduced_motion(self):
+        for path in ('', 'v3/'):
+            for initial in ('light', 'dark'):
+                with self.subTest(path=path, initial=initial):
+                    page = self.new_page(color_scheme=initial, reduced_motion='reduce')
+                    films = []
+
+                    def record_film(request):
+                        if re.search(r'\.mp4(?:[?#]|$)', request.url):
+                            films.append(request.url)
+
+                    page.on('request', record_film)
+                    page.goto(self.url + path)
+                    opposite = 'dark' if initial == 'light' else 'light'
+                    for scheme in (initial, opposite):
+                        if scheme != initial:
+                            page.emulate_media(color_scheme=scheme, reduced_motion='reduce')
+                        day = scheme == 'light'
+                        theme = 'day' if day else 'night'
+                        visible, hidden = ('.ruth-day-art', '.art') if day else ('.art', '.ruth-day-art')
+                        expect(page.locator('html')).to_have_attribute('data-ruth-theme', theme)
+                        expect(page.locator(visible)).to_be_visible()
+                        expect(page.locator(hidden)).to_be_hidden()
+                        page.wait_for_function(
+                            '([selector, width]) => document.querySelector(selector + " img")?.naturalWidth === width',
+                            arg=[visible, 1638 if day else 1916])
+                        self.assertTrue(page.locator('video').evaluate_all(
+                            'videos => videos.every(video => video.paused && video.currentTime === 0)'))
+                        expect(page.locator('#ruth-theme-toggle')).to_have_count(0)
+                        expect(page.get_by_role('heading', name=HEADLINE, exact=True)).to_be_visible()
+                        expect(page.locator('#signup-cta')).to_have_attribute('aria-expanded', 'false')
+                    self.assertEqual(films, [])
+                    page.close()
+
+    def test_responsive_lockup_clears_the_moving_lips_in_both_editions(self):
+        for scheme, photo in [('dark', '.art img'), ('light', '.ruth-day-art img')]:
+            page = self.new_page(color_scheme=scheme, reduced_motion='reduce')
+            page.goto(self.url)
+            page.wait_for_function('([selector, width]) => document.querySelector(selector)?.naturalWidth === width',
+                                   arg=[photo, 1916 if scheme == 'dark' else 1638])
+            headline = page.get_by_role('heading', level=1, name=HEADLINE, exact=True)
+            cta = page.locator('#signup-cta')
+            for w, h in [(320, 568), (350, 349), (390, 844), (844, 390), (768, 1024),
+                         (899, 550), (900, 540), (900, 550), (900, 675), (900, 676),
+                         (961, 651), (1024, 480), (1280, 800), (1500, 500), (2560, 900)]:
+                with self.subTest(scheme=scheme, viewport=(w, h)):
+                    page.set_viewport_size({'width': w, 'height': h})
+                    page.evaluate('document.fonts.ready')
+                    side = w >= 900 and w * 3 >= h * 4 and (h >= 550 or w >= 1024)
+                    lower_third = (w <= 960 and w <= h) or (h <= 560 and w >= h)
+                    logo = page.locator('.ruth-home svg').bounding_box()
+                    title = headline.bounding_box()
+                    button = cta.bounding_box()
+                    label = cta.locator('.join-label').bounding_box()
+                    for box in (logo, title, button):
+                        self.assertGreater(box['height'], 0)
+                        self.assertGreaterEqual(min(box['x'], box['y']), -0.1)
+                        self.assertLessEqual(box['x'] + box['width'], w + 0.1)
+                        self.assertLessEqual(box['y'] + box['height'], h + 0.1)
+                        self.assertAlmostEqual(box['x'] + box['width'] / 2, w * (.23 if side else .5), delta=1)
+                    self.assertLessEqual(logo['y'] + logo['height'], title['y'])
+                    self.assertLessEqual(title['y'] + title['height'], label['y'])
+                    if lower_third and not side:
+                        self.assertAlmostEqual(title['y'] + title['height'] / 2, h * .75, delta=.1)
+                    self.assertGreaterEqual(button['width'], 160)
+                    self.assertGreaterEqual(button['height'], 46)
+
+                    # Full-film guarded lips begin at source x=919 and end at y=606.
+                    # Both posters use the same take with slightly different native sizes.
+                    boundary = page.locator(photo).evaluate(r"""(photo, side) => {
+                        const box = photo.getBoundingClientRect(), style = getComputedStyle(photo);
+                        if (style.objectFit !== 'cover') throw Error('Expected cover image');
+                        const scale = Math.max(box.width / photo.naturalWidth, box.height / photo.naturalHeight);
+                        const parts = style.objectPosition.match(/calc\([^)]*\)|[^\s]+/g);
+                        const position = parts[side ? 0 : 1];
+                        if (!position.endsWith('%')) throw Error('Expected percentage crop on measured axis');
+                        const length = side ? box.width : box.height;
+                        const imageLength = scale * (side ? photo.naturalWidth : photo.naturalHeight);
+                        return (side ? box.x : box.y) + (length - imageLength) * parseFloat(position) / 100
+                            + imageLength * (side ? 919 / 1916 : 606 / 1080);
+                    }""", side)
+                    if side:
+                        self.assertGreaterEqual(boundary - max(box['x'] + box['width'] for box in (logo, title, button)), 1)
+                    else:
+                        self.assertGreaterEqual(logo['y'] - boundary, 1)
+            page.close()
 
     def test_original_film_transitions_to_unlabelled_living_ascii(self):
-        page = self.new_page(viewport={'width': 800, 'height': 600})
+        page = self.new_page(viewport={'width': 800, 'height': 600}, color_scheme='dark')
         page.add_init_script('''window.filmFrames = { moving: false, held: false, annotations: [] };
             const context = CanvasRenderingContext2D.prototype;
             const originalText = context.fillText;
@@ -99,7 +146,7 @@ class Home(unittest.TestCase):
                 if (detail.held) window.filmFrames.held = true;
             }, true);''')
         page.goto(self.url)
-        page.wait_for_function("document.querySelector('video')?.ended && window.filmFrames.held", timeout=45_000)
+        page.wait_for_function("document.querySelector('.art video')?.ended && window.filmFrames.held", timeout=45_000)
         self.assertTrue(page.evaluate('window.filmFrames.moving'))
         self.assertEqual(page.evaluate('window.filmFrames.annotations'), [])
         shader = page.locator('#shader')
@@ -109,8 +156,26 @@ class Home(unittest.TestCase):
         self.assertEqual(page.locator('.art').inner_text().strip(), '')
         expect(page.get_by_role('heading', level=1, name=HEADLINE, exact=True)).to_be_visible()
 
+        def wait_for_edition(scheme, theme):
+            page.emulate_media(color_scheme=scheme)
+            page.wait_for_function("""theme => document.documentElement.dataset.ruthTheme === theme
+                && !document.documentElement.hasAttribute('data-ruth-preparing')""", arg=theme)
+
+        wait_for_edition('light', 'day')
+        page.wait_for_function("""() => {
+            const film = document.querySelector('.ruth-day-art video');
+            return film && Number.isFinite(film.duration) && film.paused
+                && !film.seeking && Math.abs(film.duration - film.currentTime) <= 1 / 24;
+        }""")
+        wait_for_edition('dark', 'night')
+        expect(shader).to_have_attribute('data-material-idle', 'running')
+        canvas = shader.locator('canvas')
+        expect(canvas).to_be_visible()
+        self.assertTrue(canvas.evaluate('canvas => canvas.width > 1 && canvas.height > 1'))
+        self.assertTrue(page.locator('.art video').evaluate('film => film.ended'))
+
     def waitlist_page(self, path=''):
-        page = self.new_page(viewport={'width': 390, 'height': 780}, reduced_motion='reduce')
+        page = self.new_page(viewport={'width': 390, 'height': 780}, color_scheme='dark', reduced_motion='reduce')
         page.goto(self.url + path)
         # Mock responses below are still available offline. An unexpected URL
         # can never transmit an address, including when testing a production build.
@@ -197,15 +262,13 @@ class Home(unittest.TestCase):
                     form.evaluate('form => { form.requestSubmit(); form.requestSubmit(); }')
                     page.evaluate('new Promise(resolve => requestAnimationFrame(resolve))')
                     self.assertEqual(len(requests), 1)
-                    if not path:
-                        toggle = page.locator('#ruth-theme-toggle')
-                        if toggle.count():
-                            theme = page.locator('html').get_attribute('data-ruth-theme')
-                            toggle.click()
-                            expect(page.locator('html')).not_to_have_attribute('data-ruth-theme', theme)
-                            expect(email).to_have_value(address)
-                            expect(email).to_be_focused()
-                            expect(join).to_be_disabled()
+                    if path in ('', 'v3/'):
+                        expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'night')
+                        page.emulate_media(color_scheme='light', reduced_motion='reduce')
+                        expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'day')
+                        expect(email).to_have_value(address)
+                        expect(email).to_be_focused()
+                        expect(join).to_be_disabled()
                         page.keyboard.press('Escape')
                         expect(trigger).to_be_focused()
                         page.keyboard.press('Enter')
@@ -217,7 +280,7 @@ class Home(unittest.TestCase):
                     self.assertEqual(requests[0].headers['content-type'].split(';')[0], 'application/json')
                     route, headers = awaiting_response.pop()
                     route.fulfill(status=200, json={'ok': True}, headers=headers)
-                    if not path:
+                    if path in ('', 'v3/'):
                         # Let the real client process the response while the form is closed.
                         expect(form).to_have_attribute('aria-busy', 'false')
                         expect(trigger).to_be_focused()
@@ -293,17 +356,27 @@ class Home(unittest.TestCase):
         expect(page.get_by_role('button', name='Done')).to_be_focused()
         self.assertEqual(len(requests), 5)
 
-    def test_content_does_not_wait_for_palette_script(self):
-        page = self.new_page()
-        pending = []
-        page.route('**/palette.js*', lambda route: pending.append(route))
-        page.goto(self.url + '?palette=marble', wait_until='commit')
-        try:
-            expect(page.get_by_role('heading', level=1, name=HEADLINE, exact=True)).to_be_visible(timeout=3000)
-        finally:
-            for route in pending:
-                route.continue_()
-        expect(page.locator('html')).to_have_attribute('data-palette', 'marble')
+    def test_system_poster_and_copy_render_while_theme_module_is_delayed(self):
+        for scheme, visible, hidden in [('dark', '.art', '.ruth-day-art'), ('light', '.ruth-day-art', '.art')]:
+            with self.subTest(scheme=scheme):
+                page = self.new_page(color_scheme=scheme, reduced_motion='reduce')
+                pending = []
+                page.route('**/ruth-theme.js*', lambda route: pending.append(route))
+                try:
+                    with page.expect_request('**/ruth-theme.js*'):
+                        page.goto(self.url + '?palettes&palette=marble', wait_until='commit')
+                    expect(page.get_by_role('heading', level=1, name=HEADLINE, exact=True)).to_be_visible()
+                    expect(page.locator(visible)).to_be_visible()
+                    expect(page.locator(hidden)).to_be_hidden()
+                    page.wait_for_function(
+                        '([selector, width]) => document.querySelector(selector + " img")?.naturalWidth === width',
+                        arg=[visible, 1916 if scheme == 'dark' else 1638])
+                finally:
+                    for route in pending:
+                        route.continue_()
+                expect(page.locator('html')).to_have_attribute('data-ruth-theme', 'night' if scheme == 'dark' else 'day')
+                expect(page.locator('.palette, #ruth-theme-toggle')).to_have_count(0)
+                page.close()
 
     def test_tab_icon_needs_no_extra_request(self):
         page = self.new_page()

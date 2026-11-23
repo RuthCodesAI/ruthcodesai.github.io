@@ -1,0 +1,87 @@
+/* The full-width V3 print places the copy on an axis 23% in from the left. */
+@media (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3),
+       (min-width: 1024px) and (min-aspect-ratio: 4/3) {
+  body {
+    --art-height: var(--view-height);
+    --copy-axis: 23vw;
+    --copy-radius-x: min(25vw, 510px);
+    --copy-radius-y: min(30dvh, 310px);
+  }
+
+  /* The native film and its ASCII renderer both read this computed crop.
+     The player also writes an inline alignment when the viewport changes. */
+  .art .photo, .art .living-video {
+    object-position: 22% var(--side-crop-y, 56.25%) !important;
+  }
+  .ruth-day-art {
+    --day-x: 22%;
+    --day-y: var(--side-crop-y, 56.25%);
+    mask-image: radial-gradient(ellipse var(--copy-radius-x) var(--copy-radius-y)
+      at var(--copy-axis) 52%, rgb(0 0 0 / .16), rgb(0 0 0 / .23) 58%,
+      rgb(0 0 0 / .6) 81%, black);
+  }
+  .art .veil {
+    background: radial-gradient(ellipse var(--copy-radius-x) var(--copy-radius-y)
+      at var(--copy-axis) 52%, rgb(16 16 16 / .78), rgb(16 16 16 / .72) 58%,
+      rgb(16 16 16 / .32) 81%, transparent);
+  }
+
+  .page .hero-lockup {
+    --brand-width: min(32vw, 41dvh, 420px);
+    inset: 0 auto 0 0;
+    display: grid;
+    width: calc(2 * var(--copy-axis));
+    padding: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 16% minmax(0, 1fr) auto minmax(0, 1fr);
+    justify-items: center;
+  }
+  .hero-lockup .ruth-home {
+    grid-row: 1 / 3;
+    align-self: end;
+    width: var(--brand-width);
+    height: auto;
+    max-height: none;
+    margin: 0 0 clamp(10px, 1.9dvh, 22px);
+  }
+  .hero-lockup .ruth-home svg { width: 100%; height: auto; }
+  .hero-lockup .hero-details { display: contents; }
+  .hero-lockup h1 {
+    grid-row: 3;
+    align-self: center;
+    max-width: 92%;
+    font-size: clamp(22px, min(3.7dvh, 3.5vw), 39px);
+    line-height: 1.08;
+    letter-spacing: -.032em;
+  }
+  .hero-lockup :is(.headline-lead, .headline-end) { display: block; }
+  .hero-lockup :is(h1, .join)::before { content: none; }
+  .hero-lockup .join { text-shadow: none; }
+  .hero-lockup .waitlist {
+    grid-row: 4;
+    align-self: start;
+    top: auto;
+    margin: clamp(10px, 2.1dvh, 24px) 0 0;
+  }
+  body:not([data-waitlist-open="true"]) .hero-lockup .waitlist { top: auto; }
+
+  body[data-waitlist-open="true"] .hero-lockup .waitlist {
+    --panel-floor: max(16px, env(safe-area-inset-bottom), min(15dvh, 140px));
+    position: fixed;
+    left: var(--copy-axis);
+    top: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor));
+    bottom: auto;
+    margin: 0;
+    transform: translate(-50%, -100%);
+  }
+  .hero-lockup .waitlist-panel {
+    max-height: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor, 16px) - 48px - max(12px, env(safe-area-inset-top)));
+  }
+  body[data-waitlist-compact="true"] .hero-lockup .waitlist {
+    --panel-floor: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-aspect-ratio: 8/3) { :root { --side-crop-y: 36%; } }
+@media (min-aspect-ratio: 17/5) { :root { --side-crop-y: 32%; } }
+@media (min-aspect-ratio: 17/4) { :root { --side-crop-y: calc(56.25% + 35dvh); } }

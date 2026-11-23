@@ -160,10 +160,10 @@ form.addEventListener('submit', async event => {
 trigger.addEventListener('click', () => open ? closeWaitlist() : openWaitlist());
 done.addEventListener('click', () => closeWaitlist());
 document.addEventListener('pointerdown', event => {
-  if (open && !waitlist.contains(event.target) && !event.target.closest('#ruth-theme-toggle')) closeWaitlist(false);
+  if (open && !waitlist.contains(event.target)) closeWaitlist(false);
 });
 waitlist.addEventListener('focusout', event => {
-  if (open && event.relatedTarget && !waitlist.contains(event.relatedTarget) && event.relatedTarget.id !== 'ruth-theme-toggle') {
+  if (open && event.relatedTarget && !waitlist.contains(event.relatedTarget)) {
     closeWaitlist(false);
   }
 });
