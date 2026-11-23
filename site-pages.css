@@ -1,0 +1,45 @@
+@font-face {
+  font-family: Ruth Reading;
+  src: url('/assets/Newsreader-Latin.woff2') format('woff2');
+  font-weight: 200 800;
+  font-display: swap;
+}
+.site-nav { display: flex; gap: .25rem; align-items: center; }
+.site-nav a {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 .55rem;
+  color: inherit;
+  font: 500 .875rem/1.2 system-ui, sans-serif;
+  text-decoration: none;
+}
+.site-nav a:is([aria-current], :hover, :focus-visible) { text-decoration: underline; text-underline-offset: .3em; }
+.site-nav a:focus-visible, .reading-page a:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.reading-page {
+  color-scheme: light dark;
+  margin: 0;
+  background: #f1edea;
+  color: #101010;
+  font: 400 clamp(1.25rem, 1.1rem + .6vw, 1.6rem)/1.45 'Ruth Reading', Georgia, serif;
+}
+@media (prefers-color-scheme: dark) { .reading-page { background: #101010; color: #f2f0eb; } }
+.reading-page .masthead, .reading-page main { width: min(60rem, 89%); margin-inline: auto; }
+.masthead { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid; }
+.imprint { font-size: 2.25rem; letter-spacing: -.05em; }
+.reading-page main { padding-block: clamp(2.5rem, 9vh, 6rem); }
+.folio { font: 500 .8rem/1.5 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.reading-page h1 { margin: .2em 0 .4em; font-size: clamp(3.25rem, 8vw, 6.5rem); line-height: 1; font-weight: 400; letter-spacing: -.045em; }
+.reading-page p { max-width: 52ch; }
+.reading-page a { color: inherit; text-underline-offset: .16em; }
+.reading-page h2 { font-size: 1.35em; font-weight: 500; margin: 1.2em 0 .25em; }
+.reading-page .role { margin: 0; font: 500 1rem/1.4 system-ui, sans-serif; }
+/* Keep the links outside the hero grid and off the open waitlist sheet. */
+body[data-design] > .site-nav {
+  position: fixed;
+  z-index: 5;
+  top: max(.4rem, env(safe-area-inset-top));
+  left: max(.65rem, env(safe-area-inset-left));
+  background-color: var(--ground);
+}
+body[data-waitlist-open="true"] > .site-nav { display: none; }
