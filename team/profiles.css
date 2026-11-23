@@ -1,0 +1,10 @@
+/* The portrait belongs to the heading, not to the paragraph below it. */
+/* Step the shared reading measure in character units as space opens up. */
+.founder {
+  max-inline-size: 52ch;
+  inline-size: min(100%, max(26ch, round(down, 100%, 4ch)));
+  margin-block-start: 1.8em;
+}
+.founder header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1rem; }
+.founder h2 { margin: 0 0 .2em; }
+.founder img { inline-size: clamp(4.5rem, 12vw, 6rem); block-size: auto; border-radius: 50%; }

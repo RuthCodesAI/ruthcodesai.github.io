@@ -121,15 +121,56 @@ class Pages(unittest.TestCase):
                 self.assert_navigation(page)
                 self.assertEqual(page.locator('nav [aria-current="page"]').inner_text(), title)
 
-    def test_founder_biographies_are_full_paragraphs(self):
+    def test_about_anniversary(self):
+        page = self.visit('/about/', 200)
+        self.assertIn('the sixth anniversary of her passing.', page.locator('main').inner_text())
+
+    def test_founder_portraits_beside_name_and_role(self):
         page = self.visit('/team/', 200)
-        profiles = page.locator('main .role + p').all_inner_texts()
-        self.assertEqual(len(profiles), 2)
-        for profile, baseline in zip(profiles, (25, 37)):
-            with self.subTest(baseline=baseline):
-                count = len(profile.split())
-                self.assertGreaterEqual(count, baseline * 2.8)
-                self.assertLessEqual(count, baseline * 3.2)
+        for width in (320, 390, 768, 1440):
+            page.set_viewport_size({'width': width, 'height': 900})
+            page.evaluate('document.fonts.ready')
+            sizes = []
+            for name in ('Jonas Hertner', 'Joel Niklaus'):
+                section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
+                image = section.get_by_role('img', name=name)
+                self.assertEqual(image.count(), 1, name)
+                self.assertTrue(image.evaluate("i => i.complete && i.naturalWidth && new URL(i.src).origin === location.origin"))
+                self.assertEqual(image.evaluate('i => getComputedStyle(i).borderRadius'), '50%')
+                photo = image.bounding_box()
+                sizes.append(photo['width'])
+                self.assertEqual(photo['width'], photo['height'])
+                for label in (section.locator('h2'), section.locator('.role')):
+                    box = label.bounding_box()
+                    self.assertLessEqual(box['x'] + box['width'], photo['x'])
+                    self.assertLess(box['y'], photo['y'] + photo['height'])
+                    self.assertGreater(box['y'] + box['height'], photo['y'])
+                self.assertGreater(section.locator('p').last.bounding_box()['y'], photo['y'] + photo['height'])
+            self.assertEqual(*sizes)
+
+    def test_founder_bios_wrap_to_equal_lines(self):
+        page = self.visit('/team/', 200)
+        for width in (320, 375, 390, 430, 768, 1024, 1440):
+            page.set_viewport_size({'width': width, 'height': 900})
+            page.evaluate('document.fonts.ready')
+            counts = page.locator('section > p').evaluate_all("""nodes => nodes.map(p => {
+            const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+            const range = document.createRange(), rows = new Set();
+            while (walker.nextNode()) {
+                range.selectNodeContents(walker.currentNode);
+                for (const r of range.getClientRects()) if (r.width) rows.add(Math.round((r.top - p.getBoundingClientRect().top) / parseFloat(getComputedStyle(p).lineHeight)));
+            }
+            return rows.size;
+        })""")
+            self.assertEqual(len(counts), 2)
+            self.assertGreater(min(counts), 1)
+            self.assertEqual(*counts, msg=f'{width}px: {counts}')
+
+    def test_multilegalpile_award(self):
+        page = self.visit('/team/', 200)
+        bio = page.get_by_text('MultiLegalPile', exact=True).locator('..').inner_text()
+        self.assertTrue(bio.endswith('He co-created MultiLegalPile; the paper won an ACL 2024 Outstanding Paper Award.'), bio)
+        self.assertNotIn('They released the texts', bio)
 
     def test_home_uses_root_relative_site_files(self):
         page = self.visit('/', 200)
