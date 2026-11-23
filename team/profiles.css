@@ -7,4 +7,4 @@
 }
 .founder header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1rem; }
 .founder h2 { margin: 0 0 .2em; }
-.founder img { inline-size: clamp(4.5rem, 12vw, 6rem); block-size: auto; border-radius: 50%; }
+.founder img { display: block; inline-size: clamp(4.5rem, 12vw, 6rem); block-size: auto; border-radius: 50%; }
