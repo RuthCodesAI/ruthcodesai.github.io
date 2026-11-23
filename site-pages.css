@@ -4,18 +4,26 @@
   font-weight: 200 800;
   font-display: swap;
 }
-.site-nav { display: flex; gap: .25rem; align-items: center; }
-.site-nav a {
+.site-nav { display: flex; gap: clamp(.8rem, 1.8vw, 1.65rem); align-items: center; }
+.masthead .site-nav a {
   display: grid;
   place-items: center;
-  min-height: 44px;
-  padding: 0 .55rem;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  box-sizing: border-box;
   color: inherit;
-  font: 500 .875rem/1.2 system-ui, sans-serif;
+  font: 510 1rem/1.2 'Ruth Sans', system-ui, sans-serif;
+  letter-spacing: -.012em;
   text-decoration: none;
 }
-.site-nav a:is([aria-current], :hover, :focus-visible) { text-decoration: underline; text-underline-offset: .3em; }
+.masthead .site-nav a:last-child { justify-items: end; }
+.masthead .site-nav a:is([aria-current="page"], :hover, :focus-visible) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .31em;
+}
 .masthead a:focus-visible, .reading-page a:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.masthead .site-nav a:focus-visible { outline-offset: 2px; }
 .reading-page {
   color-scheme: light dark;
   margin: 0;
@@ -26,7 +34,8 @@
 @media (prefers-color-scheme: dark) { .reading-page { background: #101010; color: #f2f0eb; } }
 .reading-page .masthead, .reading-page main { width: min(60rem, 89%); margin-inline: auto; }
 .masthead { display: flex; align-items: center; justify-content: space-between; }
-.reading-page .masthead { padding: 1rem 0; border-bottom: 1px solid; }
+.reading-page .masthead { flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid; }
+.reading-page .site-nav { margin-inline-start: auto; }
 .imprint { display: grid; align-items: center; min-height: 44px; color: inherit; text-decoration: none; font-size: 2.25rem; letter-spacing: -.05em; }
 .reading-page main { padding-block: clamp(2.5rem, 9vh, 6rem); }
 .folio { font: 500 .8rem/1.5 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
@@ -35,17 +44,46 @@
 .reading-page a { color: inherit; text-underline-offset: .16em; }
 .reading-page h2 { font-size: 1.35em; font-weight: 500; margin: 1.2em 0 .25em; }
 .reading-page .role { margin: 0; font: 500 1rem/1.4 system-ui, sans-serif; }
-/* Keep the links outside the hero grid and off the open waitlist sheet. */
+body[data-design], .reading-edition {
+  --reading-gutter: clamp(1.25rem, 5vw, 5.5rem);
+  --reading-width: 78rem;
+  --masthead-padding: clamp(.65rem, 1.4vw, 1.25rem);
+}
+
+/* Align the floating links to the reading pages' text margin. */
 body[data-design] > .masthead {
+  --nav-top: max(var(--masthead-padding), env(safe-area-inset-top));
+  --nav-margin: max(var(--reading-gutter), calc((100vw - var(--reading-width)) / 2));
+  --nav-right: max(var(--nav-margin), env(safe-area-inset-right));
   position: fixed;
   z-index: 5;
-  top: max(.4rem, env(safe-area-inset-top));
-  right: max(.65rem, env(safe-area-inset-right));
+  inset-block-start: var(--nav-top);
+  inset-inline-end: var(--nav-right);
+  isolation: isolate;
   pointer-events: none;
 }
-body[data-design] > .masthead .site-nav {
-  pointer-events: auto;
-  background-color: var(--ground);
+body[data-design] > .masthead .site-nav { pointer-events: auto; }
+body[data-design] > .masthead::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block-start: calc(-1 * var(--nav-top));
+  inset-inline-end: calc(-1 * var(--nav-right));
+  inline-size: calc(var(--nav-margin) + 13rem);
+  block-size: 7.6rem;
+  background: radial-gradient(ellipse 100% 100% at right top,
+    rgb(var(--ground-rgb) / .95) 0%, rgb(var(--ground-rgb) / .9) 48%,
+    rgb(var(--ground-rgb) / .72) 67%, rgb(var(--ground-rgb) / .16) 85%, transparent 100%);
+}
+@media (min-width: 89rem) {
+  body[data-design] > .masthead::before {
+    inset-inline-end: -5.5rem;
+    inline-size: 18.5rem;
+    mask-image: linear-gradient(to left, transparent, black 5rem);
+  }
+}
+@media (forced-colors: active) {
+  body[data-design] > .masthead .site-nav { background: Canvas; }
 }
 body[data-waitlist-open="true"] > .masthead { display: none; }
 
@@ -60,24 +98,20 @@ body[data-waitlist-open="true"] > .masthead { display: none; }
   --quiet: #57534f;
   --line: #b6afa6;
   --sans: 'Ruth Sans', system-ui, sans-serif;
-  --gutter: clamp(1.25rem, 5vw, 5.5rem);
   font-optical-sizing: auto;
 }
 @media (prefers-color-scheme: dark) {
   .reading-edition { --quiet: #c0bab1; --line: #514e49; }
 }
 .reading-edition :is(.masthead, main) {
-  width: min(calc(100% - 2 * var(--gutter)), 78rem);
+  width: min(calc(100% - 2 * var(--reading-gutter)), var(--reading-width));
   margin-inline: auto;
 }
 .reading-edition .masthead {
-  flex-wrap: wrap;
-  padding-block: clamp(.65rem, 1.4vw, 1.25rem);
+  padding-block: var(--masthead-padding);
   border-bottom: 1px solid var(--line);
 }
 .reading-edition .imprint { font-size: clamp(2rem, 3vw, 2.7rem); line-height: 1; }
-.reading-edition .site-nav { gap: clamp(.25rem, 1vw, .9rem); margin-inline-start: auto; }
-.reading-edition .site-nav a { font-family: var(--sans); font-size: 1rem; }
 .reading-edition main { padding-block: clamp(2.25rem, 5vw, 5rem) clamp(3rem, 6vw, 6rem); }
 .reading-edition main a {
   text-decoration-thickness: 1px;
@@ -137,6 +171,6 @@ body[data-waitlist-open="true"] > .masthead { display: none; }
   .about-print img { object-position: 50% 38%; }
 }
 @media (max-width: 22rem) {
-  .reading-edition { --gutter: 1rem; }
+  body[data-design], .reading-edition { --reading-gutter: 1rem; }
   .about .mission { font-size: 2.35rem; }
 }
