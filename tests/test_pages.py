@@ -148,6 +148,23 @@ class Pages(unittest.TestCase):
                 self.assertGreater(section.locator('p').last.bounding_box()['y'], photo['y'] + photo['height'])
             self.assertEqual(*sizes)
 
+    def test_founder_homepages_on_names_and_portraits_only(self):
+        page = self.visit('/team/', 200)
+        page.keyboard.press('Tab')
+        for name, home in [('Jonas Hertner', 'https://jonashertner.com/'),
+                           ('Joel Niklaus', 'https://niklaus.ai/')]:
+            section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
+            targets = [section.locator('h2').get_by_role('link', name=name, exact=True),
+                       section.get_by_role('link', name=name, exact=True).filter(has=page.get_by_role('img', name=name))]
+            for target in targets:
+                self.assertEqual(target.count(), 1, name)
+                self.assertEqual(target.get_attribute('href'), home)
+                target.focus()
+                self.assertTrue(target.evaluate("a => a.matches('a:focus-visible') && parseFloat(getComputedStyle(a).outlineWidth) > 0"))
+            self.assertFalse(section.locator('.role').evaluate("p => !!(p.closest('a') || p.querySelector('a'))"))
+            hosts = section.locator(':scope > p a').evaluate_all('links => links.map(a => a.hostname)')
+            self.assertTrue({'niklaus.ai', 'jonashertner.com'}.isdisjoint(hosts))
+
     def test_founder_bios_wrap_to_equal_lines(self):
         page = self.visit('/team/', 200)
         for width in (320, 375, 390, 430, 768, 1024, 1440):
@@ -166,11 +183,25 @@ class Pages(unittest.TestCase):
             self.assertGreater(min(counts), 1)
             self.assertEqual(*counts, msg=f'{width}px: {counts}')
 
-    def test_multilegalpile_award(self):
+    def test_founder_bios_open_with_work(self):
         page = self.visit('/team/', 200)
-        bio = page.get_by_text('MultiLegalPile', exact=True).locator('..').inner_text()
-        self.assertTrue(bio.endswith('He co-created MultiLegalPile; the paper won an ACL 2024 Outstanding Paper Award.'), bio)
-        self.assertNotIn('They released the texts', bio)
+        for name, work in [('Jonas Hertner', 'disputes'), ('Joel Niklaus', 'models')]:
+            section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
+            opening = section.locator('p').last.inner_text().partition('.')[0]
+            with self.subTest(name=name):
+                self.assertIn(work, opening)
+                self.assertNotIn('at Ruth', opening)
+
+    def test_joel_resources_and_collaborative_paper_awards(self):
+        page = self.visit('/team/', 200)
+        section = page.locator('section').filter(has=page.get_by_role('heading', name='Joel Niklaus'))
+        bio = section.locator('p').last.inner_text()
+        for resource in ('LEXam', 'SwiLTra-Bench', 'LEXTREME', 'LegalBench', 'MultiLegalPile'):
+            self.assertEqual(section.get_by_role('link', name=resource, exact=True).count(), 1, resource)
+        self.assertIn('co-authors', bio)
+        self.assertIn('Outstanding Paper', bio)
+        self.assertRegex(bio, r'MultiLegalPile[^.]*ACL 2024')
+        self.assertRegex(bio, r'FinePhrase[^.]*COLM 2026')
 
     def test_home_uses_root_relative_site_files(self):
         page = self.visit('/', 200)
