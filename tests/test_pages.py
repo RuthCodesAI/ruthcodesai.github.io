@@ -183,26 +183,28 @@ class Pages(unittest.TestCase):
             self.assertGreater(min(counts), 1)
             self.assertEqual(*counts, msg=f'{width}px: {counts}')
 
-    def test_founder_bios_open_with_work(self):
+    def test_jonas_bio_opens_with_his_practice(self):
         page = self.visit('/team/', 200)
-        for name, work in [('Jonas Hertner', 'disputes'), ('Joel Niklaus', 'models')]:
-            section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
-            opening = section.locator('p').last.inner_text().partition('.')[0]
-            with self.subTest(name=name):
-                self.assertIn(work, opening)
-                self.assertNotIn('at Ruth', opening)
+        section = page.locator('section').filter(has=page.get_by_role('heading', name='Jonas Hertner'))
+        opening = section.locator('p').last.inner_text().partition('.')[0]
+        self.assertIn('disputes', opening)
+        self.assertNotIn('at Ruth', opening)
 
-    def test_joel_career_benchmarks_and_shared_awards(self):
+    def test_joel_approved_bio_and_paper_links(self):
         page = self.visit('/team/', 200)
         section = page.locator('section').filter(has=page.get_by_role('heading', name='Joel Niklaus'))
         paragraph = section.locator('p').last
-        bio = paragraph.inner_text()
-        self.assertIn('Hugging Face', bio.partition('.')[0])
-        for fact in ('Harvey', 'Thomson Reuters Labs', 'PhD', 'University of Bern', 'Stanford',
-                     'co-developed', 'contributed to LegalBench', 'co-authors',
-                     'Outstanding Paper Awards', 'ACL 2024', 'COLM 2026'):
-            self.assertIn(fact, bio)
-        self.assertNotIn('FinePhrase', bio)
+        self.assertEqual(paragraph.inner_text(), (
+            'Joel is an expert in legal AI and his datasets and benchmarks such as LEXam, SwiLTra-Bench '
+            'and LegalBench have shaped the evaluation of LLMs in the legal domain. Previously, he was '
+            'a Research Scientist at Harvey, specializing in large language model systems for legal '
+            'applications. Before that, he pretrained LLMs at (Google) X and Thomson Reuters Labs. Joel '
+            'holds a PhD in NLP from the University of Bern and conducted research at Stanford '
+            'University, leading projects for the Swiss Federal Supreme Court and AI startups such as '
+            'Darrow and Libra. His work has been published at top conferences, honored with Outstanding '
+            'Paper Awards at ACL and CoLM, and covered by Anthropic and the Swiss National Radio & '
+            'Television.'
+        ))
         links = paragraph.get_by_role('link').all()
         self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in links], [
             ('LEXam', 'https://arxiv.org/abs/2505.12864'),
