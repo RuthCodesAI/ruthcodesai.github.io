@@ -232,9 +232,9 @@ class Pages(unittest.TestCase):
         self.assertEqual(bio.locator('p').all_inner_texts(), [
             'Jonas Hertner is an independent Swiss lawyer based in Zurich and Basel. He represents '
             'clients in complex commercial disputes and advises boards and business owners on '
-            'governance. He worked at the Court of Appeal of Basel-Stadt before spending a decade '
-            'at Quinn Emanuel, where he helped establish the firm’s Swiss office and handled '
-            'cross-border litigation.',
+            'governance. He worked at the Federal Department of Foreign Affairs International Law '
+            'Division and the Court of Appeal of Basel-Stadt before spending a decade at Quinn '
+            'Emanuel, where he helped establish the firm’s Swiss office.',
             'Jonas built OpenCaseLaw, an open dataset that brings together judgments, legislation '
             'and regulatory decisions from across Switzerland.',
             'At Ruth, he works with clients to optimize legal tasks and workflows to achieve '
