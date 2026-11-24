@@ -4,14 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f1edea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Page not found on Ruth.">
   <title>Page not found · Ruth</title>
-  <link rel="stylesheet" href="/site-pages.css?v=nav-1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-75 -50 760 800'%3E%3Crect x='-75' y='-50' width='760' height='800' rx='60' fill='%23101010'/%3E%3Cpath fill='%23f2f0eb' fill-rule='evenodd' d='M0 0H267C417 0 505 70 505 185C505 283 439 344 340 369L484 598C508 636 535 673 563 700H421L222 379H126V576C126 627 135 671 149 700H0C14 671 23 627 23 576V124C23 74 14 30 0 0ZM126 58V321H255C350 321 405 272 405 185C405 103 350 58 250 58Z'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script>(function(){try{var e=sessionStorage.getItem('ruth-edition');if(e==='day'||e==='night')document.documentElement.dataset.ruthTheme=e;}catch(x){}})();</script>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/Newsreader-Latin.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/InterTight-Latin.woff2" crossorigin>
+  <link rel="stylesheet" href="/ruth-base.css?v=2026-overhaul">
+  <link rel="stylesheet" href="/site-pages.css?v=2026-overhaul">
+  <script type="module" src="/ruth-edition.js?v=2026-overhaul"></script>
   <style>
-    .art { display: block; width: min(100%, 240px); height: 86px; margin: 12px 0 10px; overflow: visible;
-      --rule: #aaa29c; --sheet: #f7f4f0; --accent: #744232; }
-    @media (prefers-color-scheme: dark) {
-      .art { --rule: #8e8881; --sheet: #191817; --accent: #d4ab94; }
+    .art {
+      display: block;
+      width: min(100%, 248px);
+      height: 88px;
+      margin: 18px 0 16px;
+      overflow: visible;
+      --rule: var(--line);
+      --sheet: color-mix(in srgb, var(--ground) 92%, var(--ink) 8%);
     }
     .art text { fill: currentColor; }
     .art .line { fill: none; stroke: currentColor; stroke-width: 1.15; }
@@ -29,20 +44,35 @@
     @keyframes reveal-volume { from { opacity: 0; } to { opacity: 1; } }
   </style>
 </head>
-<body class="reading-page">
+<body class="reading-page reading-edition">
+<a class="skip" href="#main">Skip to content</a>
 <header class="masthead">
-  <a class="imprint" href="/">Ruth</a>
+  <a class="imprint" href="/" aria-label="Ruth"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1831 714" aria-hidden="true" focusable="false"><g fill="currentColor"><path fill-rule="evenodd" d="M0 0H267C417 0 505 70 505 185C505 283 439 344 340 369L484 598C508 636 535 673 563 700H421L222 379H126V576C126 627 135 671 149 700H0C14 671 23 627 23 576V124C23 74 14 30 0 0ZM126 58V321H255C350 321 405 272 405 185C405 103 350 58 250 58Z"/><path transform="translate(561 0)" d="M0 214H131C119 246 114 282 114 327V527C114 609 145 654 207 654C254 654 300 619 333 569V327C333 282 328 246 316 214H445C433 246 428 282 428 327V587C428 635 435 672 450 700H333V642C294 690 245 714 184 714C73 714 17 649 17 540V327C17 282 12 246 0 214Z"/><path transform="translate(1042 0)" d="M0 230H64V124L162 89C155 127 152 159 152 195V230H292V286H152V566C152 624 171 653 212 653C246 653 273 640 301 616L324 646C283 692 242 714 188 714C107 714 60 664 60 579V286H0Z"/><path transform="translate(1386 0)" d="M0 0H125C114 33 109 72 109 121V286C146 240 191 214 251 214C358 214 411 279 411 388V587C411 635 418 672 433 700H298C311 672 316 635 316 587V404C316 322 287 279 230 279C182 279 138 311 109 354V587C109 635 116 672 131 700H0C13 672 18 635 18 587V121C18 72 12 33 0 0Z"/></g></svg></a>
   <nav class="site-nav" aria-label="Site">
     <a href="/about/">About</a>
     <a href="/team/">Team</a>
+    <span class="nav-divider" aria-hidden="true"></span>
+    <button type="button" class="edition-toggle" id="edition-toggle" aria-label="Switch edition">
+      <svg class="edition-icon" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M6 1a5 5 0 0 1 0 10z" fill="currentColor"/></svg>
+      <span class="edition-label">Code</span>
+    </button>
   </nav>
 </header>
-<main>
-  <p class="folio">404 · Page not found</p>
+<main id="main">
+  <p class="folio">404 &middot; Page not found</p>
   <h1>Citation not found.</h1>
   <svg class="art" aria-hidden="true" viewBox="0 0 240 86" preserveAspectRatio="xMinYMid meet"><path class="thin" d="M4 78h218m-211 3h206"/><g class="ghost accent"><rect x="91" y="16" width="40" height="61" rx="1" fill="none" stroke="currentColor" stroke-dasharray="2 4"/><text x="111" y="50" text-anchor="middle" font-size="16" font-style="italic">404</text></g><g class="left"><rect class="sheet" x="23" y="21" width="18" height="56" rx="2"/><path class="line" d="M25 29h14m-14 3h14M25 66h14"/><text x="32.0" y="51" text-anchor="middle" font-size="13"></text><path class="thin" d="M32.0 60v7"/><rect class="sheet" x="43" y="15" width="11" height="62" rx="2"/><path class="line" d="M45 23h7m-7 3h7M45 66h7"/><text x="48.5" y="45" text-anchor="middle" font-size="13"></text><path class="thin" d="M48.5 54v7"/><rect class="sheet" x="56" y="9" width="32" height="68" rx="2"/><path class="line" d="M58 17h28m-28 3h28M58 66h28"/><text x="72.0" y="39" text-anchor="middle" font-size="13">403</text><path class="thin" d="M72.0 48v7"/></g><g class="right"><rect class="sheet" x="134" y="9" width="32" height="68" rx="2"/><path class="line" d="M136 17h28m-28 3h28M136 66h28"/><text x="150.0" y="39" text-anchor="middle" font-size="13">405</text><path class="thin" d="M150.0 48v7"/><rect class="sheet" x="168" y="18" width="18" height="59" rx="2"/><path class="line" d="M170 26h14m-14 3h14M170 66h14"/><text x="177.0" y="48" text-anchor="middle" font-size="13"></text><path class="thin" d="M177.0 57v7"/><rect class="sheet" x="188" y="14" width="13" height="63" rx="2"/><path class="line" d="M190 22h9m-9 3h9M190 66h9"/><text x="194.5" y="44" text-anchor="middle" font-size="13"></text><path class="thin" d="M194.5 53v7"/></g></svg>
   <p>We checked the record. This page isn’t in it.</p>
   <p><a href="/">Return to Ruth’s homepage</a></p>
 </main>
+<footer class="site-colophon colophon-compact">
+  <div class="colophon-meta">
+    <div class="colophon-links">
+      <span>Zurich &middot; Basel</span>
+      <a href="/privacy/">Privacy</a>
+      <a href="/imprint/">Imprint</a>
+    </div>
+  </div>
+</footer>
 </body>
 </html>

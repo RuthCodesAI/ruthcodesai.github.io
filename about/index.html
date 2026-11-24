@@ -4,33 +4,109 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f1edea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="We act as outside counsel and build legal infrastructure within our clients’ organizations.">
+  <link rel="canonical" href="https://ruth.codes/about/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Ruth">
+  <meta property="og:title" content="About · Ruth">
+  <meta property="og:description" content="We act as outside counsel and build legal infrastructure within our clients’ organizations.">
+  <meta property="og:url" content="https://ruth.codes/about/">
+  <meta property="og:image" content="https://ruth.codes/assets/og-ruth.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="About · Ruth">
+  <meta name="twitter:description" content="We act as outside counsel and build legal infrastructure within our clients’ organizations.">
+  <meta name="twitter:image" content="https://ruth.codes/assets/og-ruth.jpg">
   <title>About · Ruth</title>
-  <link rel="stylesheet" href="/site-pages.css?v=nav-1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-75 -50 760 800'%3E%3Crect x='-75' y='-50' width='760' height='800' rx='60' fill='%23101010'/%3E%3Cpath fill='%23f2f0eb' fill-rule='evenodd' d='M0 0H267C417 0 505 70 505 185C505 283 439 344 340 369L484 598C508 636 535 673 563 700H421L222 379H126V576C126 627 135 671 149 700H0C14 671 23 627 23 576V124C23 74 14 30 0 0ZM126 58V321H255C350 321 405 272 405 185C405 103 350 58 250 58Z'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script>(function(){try{var e=sessionStorage.getItem('ruth-edition');if(e==='day'||e==='night')document.documentElement.dataset.ruthTheme=e;}catch(x){}})();</script>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/Newsreader-Latin.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/InterTight-Latin.woff2" crossorigin>
+  <link rel="preload" as="image" href="/v2/assets/paper.webp" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="/ruth-base.css?v=2026-overhaul">
+  <link rel="stylesheet" href="/site-pages.css?v=2026-overhaul">
+  <script type="module" src="/ruth-edition.js?v=2026-overhaul"></script>
+  <script type="module" src="/waitlist.js?v=2026-overhaul"></script>
 </head>
 <body class="reading-page reading-edition">
+<a class="skip" href="#main">Skip to content</a>
 <header class="masthead">
-  <a class="imprint" href="/">Ruth</a>
+  <a class="imprint" href="/" aria-label="Ruth"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1831 714" aria-hidden="true" focusable="false"><g fill="currentColor"><path fill-rule="evenodd" d="M0 0H267C417 0 505 70 505 185C505 283 439 344 340 369L484 598C508 636 535 673 563 700H421L222 379H126V576C126 627 135 671 149 700H0C14 671 23 627 23 576V124C23 74 14 30 0 0ZM126 58V321H255C350 321 405 272 405 185C405 103 350 58 250 58Z"/><path transform="translate(561 0)" d="M0 214H131C119 246 114 282 114 327V527C114 609 145 654 207 654C254 654 300 619 333 569V327C333 282 328 246 316 214H445C433 246 428 282 428 327V587C428 635 435 672 450 700H333V642C294 690 245 714 184 714C73 714 17 649 17 540V327C17 282 12 246 0 214Z"/><path transform="translate(1042 0)" d="M0 230H64V124L162 89C155 127 152 159 152 195V230H292V286H152V566C152 624 171 653 212 653C246 653 273 640 301 616L324 646C283 692 242 714 188 714C107 714 60 664 60 579V286H0Z"/><path transform="translate(1386 0)" d="M0 0H125C114 33 109 72 109 121V286C146 240 191 214 251 214C358 214 411 279 411 388V587C411 635 418 672 433 700H298C311 672 316 635 316 587V404C316 322 287 279 230 279C182 279 138 311 109 354V587C109 635 116 672 131 700H0C13 672 18 635 18 587V121C18 72 12 33 0 0Z"/></g></svg></a>
   <nav class="site-nav" aria-label="Site">
     <a href="/about/" aria-current="page">About</a>
     <a href="/team/">Team</a>
+    <span class="nav-divider" aria-hidden="true"></span>
+    <button type="button" class="edition-toggle" id="edition-toggle" aria-label="Switch edition">
+      <svg class="edition-icon" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M6 1a5 5 0 0 1 0 10z" fill="currentColor"/></svg>
+      <span class="edition-label">Code</span>
+    </button>
   </nav>
 </header>
-<main class="about">
+<main id="main" class="about">
   <div class="about-opening">
     <div class="about-copy">
       <h1>About Ruth</h1>
       <p class="mission">We act as outside counsel and build legal infrastructure within our clients’ organizations.</p>
       <p class="practice">The matters we handle for a client shape what we build with its legal team. Our lawyers and AI engineers develop tools that connect the team’s advice and decisions to the documents, law and reasoning behind them. When a question comes up again, the team can see why it took a particular course, which assumptions mattered and whether new facts call for different advice.</p>
     </div>
-    <picture class="about-print">
-      <source media="(prefers-color-scheme: dark)" srcset="/assets/video/gentle-lift-poster.webp">
-      <img src="/v2/assets/portrait.webp" width="780" height="810" alt="">
+    <picture class="about-print" data-day-src="/assets/about-justitia-day.webp" data-night-src="/assets/about-justitia-night.webp">
+      <source media="(prefers-color-scheme: dark)" srcset="/assets/about-justitia-night.webp">
+      <source media="(prefers-color-scheme: light)" type="image/avif" srcset="/assets/about-justitia-day.avif">
+      <img src="/assets/about-justitia-day.webp" width="840" height="874" alt="">
     </picture>
   </div>
+
+  <section class="principles" aria-label="How Ruth works">
+    <div class="principle">
+      <span class="principle-num" aria-hidden="true">01</span>
+      <h2>Counsel and engineering as one team</h2>
+      <p>The lawyers advising on a matter work directly with the engineers building the systems that carry its reasoning forward.</p>
+    </div>
+    <div class="principle">
+      <span class="principle-num" aria-hidden="true">02</span>
+      <h2>Memory bound to authority</h2>
+      <p>Every position stays linked to the underlying documents, statutes, case law and factual assumptions behind it.</p>
+    </div>
+    <div class="principle">
+      <span class="principle-num" aria-hidden="true">03</span>
+      <h2>Built inside your organization</h2>
+      <p>Infrastructure lives within the client’s own legal team, compounding institutional judgment across matters.</p>
+    </div>
+  </section>
+
   <div class="origin">
-    <p><a href="/team/#jonas-hertner">Jonas Hertner</a> and <a href="/team/#joel-niklaus">Joel Niklaus</a> named Ruth after U.S. Supreme Court Justice Ruth Bader Ginsburg. The name honors her precision in argument, her courage in dissent and her intellectual curiosity. They founded Ruth on <time datetime="2026-09-18">September 18, 2026</time>, the sixth anniversary of her passing.</p>
+    <p><a href="/team/#jonas-hertner">Jonas Hertner</a> and <a href="/team/#joel-niklaus">Joel Niklaus</a> named Ruth after U.S. Supreme Court Justice Ruth Bader Ginsburg. The name honors her precision in argument, her courage in dissent and her intellectual curiosity. They founded Ruth on <time datetime="2026-09-18">September&nbsp;18,&nbsp;2026</time>, the sixth anniversary of her passing.</p>
   </div>
 </main>
+<footer class="site-colophon">
+  <div class="colophon-waitlist" data-inline-waitlist>
+    <p class="colophon-kicker">Waitlist</p>
+    <h2>Follow Ruth’s launch.</h2>
+    <form method="post" action="https://ruth-waitlist-api.waitlist-api.workers.dev/waitlist" novalidate>
+      <label class="visually-hidden" for="about-waitlist-email">Email address</label>
+      <div class="inline-waitlist-entry">
+        <input id="about-waitlist-email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" required maxlength="254">
+        <button class="inline-waitlist-submit" type="submit">Join</button>
+      </div>
+      <p class="inline-waitlist-error" role="alert" data-waitlist-error hidden></p>
+      <p class="inline-waitlist-note">By joining, you agree to receive Ruth launch updates by email. <a href="/privacy/">Privacy notice</a>.</p>
+    </form>
+    <p class="inline-waitlist-status" role="status" aria-live="polite" data-waitlist-status hidden></p>
+  </div>
+  <div class="colophon-meta">
+    <a class="colophon-next" href="/team/">Meet the team <svg viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5"/></svg></a>
+    <div class="colophon-links">
+      <span>Zurich &middot; Basel</span>
+      <a href="/privacy/">Privacy</a>
+      <a href="/imprint/">Imprint</a>
+    </div>
+  </div>
+</footer>
 </body>
 </html>

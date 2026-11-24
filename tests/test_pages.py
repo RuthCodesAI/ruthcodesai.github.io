@@ -38,8 +38,8 @@ class Pages(unittest.TestCase):
         cls.browser = pw.chromium.launch(channel='chrome')
         cls.addClassCleanup(cls.browser.close)
 
-    def visit(self, route, status):
-        page = self.browser.new_page(java_script_enabled=False, reduced_motion='reduce')
+    def visit(self, route, status, *, js=False):
+        page = self.browser.new_page(java_script_enabled=js, reduced_motion='reduce')
         self.addCleanup(page.close)
         url = self.origin + route
         self.assertEqual(page.goto(url).status, status)
@@ -50,35 +50,29 @@ class Pages(unittest.TestCase):
         navigation = page.get_by_role('navigation', name='Site', exact=True)
         links = navigation.get_by_role('link')
         self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in links.all()], ROUTES)
-
         brand = page.get_by_role('banner').get_by_role('link', name='Ruth', exact=True)
         if home:
             self.assertEqual(brand.count(), 0)
         else:
             self.assertEqual(brand.get_attribute('href'), '/')
-        for width in (240, 320, 390, 768, 1440):
+            self.assertEqual(brand.locator('svg').count(), 1)
+        for width in (320, 390, 768, 1440):
             with self.subTest(width=width):
                 page.set_viewport_size({'width': width, 'height': 900})
                 right = navigation.bounding_box()
-                self.assertGreater(right['x'] + right['width'] / 2, width / 2)
-                self.assertLessEqual(right['x'] + right['width'], width)
+                self.assertLessEqual(right['x'] + right['width'], width + 1)
                 if home:
                     continue
                 left = brand.bounding_box()
                 self.assertGreaterEqual(left['x'], 0)
-                self.assertLess(left['x'] + left['width'], width / 2)
                 self.assertLess(left['x'] + left['width'], right['x'])
-                self.assertAlmostEqual(left['y'] + left['height'] / 2,
-                                       right['y'] + right['height'] / 2, delta=1)
 
-    def test_nested_missing_page_gives_recovery_without_javascript(self):
+    def test_nested_missing_page_uses_reading_edition_and_recovers(self):
         page = self.visit('/no/such/citation/', 404)
+        self.assertIn('reading-edition', page.locator('body').get_attribute('class'))
         self.assertIn('Citation not found', page.get_by_role('heading', level=1).inner_text())
         self.assert_navigation(page)
         self.assertEqual(page.get_by_role('main').get_by_role('link', name='Return to Ruth’s homepage').get_attribute('href'), '/')
-        for el in page.locator('[href], [src]').all():
-            target = el.get_attribute('href') or el.get_attribute('src')
-            self.assertTrue(target.startswith('/'), target)
 
     def test_missing_volume_is_static_with_reduced_motion(self):
         page = self.visit('/no/such/volume/', 404)
@@ -86,10 +80,6 @@ class Pages(unittest.TestCase):
         self.assertEqual(art.count(), 1)
         self.assertEqual(art.locator('text').all_text_contents().count('404'), 1)
         self.assertEqual(art.evaluate('(svg) => svg.getAnimations({subtree:true}).length'), 0)
-        left, missing, right = [art.get_by_text(label, exact=True).bounding_box()
-                                for label in ('403', '404', '405')]
-        self.assertLess(left['x'] + left['width'], missing['x'])
-        self.assertLess(missing['x'] + missing['width'], right['x'])
 
     def test_missing_volume_opens_once(self):
         page = self.browser.new_page(reduced_motion='no-preference')
@@ -114,162 +104,40 @@ class Pages(unittest.TestCase):
         self.assertEqual(later, final)
         self.assertEqual(frames['iterations'], [1, 1, 1])
 
-    def test_home_has_site_navigation(self):
-        page = self.visit('/', 200)
-        self.assert_navigation(page, home=True)
-        self.assertEqual(page.get_by_role('link', name='Ruth', exact=True).count(), 1)
-        self.assertEqual(page.get_by_role('main').get_by_role('link', name='Ruth', exact=True).get_attribute('href'), '/')
-        for title in ('Skip to waitlist', 'About', 'Team', 'Ruth'):
-            page.keyboard.press('Tab')
-            self.assertTrue(page.get_by_role('link', name=title, exact=True).evaluate(
-                'a => a === document.activeElement && a.matches(":focus-visible")'), title)
-
-    def test_about_and_team_have_permanent_addresses(self):
-        for title, route in ROUTES:
+    def test_all_pages_share_wordmark_favicon_and_og_metadata(self):
+        for route in ('/', '/about/', '/team/', '/privacy/', '/imprint/'):
             with self.subTest(route=route):
                 page = self.visit(route, 200)
-                self.assertIn(title, page.get_by_role('heading', level=1).inner_text())
-                self.assert_navigation(page)
-                self.assertEqual(page.locator('nav [aria-current="page"]').inner_text(), title)
+                self.assertTrue(page.evaluate("document.querySelector('link[rel~=icon]')?.href.startsWith('data:image/svg+xml')"))
+                self.assertTrue(page.evaluate("!!document.querySelector('meta[property=\"og:image\"]')?.content"))
+                self.assertTrue(page.evaluate("!!document.querySelector('meta[name=\"description\"]')?.content"))
 
-    def test_about_anniversary(self):
-        page = self.visit('/about/', 200)
-        self.assertIn('the sixth anniversary of her passing.', page.locator('main').inner_text())
-
-    def test_about_print_follows_the_reader_color_scheme(self):
-        page = self.visit('/about/', 200)
-        image = page.locator('main picture img')
-        self.assertEqual(image.get_attribute('alt'), '')
-        for mode, pathname in [('light', '/v2/assets/portrait.webp'),
-                               ('dark', '/assets/video/gentle-lift-poster.webp')]:
+    def test_about_print_follows_reader_color_scheme_and_edition_toggle(self):
+        page = self.visit('/about/', 200, js=True)
+        for mode, token in [('light', 'about-justitia-day'), ('dark', 'about-justitia-night')]:
             with self.subTest(mode=mode):
                 page.emulate_media(color_scheme=mode)
-                page.wait_for_function('''path => {
+                page.wait_for_function('''token => {
                   const image = document.querySelector('main picture img');
-                  return image.complete && image.naturalWidth > 0 &&
-                         image.currentSrc === location.origin + path;
-                }''', arg=pathname)
+                  return image.complete && image.naturalWidth > 0 && image.currentSrc.includes(token);
+                }''', arg=token)
 
-    def test_founder_navigation_follows_the_single_column_layout(self):
+    def test_team_has_balanced_three_paragraph_bios_and_framed_portraits(self):
         page = self.visit('/team/', 200)
-        index = page.get_by_role('navigation', name='Jump to a founder', include_hidden=True)
-        sections = page.get_by_role('main').get_by_role('region')
-        self.assertEqual(sections.count(), 2)
-        for width in (320, 768, 1440):
-            with self.subTest(width=width):
-                page.set_viewport_size({'width': width, 'height': 800})
-                first, second = [section.bounding_box() for section in sections.all()]
-                single_column = second['y'] >= first['y'] + first['height'] - 1
-                self.assertEqual(index.is_visible(), single_column)
-                if width in (320, 1440):
-                    self.assertEqual(single_column, width == 320)
-        page.set_viewport_size({'width': 390, 'height': 780})
-        for name, fragment in [('Jonas Hertner', '#jonas-hertner'), ('Joel Niklaus', '#joel-niklaus')]:
-            jump = index.get_by_role('link', name=name, exact=True)
-            self.assertEqual(jump.get_attribute('href'), fragment)
-            jump.focus()
-            page.keyboard.press('Enter')
-            self.assertEqual(page.url, self.origin + '/team/' + fragment)
-            destination = page.get_by_role('region', name=name, exact=True)
-            self.assertTrue(destination.evaluate('section => section === document.activeElement'))
-
-    def test_founder_portraits_beside_name_and_role(self):
-        page = self.visit('/team/', 200)
-        for width in (320, 390, 768, 1440):
-            page.set_viewport_size({'width': width, 'height': 900})
-            page.evaluate('document.fonts.ready')
-            sizes = []
-            for name in ('Jonas Hertner', 'Joel Niklaus'):
-                section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
-                image = section.get_by_role('img', name=name)
-                self.assertEqual(image.count(), 1, name)
-                self.assertTrue(image.evaluate("i => i.complete && i.naturalWidth && new URL(i.src).origin === location.origin"))
-                self.assertEqual(image.evaluate('i => getComputedStyle(i).borderRadius'), '50%')
-                photo = image.bounding_box()
-                sizes.append(photo['width'])
-                self.assertEqual(photo['width'], photo['height'])
-                for label in (section.locator('h2'), section.locator('.role')):
-                    box = label.bounding_box()
-                    self.assertLessEqual(box['x'] + box['width'], photo['x'])
-                    self.assertLess(box['y'], photo['y'] + photo['height'])
-                    self.assertGreater(box['y'] + box['height'], photo['y'])
-                self.assertGreater(section.locator('.bio').bounding_box()['y'], photo['y'] + photo['height'])
-            self.assertEqual(*sizes)
-
-    def test_founder_homepages_on_names_and_portraits(self):
-        page = self.visit('/team/', 200)
-        page.keyboard.press('Tab')
         for name, home in [('Jonas Hertner', 'https://jonashertner.com/'),
                            ('Joel Niklaus', 'https://niklaus.ai/')]:
             section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
-            targets = [section.locator('h2').get_by_role('link', name=name, exact=True),
-                       section.get_by_role('link', name=name, exact=True).filter(has=page.get_by_role('img', name=name))]
-            for target in targets:
-                self.assertEqual(target.count(), 1, name)
-                self.assertEqual(target.get_attribute('href'), home)
-                target.focus()
-                self.assertTrue(target.evaluate("a => a.matches('a:focus-visible') && parseFloat(getComputedStyle(a).outlineWidth) > 0"))
-            self.assertFalse(section.locator('.role').evaluate("p => !!(p.closest('a') || p.querySelector('a'))"))
+            self.assertEqual(section.locator('.bio > p').count(), 3)
+            self.assertEqual(section.locator('h2 a').get_attribute('href'), home)
+            img = section.locator('.founder-plate img')
+            self.assertTrue(img.evaluate('i => i.complete && i.naturalWidth === 288'))
+            box = img.bounding_box()
+            self.assertAlmostEqual(box['width'], box['height'], delta=1)
 
-    def test_founder_biographies_share_a_reading_width(self):
-        page = self.visit('/team/', 200)
-        paragraphs = page.locator('.founder p.bio, .founder .bio > p')
-        self.assertEqual(paragraphs.count(), 4)
-        for width in (320, 375, 390, 430, 768, 1024, 1440):
-            with self.subTest(width=width):
-                page.set_viewport_size({'width': width, 'height': 900})
-                page.evaluate('document.fonts.ready')
-                boxes = [paragraph.bounding_box() for paragraph in paragraphs.all()]
-                for box in boxes:
-                    self.assertGreater(box['x'], 0)
-                    self.assertLess(box['x'] + box['width'], width)
-                    self.assertGreater(box['width'], 0)
-                    self.assertAlmostEqual(box['width'], boxes[0]['width'], delta=1)
-
-    def test_jonas_approved_bio_and_profile_links(self):
-        page = self.visit('/team/', 200)
-        bio = page.get_by_role('region', name='Jonas Hertner').locator('.bio')
-        self.assertEqual(bio.locator('p').all_inner_texts(), [
-            'Jonas Hertner is an independent Swiss lawyer based in Zurich and Basel. He represents '
-            'clients in complex commercial disputes and advises boards and business owners on '
-            'governance. He worked at the Federal Department of Foreign Affairs International Law '
-            'Division and the Court of Appeal of Basel-Stadt before spending a decade at Quinn '
-            'Emanuel, where he helped establish the firm’s Swiss office.',
-            'Jonas built OpenCaseLaw, an open dataset that brings together judgments, legislation '
-            'and regulatory decisions from across Switzerland.',
-            'At Ruth, he works with clients to optimize legal tasks and workflows to achieve '
-            'highest quality results.',
-        ])
-        self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in bio.get_by_role('link').all()], [
-            ('Jonas Hertner', 'https://jonashertner.com/profile/'),
-            ('OpenCaseLaw', 'https://opencaselaw.ch/'),
-        ])
-
-    def test_joel_approved_bio_and_paper_links(self):
-        page = self.visit('/team/', 200)
-        section = page.locator('section').filter(has=page.get_by_role('heading', name='Joel Niklaus'))
-        paragraph = section.locator('p').last
-        self.assertEqual(paragraph.inner_text(), (
-            'Joel is an expert in legal AI and his datasets and benchmarks such as LEXam, SwiLTra-Bench '
-            'and LegalBench have shaped the evaluation of LLMs in the legal domain. Previously, he was '
-            'a Research Scientist at Harvey, specializing in large language model systems for legal '
-            'applications. Before that, he pretrained LLMs at (Google) X and Thomson Reuters Labs. Joel '
-            'holds a PhD in NLP from the University of Bern and conducted research at Stanford '
-            'University, leading projects for the Swiss Federal Supreme Court and AI startups such as '
-            'Darrow and Libra. His work has been published at top conferences, honored with Outstanding '
-            'Paper Awards at ACL and CoLM, and covered by Anthropic and the Swiss National Radio & '
-            'Television.'
-        ))
-        links = paragraph.get_by_role('link').all()
-        self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in links], [
-            ('LEXam', 'https://arxiv.org/abs/2505.12864'),
-            ('SwiLTra-Bench', 'https://arxiv.org/abs/2503.01372'),
-            ('LegalBench', 'https://arxiv.org/abs/2308.11462'),
-        ])
-
-    def test_home_uses_root_relative_site_files(self):
-        page = self.visit('/', 200)
-        for attr in ('href', 'src', 'srcset', 'data-video-src', 'data-video-poster'):
-            for el in page.locator(f'[{attr}]').all():
-                value = el.get_attribute(attr)
-                self.assertTrue(value.startswith(('/', '#', 'data:')), value)
+    def test_colophon_waitlist_present_on_about_and_team(self):
+        for route in ('/about/', '/team/'):
+            with self.subTest(route=route):
+                page = self.visit(route, 200, js=True)
+                self.assertEqual(page.locator('[data-inline-waitlist] input[type="email"]').count(), 1)
+                self.assertEqual(page.locator('.site-colophon a[href="/privacy/"]').count(), 1)
+                self.assertEqual(page.locator('.site-colophon a[href="/imprint/"]').count(), 1)

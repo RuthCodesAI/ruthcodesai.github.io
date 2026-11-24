@@ -1,12 +1,12 @@
 /**
- * Real video playback for the Ruth draft. No animation or synthetic frames are generated here.
- * Import createLivingVideo for an ASCII consumer, or use data-video-src on the body for display.
+ * Real video playback for Ruth. No synthetic frames are generated here.
+ * Import createLivingVideo for an ASCII consumer or native display.
  */
 export function createLivingVideo(options = {}) {
   const root = options.root || document.body;
   const container = options.container || root.querySelector('.art');
   const photo = options.photo || root.querySelector('.photo');
-  const button = options.button || root.querySelector('#motion-toggle');
+  const button = options.button || null;
   const visible = options.visible !== false;
   const doc = root.ownerDocument || document;
   const view = doc.defaultView || window;
@@ -28,9 +28,11 @@ export function createLivingVideo(options = {}) {
   let offscreen = false, pageSuspended = false, playPending = false, playing = false;
   let playEpoch = 0, frameHandle = 0, frameKind = '', lastFrame = -Infinity, lastMediaTime = -1;
   let resizeObserver, intersectionObserver, sourceErrors = 0, state = 'poster';
-  const stateIs = () => ({ state, configured, preview, reducedMotion: reduced.matches, playing,
+  const stateIs = () => ({
+    state, configured, preview, reducedMotion: reduced.matches, playing,
     hasFrame, hasPlayed, pausedByUser: userPaused, blocked, failed, ended, offscreen, disposed,
-    currentTime: Number.isFinite(video.currentTime) ? video.currentTime : 0 });
+    currentTime: Number.isFinite(video.currentTime) ? video.currentTime : 0,
+  });
 
   video.className = visible ? 'living-video' : 'living-video living-video-source';
   video.setAttribute('aria-hidden', 'true'); video.tabIndex = -1;
@@ -41,7 +43,6 @@ export function createLivingVideo(options = {}) {
   video.preload = 'none'; video.autoplay = false;
   video.poster = root.dataset.videoPoster || photo?.currentSrc || photo?.src || '';
   video.disablePictureInPicture = true;
-  // Use same-origin published clip paths. Canvas consumers require readable video pixels.
   video.crossOrigin = options.crossOrigin || 'anonymous';
 
   function motionPermitted() {
@@ -53,14 +54,12 @@ export function createLivingVideo(options = {}) {
     root.dataset.videoState = next;
     video.dataset.state = next;
     if (button) {
-      button.hidden = disposed || !configured || preview || ended;
-      button.disabled = disposed || !configured || preview || ended;
-      button.textContent = ended ? '' : failed ? 'Retry motion' :
-        playing || playPending ? 'Pause motion' : 'Play motion';
-      if (ended) button.removeAttribute('aria-label');
-      else button.setAttribute('aria-label', failed ? 'Retry video playback' :
-        playing || playPending ? 'Pause video motion' : 'Play video motion');
-      button.removeAttribute('aria-pressed');
+      button.hidden = disposed || !configured || preview;
+      button.disabled = disposed || !configured || preview;
+      const label = ended ? 'Replay' : failed ? 'Retry' : playing || playPending ? 'Pause' : 'Play';
+      button.textContent = label;
+      button.setAttribute('aria-label', ended ? 'Replay hero motion' :
+        failed ? 'Retry hero motion' : playing || playPending ? 'Pause hero motion' : 'Play hero motion');
     }
     const snapshot = stateIs();
     for (const listener of stateListeners) {
@@ -93,7 +92,10 @@ export function createLivingVideo(options = {}) {
       frameHandle = video.requestVideoFrameCallback((now, metadata) => {
         frameHandle = 0;
         if (!playing || !motionPermitted()) return;
-        if (now-lastFrame >= 1000/maxFrameRate) { lastFrame = Number.isFinite(lastFrame) ? now-(now-lastFrame)%(1000/maxFrameRate) : now; emitFrame(now, metadata); }
+        if (now - lastFrame >= 1000 / maxFrameRate) {
+          lastFrame = Number.isFinite(lastFrame) ? now - (now - lastFrame) % (1000 / maxFrameRate) : now;
+          emitFrame(now, metadata);
+        }
         scheduleFrame();
       });
     } else {
@@ -101,8 +103,10 @@ export function createLivingVideo(options = {}) {
       frameHandle = view.requestAnimationFrame(now => {
         frameHandle = 0;
         if (!playing || !motionPermitted()) return;
-        if (now-lastFrame >= 1000/maxFrameRate && video.currentTime !== lastMediaTime) {
-          lastFrame = Number.isFinite(lastFrame) ? now-(now-lastFrame)%(1000/maxFrameRate) : now; lastMediaTime = video.currentTime; emitFrame(now);
+        if (now - lastFrame >= 1000 / maxFrameRate && video.currentTime !== lastMediaTime) {
+          lastFrame = Number.isFinite(lastFrame) ? now - (now - lastFrame) % (1000 / maxFrameRate) : now;
+          lastMediaTime = video.currentTime;
+          emitFrame(now);
         }
         scheduleFrame();
       });
@@ -122,7 +126,8 @@ export function createLivingVideo(options = {}) {
     if (loaded) return;
     loaded = true; sourceErrors = 0; video.preload = 'auto';
     for (const source of sources) {
-      const element = doc.createElement('source'); element.src = source.src; element.type = source.type;
+      const element = doc.createElement('source');
+      element.src = source.src; element.type = source.type;
       element.addEventListener('error', () => {
         sourceErrors++;
         if (sourceErrors >= sources.length) fail();
@@ -134,7 +139,6 @@ export function createLivingVideo(options = {}) {
   function attemptPlay() {
     if (!motionPermitted() || playPending || playing) return;
     ensureLoaded();
-    // Browser-native autoplay has the same muted/inline constraints as this request.
     video.autoplay = true;
     const epoch = ++playEpoch; playPending = true; update('loading');
     let promise;
@@ -145,7 +149,6 @@ export function createLivingVideo(options = {}) {
         return;
       }
       playPending = false;
-      // A fulfilled promise can precede the playing event. That event reveals actual frames.
       if (!video.paused) {
         playing = true; hasFrame = video.readyState >= 2; hasPlayed = true;
         if (hasFrame) video.classList.add('is-ready');
@@ -167,18 +170,33 @@ export function createLivingVideo(options = {}) {
       ended ? 'ended' : hasFrame ? 'paused' : 'poster');
   }
   function play() {
-    if (disposed || !configured || preview || ended) return;
+    if (disposed || !configured || preview) return;
+    if (ended) {
+      ended = false;
+      try { video.currentTime = 0; } catch {}
+    }
     userPaused = false; manualAllowed = true; blocked = false;
     if (failed) {
       failed = false; sourceErrors = 0;
-      // load() clears the media error; keep the same reviewed source list.
       video.load();
     }
     reconcile();
   }
   function pause() {
-    if (disposed || ended) return;
-    userPaused = true; cancelPlayback(hasFrame ? 'paused' : 'poster');
+    if (disposed) return;
+    userPaused = true;
+    cancelPlayback(ended ? 'ended' : hasFrame ? 'paused' : 'poster');
+  }
+  function replay() {
+    if (disposed || !configured || preview) return;
+    ended = false;
+    userPaused = false;
+    manualAllowed = true;
+    blocked = false;
+    failed = false;
+    ensureLoaded();
+    try { video.currentTime = 0; } catch {}
+    reconcile();
   }
   function dispose() {
     if (disposed) return;
@@ -210,7 +228,11 @@ export function createLivingVideo(options = {}) {
   }, events);
   video.addEventListener('error', fail, events);
   video.addEventListener('waiting', () => { if (motionPermitted()) update('loading'); }, events);
-  button?.addEventListener('click', () => { if (playing || playPending) pause(); else play(); }, events);
+  button?.addEventListener('click', () => {
+    if (ended) replay();
+    else if (playing || playPending) pause();
+    else play();
+  }, events);
   reduced.addEventListener('change', () => { if (reduced.matches) manualAllowed = false; reconcile(); }, events);
   doc.addEventListener('visibilitychange', reconcile, events);
   view.addEventListener('pagehide', e => {
@@ -237,7 +259,7 @@ export function createLivingVideo(options = {}) {
   }
   reconcile();
   return {
-    video, play, pause, dispose,
+    video, play, pause, replay, dispose,
     get state() { return stateIs(); },
     onFrame(listener) { frameListeners.add(listener); scheduleFrame(); return () => { frameListeners.delete(listener); if (!frameListeners.size) stopFrames(); }; },
     onState(listener) { stateListeners.add(listener); listener(stateIs()); return () => stateListeners.delete(listener); },
