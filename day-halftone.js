@@ -130,7 +130,7 @@ export function createDayHalftone(options) {
   let gl = null, glExt = null, glProg = null, glQuadBuf = null, glInstBuf = null;
   let glLoc = null, ctx2d = null, backend = 'none';
 
-  const waitlistOpen = () => body.dataset.waitlistOpen === 'true';
+  const waitlistOpen = () => body.dataset.waitlistOpen === 'true' || body.dataset.menuOpen === 'true';
   const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
   const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 
@@ -1094,7 +1094,7 @@ export function createDayHalftone(options) {
   initBackend();
   resizeObserver.observe(host);
   intersectionObserver.observe(host);
-  waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open'] });
+  waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open', 'data-menu-open'] });
   document.addEventListener('visibilitychange', sync, events);
   window.addEventListener('pointermove', onPointerMove, { ...events, passive: true });
   window.addEventListener('pointerdown', onPointerDown, { ...events, passive: true });

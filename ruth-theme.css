@@ -26,26 +26,18 @@
   .art .living-video {
     opacity: 0 !important;
   }
-  /* Mobile & portrait soft cotton-paper reading veil behind the bottom lockup */
+  /* Mobile & portrait soft cotton-paper reading veil behind the bottom lockup
+     (top edge stays 100% pure now that top-left nav clears Justitia's hair). */
   .art .veil {
     background: linear-gradient(180deg,
-      rgb(255 255 255 / .46) 0%,
-      transparent 16%,
-      transparent 44%,
-      rgb(255 255 255 / .78) 60%,
+      transparent 0%,
+      transparent 48%,
+      rgb(255 255 255 / .78) 62%,
       rgb(255 255 255 / .94) 76%,
       #ffffff 100%);
   }
   :is(h1, .join)::before { background: none; }
   .join { text-shadow: none; }
-  /* Seamless top-edge cotton fade matching inner reading pages (no floating box) */
-  .top-scrim {
-    height: max(92px, calc(env(safe-area-inset-top) + 80px));
-    background: linear-gradient(180deg,
-      rgb(241 237 234 / .98) 0%,
-      rgb(241 237 234 / .86) 52%,
-      transparent 100%);
-  }
 }
 
 @media (forced-colors: active) {

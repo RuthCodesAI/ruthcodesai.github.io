@@ -23,13 +23,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Homepage floating top-right masthead with clean edge fade (no oval blur smudge) */
+/* Homepage top-left masthead aligned cleanly to the Swiss left rail (never collides with Justitia) */
 body[data-design] > .masthead {
   --nav-top: max(var(--masthead-padding), env(safe-area-inset-top));
   position: fixed;
   z-index: 6;
   inset-block-start: var(--nav-top);
-  inset-inline-end: var(--rail-right);
+  inset-inline-start: var(--rail-left);
   display: flex;
   align-items: center;
   isolation: isolate;
@@ -41,14 +41,13 @@ body[data-design] > .masthead .site-nav {
   pointer-events: auto;
 }
 
-/* Subtle top-edge veil across the upper margin so masthead links stay legible cleanly */
+body[data-design] > .masthead .site-nav a {
+  justify-content: flex-start;
+}
+
+/* Top-edge veil is no longer needed on top-left desktop nav; keep subtle only on compact screens */
 .top-scrim {
-  position: fixed;
-  z-index: 4;
-  inset: 0 0 auto;
-  height: max(84px, calc(env(safe-area-inset-top) + 74px));
-  pointer-events: none;
-  background: linear-gradient(180deg, rgb(0 0 0 / .74) 0%, rgb(0 0 0 / .34) 55%, transparent 100%);
+  display: none;
 }
 
 .art {

@@ -1,3 +1,5 @@
+import './site-menu.js?v=2026-nav1';
+
 const SERVICE_ERROR = 'We couldn’t confirm your signup. Please try again.';
 
 async function submitWaitlistEmail(form, address) {
@@ -236,6 +238,13 @@ function initHomeWaitlist() {
   window.addEventListener('resize', syncViewport);
   window.addEventListener('pageshow', syncViewport);
   syncViewport();
+
+  if (new URLSearchParams(location.search).has('waitlist')) {
+    const clean = new URL(location.href);
+    clean.searchParams.delete('waitlist');
+    history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+    requestAnimationFrame(() => openWaitlist());
+  }
 }
 
 function initInlineWaitlists() {

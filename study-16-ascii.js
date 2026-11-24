@@ -56,7 +56,7 @@ async function initializeHero(host) {
   const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
   const matteCtx = matte.getContext('2d');
 
-  const waitlistOpen = () => body.dataset.waitlistOpen === 'true';
+  const waitlistOpen = () => body.dataset.waitlistOpen === 'true' || body.dataset.menuOpen === 'true';
   const hasDecodedFilm = () => media?.videoWidth > 0 && media.currentTime > 0;
   const idleRunning = () => idleReady && !reduced.matches && !idleSleeping;
   const permitted = () => mode === 'night' && optedIn && ready && !failed && !disposed && !preview && !paused &&
@@ -603,7 +603,7 @@ async function initializeHero(host) {
     if (canvas.isConnected) canvas.hidden = true;
     try {
       if (!dayController) {
-        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-ht4');
+        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-nav1');
         const { createDayHalftone } = await dayLoading;
         if (disposed || mode !== 'day') return;
         dayController = createDayHalftone({
@@ -665,7 +665,7 @@ async function initializeHero(host) {
       intersecting = entries[0]?.isIntersecting ?? true; sync();
     }); intersectionObserver.observe(host);
     waitlistObserver = new MutationObserver(() => sync());
-    waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open'] });
+    waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open', 'data-menu-open'] });
 
     if (light.matches) await activateDay(true);
     else activateNight();
