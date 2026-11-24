@@ -1,19 +1,21 @@
 /**
- * Ruth unified photo-to-living-ASCII renderer for both Light and Dark themes:
- * - Light mode: dark printer's ink (#11100f) glyphs on #ffffff, blended via
- *   mix-blend-mode: multiply directly onto textured cotton paper (#f1edea).
- * - Dark mode: luminous ivory (#f2f0eb) glyphs on pure obsidian (#000000).
- * Reuses the DOM .photo image (zero duplicate poster download), runs idle
- * living glyphs at 12fps, pauses when the waitlist opens, and sleeps after 90s.
+ * Ruth homepage visual orchestrator:
+ * - Day mode (prefers-color-scheme: light): loads ./day-halftone.js for the
+ *   chaotic-to-crystalline 45-degree Swiss lithographic halftone simulation on
+ *   warm cotton paper (zero video bytes downloaded in Day mode).
+ * - Night mode (prefers-color-scheme: dark): plays the chiaroscuro marble film
+ *   transitioning into luminous ivory living ASCII on pure obsidian (#000000).
+ * Reuses the single DOM .photo image across both themes and switches cleanly on
+ * live OS color-scheme changes.
  */
 import { createLivingVideo } from './living-video.js';
 
 const host = document.getElementById('shader');
 if (host && document.body.dataset.study === '16') {
-  initializeAscii(host);
+  initializeHero(host);
 }
 
-async function initializeAscii(host) {
+async function initializeHero(host) {
   const body = document.body, photo = body.querySelector('.photo');
   const hasVideo = !!(body.dataset.videoSrc || body.dataset.videoWebm);
   const preview = new URLSearchParams(location.search).has('preview');
@@ -24,7 +26,9 @@ async function initializeAscii(host) {
   const abort = new AbortController(), events = { signal: abort.signal };
 
   let disposed = false, failed = false, ready = false, paused = false;
-  let intersecting = true, managedPlaying = false, pageSuspended = false, videoController;
+  let intersecting = true, managedPlaying = false, pageSuspended = false;
+  let videoController = null, dayController = null, dayLoading = null;
+  let nightInitialized = false, mode = light.matches ? 'day' : 'night';
   let idleReady = false, idleElapsed = 0, sourceLuma, sampledFilmTime = -1;
   let idlePreparing = false, interiorCells, livingStrips = [];
   let idleSleeping = false, sleepTimer = 0;
@@ -42,9 +46,8 @@ async function initializeAscii(host) {
   };
   const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
 
-  // Dynamic theme palette: ink on white (multiplied onto cotton paper) in Light; ivory on black in Dark.
-  const backgroundColor = () => light.matches ? '#ffffff' : '#000000';
-  const foregroundColor = () => light.matches ? '#11100f' : '#f2f0eb';
+  const backgroundColor = () => '#000000';
+  const foregroundColor = () => '#f2f0eb';
 
   const canvases = Array.from({ length: 6 }, () => document.createElement('canvas'));
   const [canvas, ink, mask, treatment, sample, matte] = canvases;
@@ -56,7 +59,7 @@ async function initializeAscii(host) {
   const waitlistOpen = () => body.dataset.waitlistOpen === 'true';
   const hasDecodedFilm = () => media?.videoWidth > 0 && media.currentTime > 0;
   const idleRunning = () => idleReady && !reduced.matches && !idleSleeping;
-  const permitted = () => optedIn && ready && !failed && !disposed && !preview && !paused &&
+  const permitted = () => mode === 'night' && optedIn && ready && !failed && !disposed && !preview && !paused &&
     !waitlistOpen() && !document.hidden && !pageSuspended && intersecting &&
     !reduced.matches && (!hasVideo || managedPlaying || idleRunning() || hasDecodedFilm());
 
@@ -66,7 +69,7 @@ async function initializeAscii(host) {
     const shaped = Math.max(0, Math.min(1, lifted + .20 * (lifted - .42) * (1 - Math.abs(2 * lifted - 1))));
     return shaped * smooth((luminance - .04) / .06);
   };
-  const materialAlpha = density => light.matches ? (.48 + .52 * density) : (.52 + .48 * density);
+  const materialAlpha = density => .52 + .48 * density;
 
   const contactCuts = [[90, 0], [92, .46], [94, .46], [98, 0]];
   const contactRegion = [.462, .355, .095, .145];
@@ -95,24 +98,27 @@ async function initializeAscii(host) {
 
   function scheduleIdleSleep() {
     clearTimeout(sleepTimer);
-    if (!idleReady || disposed || paused || idleSleeping) return;
+    if (mode !== 'night' || !idleReady || disposed || paused || idleSleeping) return;
     sleepTimer = setTimeout(() => {
-      if (idleReady && !disposed) { idleSleeping = true; sync(); }
+      if (mode === 'night' && idleReady && !disposed) { idleSleeping = true; sync(); }
     }, 90_000);
   }
   function wakeIdle() {
-    if (!idleReady || disposed || paused) return;
+    if (mode !== 'night' || !idleReady || disposed || paused) return;
     if (idleSleeping) { idleSleeping = false; sync(); }
     scheduleIdleSleep();
   }
 
   function reflect() {
+    if (mode !== 'night') return;
+    host.dataset.renderer = failed ? 'photograph' : 'living-ascii-study16';
     host.dataset.materialIdle = idleReady ? (permitted() ? 'running' : 'paused') : 'waiting';
     host.dataset.motion = failed ? 'fallback' : !ready ? 'loading' : permitted() ? 'running' : 'static';
   }
   function stop() { if (frame) cancelAnimationFrame(frame); frame = 0; last = 0; }
   function sync() {
     stop();
+    if (mode !== 'night') return;
     reflect();
     if (permitted()) {
       if (idleReady) scheduleIdleSleep();
@@ -147,6 +153,7 @@ async function initializeAscii(host) {
     disposed = true; ready = false; stop(); clearTimeout(sleepTimer);
     if (resizeFrame) cancelAnimationFrame(resizeFrame);
     abort.abort(); resizeObserver?.disconnect(); intersectionObserver?.disconnect(); waitlistObserver?.disconnect();
+    dayController?.dispose();
     videoController?.dispose(); canvas.remove();
     for (const item of canvases.slice(1)) item.width = item.height = 1;
   }
@@ -269,7 +276,6 @@ async function initializeAscii(host) {
     matte.width = sample.width; matte.height = sample.height;
     calibrateMarks();
     if (media?.videoWidth && (media.currentTime >= 2.74 || idleReady)) paintGlyphs(media);
-    else if (reduced.matches && image) paintGlyphs(image);
     makeMask();
   }
 
@@ -511,13 +517,12 @@ async function initializeAscii(host) {
     treatmentCtx.globalAlpha = 1;
   }
   function transition() {
-    if (preview || !optedIn) return 0;
-    // Under reduced motion, show static ink/ivory ASCII plate immediately in Light mode (or marble in Dark).
-    if (reduced.matches) return light.matches ? 1 : 0;
+    if (preview || !optedIn || reduced.matches) return 0;
     const filmTime = media?.videoWidth ? media.currentTime : 0;
     return fullAsciiPhase(filmTime);
   }
   function render() {
+    if (mode !== 'night') return;
     const bg = backgroundColor();
     const living = idleReady && !reduced.matches;
     if (!living) ctx.clearRect(0, 0, width, height);
@@ -555,22 +560,87 @@ async function initializeAscii(host) {
     }));
   }
 
-  function refreshThemePalette() {
-    document.documentElement.dataset.ruthTheme = light.matches ? 'day' : 'night';
-    if (!ready || disposed) return;
-    if (reduced.matches && image) {
-      paintGlyphs(image);
-    } else if (sourceLuma) {
-      paintInkFromLuma();
-      if (idleReady) prepareLivingCode();
-    }
+  function ensureNightInitialized() {
+    if (nightInitialized || disposed) return;
+    nightInitialized = true;
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.className = 'ascii-canvas';
+    host.append(canvas);
+    resize();
     render();
+    ready = true;
+    host.classList.add('ready');
+    host.dataset.videoSource = hasVideo ? 'configured' : 'none';
+    if (hasVideo) {
+      body.dataset.videoRenderer = 'ascii';
+      videoController = createLivingVideo({
+        root: body, visible: true, maxFrameRate: 20,
+        onFrame(value) {
+          if (!ready || disposed || mode !== 'night') return;
+          try {
+            media = value;
+            if (!idleReady && value.currentTime >= 2.74) paintGlyphs(value);
+          } catch { fallback(); }
+        },
+        onState(value) {
+          managedPlaying = value.playing || value.state === 'loading';
+          if (value.ended && ready && !disposed && !idleReady && mode === 'night') beginLivingCode();
+          if (value.failed && ready && !disposed && mode === 'night') {
+            media = image; paintGlyphs(image); render();
+          }
+          sync();
+        },
+      });
+    }
+  }
+
+  async function activateDay(fresh = true) {
+    mode = 'day';
+    document.documentElement.dataset.ruthTheme = 'day';
+    stop();
+    clearTimeout(sleepTimer);
+    videoController?.pause();
+    if (canvas.isConnected) canvas.hidden = true;
+    try {
+      if (!dayController) {
+        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-halftone');
+        const { createDayHalftone } = await dayLoading;
+        if (disposed || mode !== 'day') return;
+        dayController = createDayHalftone({
+          host, photo, image, body, reduced, mobile,
+          onFrame(detail) {
+            host.dispatchEvent(new CustomEvent('figureframe', { detail }));
+          },
+        });
+      }
+      if (!disposed && mode === 'day') {
+        dayController.start(fresh);
+      }
+    } catch {
+      if (!disposed && mode === 'day') {
+        host.dataset.renderer = 'fallback';
+      }
+    }
+  }
+
+  function activateNight() {
+    mode = 'night';
+    document.documentElement.dataset.ruthTheme = 'night';
+    dayController?.deactivate();
+    ensureNightInitialized();
+    canvas.hidden = false;
+    resize();
+    render();
+    if (videoController && !reduced.matches && !preview && !idleReady) {
+      videoController.play();
+    }
+    sync();
   }
 
   function scheduleResize() {
-    if (!ready || resizeFrame) return;
+    if (mode !== 'night' || !ready || resizeFrame) return;
     resizeFrame = requestAnimationFrame(() => {
-      resizeFrame = 0; if (!ready || disposed) return;
+      resizeFrame = 0; if (mode !== 'night' || !ready || disposed) return;
       if (!host.clientWidth || !host.clientHeight) return;
       try { resize(); render(); } catch { fallback(); }
     });
@@ -589,47 +659,31 @@ async function initializeAscii(host) {
       await image.decode();
     }
     if (disposed) return;
-    canvas.setAttribute('aria-hidden', 'true'); host.append(canvas);
-    resize(); render(); ready = true; host.classList.add('ready');
-    host.dataset.renderer = 'living-ascii-study16';
-    host.dataset.videoSource = hasVideo ? 'configured' : 'none';
+
     resizeObserver = new ResizeObserver(scheduleResize); resizeObserver.observe(host);
     intersectionObserver = new IntersectionObserver(entries => {
       intersecting = entries[0]?.isIntersecting ?? true; sync();
     }); intersectionObserver.observe(host);
     waitlistObserver = new MutationObserver(() => sync());
     waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open'] });
-    if (hasVideo) {
-      body.dataset.videoRenderer = 'ascii';
-      videoController = createLivingVideo({
-        root: body, visible: true, maxFrameRate: 20,
-        onFrame(value) {
-          if (!ready || disposed) return;
-          try {
-            media = value;
-            if (!idleReady && value.currentTime >= 2.74) paintGlyphs(value);
-          } catch { fallback(); }
-        },
-        onState(value) {
-          managedPlaying = value.playing || value.state === 'loading';
-          if (value.ended && ready && !disposed && !idleReady) beginLivingCode();
-          if (value.failed && ready && !disposed) {
-            media = image; paintGlyphs(image); render();
-          }
-          sync();
-        },
-      });
-    }
-    sync();
+
+    if (light.matches) await activateDay(true);
+    else activateNight();
   } catch { fallback(); }
 
-  light.addEventListener('change', refreshThemePalette, events);
+  light.addEventListener('change', () => {
+    if (disposed) return;
+    if (light.matches) activateDay(true);
+    else activateNight();
+  }, events);
   reduced.addEventListener('change', () => {
-    if (ready && !disposed) {
-      if (reduced.matches && image) paintGlyphs(image);
+    if (disposed) return;
+    if (mode === 'day') {
+      dayController?.onReducedChange();
+    } else if (ready) {
       render();
+      sync();
     }
-    sync();
   }, events);
   document.addEventListener('visibilitychange', sync, events);
   mobile.addEventListener('change', scheduleResize, events);

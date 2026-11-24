@@ -1,7 +1,7 @@
-/* Homepage Light & Dark unified photo-to-living-ASCII visual layer.
+/* Homepage Day (chaotic Swiss lithographic halftone) & Night (marble-to-ASCII) layers.
    Dark mode: ivory marble & living ASCII on pure #000000 obsidian.
-   Light mode: charcoal etching & printer's-ink living ASCII multiplied directly
-   onto warm cotton paper (#f1edea + paper.webp). */
+   Light mode: pure printer's ink (#11100f) chaotic halftone multiplied onto warm
+   cotton rag paper (#f1edea + paper.webp) with zero photo flash. */
 .art > picture { display: contents; }
 
 .art .photo {
@@ -17,15 +17,14 @@
     background-size: 512px 448px;
   }
   .art {
-    background: transparent;
+    background: #ffffff;
     mix-blend-mode: multiply;
   }
-  /* Render chiaroscuro marble as a refined silverpoint/graphite study on pure
-     white so multiply blends the background seamlessly into cotton paper while
-     leaving contrast headroom for the crisp printer's-ink ASCII layer. */
+  /* Hide the source chiaroscuro photo and Night video in Day mode so the
+     halftone ink droplets emerge cleanly out of blank warm cotton paper. */
   .art .photo,
   .art .living-video {
-    filter: grayscale(1) invert(1) contrast(0.68) brightness(1.22);
+    opacity: 0 !important;
   }
   /* Mobile & portrait soft cotton-paper reading veil behind the bottom lockup */
   .art .veil {
@@ -41,9 +40,10 @@
   .join { text-shadow: none; }
   /* Seamless top-edge cotton fade matching inner reading pages (no floating box) */
   .top-scrim {
+    height: max(92px, calc(env(safe-area-inset-top) + 80px));
     background: linear-gradient(180deg,
-      rgb(241 237 234 / .95) 0%,
-      rgb(241 237 234 / .72) 48%,
+      rgb(241 237 234 / .98) 0%,
+      rgb(241 237 234 / .86) 52%,
       transparent 100%);
   }
 }
