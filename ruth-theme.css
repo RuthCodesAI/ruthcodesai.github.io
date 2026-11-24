@@ -1,7 +1,7 @@
-/* Homepage Day (chaotic Swiss lithographic halftone) & Night (marble-to-ASCII) layers.
+/* Homepage Day (Swiss lithographic halftone on warm museum stock) & Night (marble-to-ASCII).
    Dark mode: ivory marble & living ASCII on pure #000000 obsidian.
-   Light mode: pure printer's ink (#11100f) chaotic halftone multiplied onto warm
-   cotton rag paper (#f1edea + paper.webp) with zero photo flash. */
+   Light mode: pure printer's ink (#11100f) orthogonal halftone multiplied onto crisp
+   warm alabaster (#f5f3ee) with zero bitmap paper grain and zero photo flash. */
 .art > picture { display: contents; }
 
 .art .photo {
@@ -13,35 +13,25 @@
 
 @media (prefers-color-scheme: light) {
   body[data-design] {
-    background: var(--ground) var(--paper-texture);
-    background-size: 512px 448px;
+    background: var(--ground);
   }
   .art {
     background: #ffffff;
     mix-blend-mode: multiply;
   }
   /* Hide the source chiaroscuro photo and Night video in Day mode so the
-     halftone ink droplets emerge cleanly out of blank warm cotton paper. */
+     halftone ink droplets emerge cleanly out of warm alabaster museum stock. */
   .art .photo,
   .art .living-video {
     opacity: 0 !important;
   }
-  /* Mobile & portrait soft cotton-paper reading veil behind the bottom lockup
-     (top edge stays 100% pure now that top-left nav clears Justitia's hair). */
+  /* The GPU halftone shader renders the continuous edge-to-edge pinpoint sheet
+     and feathered reading aura behind Ruth / headline / CTA on both desktop and mobile. */
   .art .veil {
-    background: linear-gradient(180deg,
-      transparent 0%,
-      transparent 48%,
-      rgb(255 255 255 / .78) 62%,
-      rgb(255 255 255 / .94) 76%,
-      #ffffff 100%);
+    background: none;
   }
   :is(h1, .join)::before { background: none; }
   .join { text-shadow: none; }
-  .waitlist-panel {
-    background-image: linear-gradient(rgb(250 248 244 / .86), rgb(250 248 244 / .86)), var(--paper-texture);
-    background-size: auto, 512px 448px;
-  }
 }
 
 @media (forced-colors: active) {

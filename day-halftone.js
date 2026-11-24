@@ -351,7 +351,9 @@ export function createDayHalftone(options) {
 
   function radiusFromValue(v, pitchPx, isMobilePortrait) {
     if (v <= 0.195) {
-      return isMobilePortrait ? 0 : pitchPx * (0.068 + 0.055 * (v / 0.195));
+      return isMobilePortrait
+        ? pitchPx * 0.088
+        : pitchPx * (0.068 + 0.055 * (v / 0.195));
     }
     return pitchPx * Math.min(0.468, v * 0.502);
   }
@@ -376,10 +378,15 @@ export function createDayHalftone(options) {
       if (b.bottom > maxY) maxY = b.bottom;
     }
     if (!Number.isFinite(minX)) { auraActive = 0; return; }
+    const isPortrait = isPortraitViewport();
     auraCx = (minX + maxX) * 0.5 - artRect.left;
     auraCy = (minY + maxY) * 0.5 - artRect.top;
-    auraRx = Math.max(90, (maxX - minX) * 0.72 + 44);
-    auraRy = Math.max(80, (maxY - minY) * 0.74 + 42);
+    auraRx = isPortrait
+      ? Math.max(110, (maxX - minX) * 0.64 + 28)
+      : Math.max(90, (maxX - minX) * 0.72 + 44);
+    auraRy = isPortrait
+      ? Math.max(85, (maxY - minY) * 0.62 + 24)
+      : Math.max(80, (maxY - minY) * 0.74 + 42);
     auraActive = 1;
   }
 
@@ -430,27 +437,45 @@ export function createDayHalftone(options) {
     dotPitch = Math.min(cellW, cellH);
 
     const list = [];
+    const bgPin = dotPitch * 0.088;
+    const minCol = Math.max(0, Math.floor((-dotPitch - cover.x) / cellW));
+    const maxCol = Math.min(cols - 1, Math.ceil((width + dotPitch - cover.x) / cellW));
     for (let r = 0; r < rows; r++) {
       const py = cover.y + (r + 0.5) * cellH;
       if (py < -dotPitch || py > height + dotPitch) continue;
-      for (let c = 0; c < cols; c++) {
+      for (let c = minCol; c <= maxCol; c++) {
         const px = cover.x + (c + 0.5) * cellW;
         if (px < -dotPitch || px > width + dotPitch) continue;
         const idx = r * cols + c;
         const v = data[idx] / 255;
 
-        let fade = 1;
+        let rad;
         if (isPortrait) {
           const edgeDrop = Math.abs(px / width - 0.52) * height * 0.075;
-          fade = 1 - smooth((py + edgeDrop - height * 0.44) / (height * 0.155));
-          if (fade <= 0.03) continue;
+          const fade = 1 - smooth((py + edgeDrop - height * 0.44) / (height * 0.155));
+          const fullRad = radiusFromValue(v, dotPitch, true);
+          rad = bgPin + Math.max(0, fullRad - bgPin) * Math.sqrt(fade);
+        } else {
+          rad = radiusFromValue(v, dotPitch, false);
+          if (rad < 0.28) continue;
         }
-
-        const rad = radiusFromValue(v, dotPitch, isPortrait) * Math.sqrt(fade);
-        if (!isPortrait && rad < 0.28) continue;
 
         const fig = v > 0.215 ? 1 : 0;
         list.push(idx, px, py, rad, fig, c, r);
+      }
+    }
+
+    // In portrait viewports, continue the exact orthogonal pinpoint sheet seamlessly
+    // below Justitia's bust all the way to the bottom edge (zero moire, 1:1 grid lock).
+    if (isPortrait) {
+      let extraRow = rows;
+      for (let py = cover.y + (rows + 0.5) * cellH; py <= height + dotPitch; py += cellH, extraRow++) {
+        if (py < -dotPitch) continue;
+        for (let c = minCol; c <= maxCol; c++) {
+          const px = cover.x + (c + 0.5) * cellW;
+          if (px < -dotPitch || px > width + dotPitch) continue;
+          list.push(-1, px, py, bgPin, 0, c, extraRow);
+        }
       }
     }
 
@@ -539,8 +564,10 @@ export function createDayHalftone(options) {
     const o1 = f1 * cellCount, o2 = f2 * cellCount;
     const invMax = 1 / (maxVal || 63);
 
+    const bgPin = dotPitch * 0.088;
     for (let i = 0; i < count; i++) {
       const idx = cellIdx[i];
+      if (idx < 0) continue;
       const p1 = frames[o1 + idx];
       const p2 = frames[o2 + idx];
       const v = (p1 === p2 ? p1 : (p1 + (p2 - p1) * u)) * invMax;
@@ -549,7 +576,7 @@ export function createDayHalftone(options) {
       if (isPortrait) {
         const edgeDrop = Math.abs(tx[i] / width - 0.52) * height * 0.075;
         const fade = 1 - smooth((ty[i] + edgeDrop - height * 0.44) / (height * 0.155));
-        nextR *= Math.sqrt(fade);
+        nextR = bgPin + Math.max(0, nextR - bgPin) * Math.sqrt(fade);
       }
       curR[i] = nextR;
     }
@@ -886,7 +913,7 @@ export function createDayHalftone(options) {
     gl.uniform1f(glLoc.dpr, dpr);
     gl.uniform3f(glLoc.ink, INK_R, INK_G, INK_B);
     gl.uniform4f(glLoc.aura, auraCx, auraCy, auraRx, auraRy);
-    gl.uniform1f(glLoc.auraOn, auraActive && !isPortraitViewport() ? 1.0 : 0.0);
+    gl.uniform1f(glLoc.auraOn, auraActive ? 1.0 : 0.0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, glQuadBuf);
     gl.enableVertexAttribArray(glLoc.quad);
