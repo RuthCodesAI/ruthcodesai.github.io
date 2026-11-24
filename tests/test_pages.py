@@ -114,6 +114,11 @@ class Pages(unittest.TestCase):
 
     def test_about_print_follows_reader_color_scheme_and_edition_toggle(self):
         page = self.visit('/about/', 200, js=True)
+        self.assertEqual(
+            page.get_by_role('heading', level=1).inner_text().strip(),
+            'We act as outside counsel and build legal infrastructure within our clients’ organizations.',
+        )
+        self.assertEqual(page.locator('p.folio').inner_text().strip(), 'About Ruth')
         for mode, token in [('light', 'about-justitia-day'), ('dark', 'about-justitia-night')]:
             with self.subTest(mode=mode):
                 page.emulate_media(color_scheme=mode)
@@ -128,6 +133,7 @@ class Pages(unittest.TestCase):
                            ('Joel Niklaus', 'https://niklaus.ai/')]:
             section = page.locator('section').filter(has=page.get_by_role('heading', name=name))
             self.assertEqual(section.locator('.bio > p').count(), 3)
+            self.assertTrue(section.locator('.bio > p').first.inner_text().startswith(f'{name} is '))
             self.assertEqual(section.locator('h2 a').get_attribute('href'), home)
             img = section.locator('.founder-plate img')
             self.assertTrue(img.evaluate('i => i.complete && i.naturalWidth === 288'))
@@ -139,5 +145,7 @@ class Pages(unittest.TestCase):
             with self.subTest(route=route):
                 page = self.visit(route, 200, js=True)
                 self.assertEqual(page.locator('[data-inline-waitlist] input[type="email"]').count(), 1)
-                self.assertEqual(page.locator('.site-colophon a[href="/privacy/"]').count(), 1)
+                privacy = page.locator('.site-colophon .colophon-links a[href="/privacy/"]')
+                self.assertEqual(privacy.count(), 1)
+                self.assertGreaterEqual(privacy.bounding_box()['height'], 44)
                 self.assertEqual(page.locator('.site-colophon a[href="/imprint/"]').count(), 0)

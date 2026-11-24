@@ -85,18 +85,11 @@
   column-gap: clamp(2.25rem, 6vw, 6.25rem);
 }
 
-.about h1 {
-  margin: 0 0 clamp(1.1rem, 2.2vw, 1.9rem);
-  color: var(--quiet);
-  font: 500 .78rem/1.4 var(--mono);
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
-
 .about .mission {
   margin: 0;
   font-size: clamp(2.15rem, 4.75vw, 4.85rem);
   line-height: 1.03;
+  font-weight: 400;
   letter-spacing: -.042em;
   text-wrap: balance;
 }
@@ -152,15 +145,15 @@
 }
 
 .principle h2 {
-  margin: 0 0 .55rem;
-  font: 460 clamp(1.18rem, 1.35vw, 1.38rem)/1.2 var(--serif);
-  letter-spacing: -.022em;
+  margin: 0 0 .65rem;
+  font: 440 clamp(1.28rem, 1.55vw, 1.52rem)/1.2 var(--serif);
+  letter-spacing: -.024em;
 }
 
 .principle p {
   margin: 0;
-  color: var(--quiet);
-  font: 430 .96rem/1.55 var(--sans);
+  color: color-mix(in srgb, var(--ink) 82%, var(--ground) 18%);
+  font: 400 clamp(1.06rem, 1.22vw, 1.18rem)/1.48 var(--serif);
   max-width: 34ch;
 }
 
@@ -287,7 +280,7 @@
 
 .inline-waitlist-entry input::placeholder {
   color: var(--quiet);
-  opacity: .68;
+  opacity: .46;
 }
 
 .inline-waitlist-submit {
@@ -400,14 +393,16 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
-  gap: .35rem 1.15rem;
+  gap: .35rem 1.25rem;
   color: var(--quiet);
-  font: 450 .86rem/1.4 var(--sans);
+  font: 460 .92rem/1.4 var(--sans);
 }
 
 .colophon-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   text-decoration: none;
-  padding-block: 6px;
 }
 
 .colophon-links a:is(:hover, :focus-visible) {

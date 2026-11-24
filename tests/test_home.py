@@ -10,7 +10,7 @@ from playwright.sync_api import expect, sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HEADLINE = 'Building the infrastructure for next-generation legal work.'
+HEADLINE = 'Outside counsel that builds your legal infrastructure.'
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -54,13 +54,10 @@ class Home(unittest.TestCase):
                         page.emulate_media(color_scheme=scheme, reduced_motion='reduce')
                     day = scheme == 'light'
                     theme = 'day' if day else 'night'
-                    visible, hidden = ('.ruth-day-art', '.art') if day else ('.art', '.ruth-day-art')
                     expect(page.locator('html')).to_have_attribute('data-ruth-theme', theme)
-                    expect(page.locator(visible)).to_be_visible()
-                    expect(page.locator(hidden)).to_be_hidden()
+                    expect(page.locator('.art')).to_be_visible()
                     page.wait_for_function(
-                        'selector => { const i = document.querySelector(selector + " img"); return i && i.complete && i.naturalWidth >= 820; }',
-                        arg=visible)
+                        '() => { const i = document.querySelector(".art img"); return i && i.complete && i.naturalWidth === 1916; }')
                     self.assertTrue(page.locator('video').evaluate_all(
                         'videos => videos.every(video => video.paused && video.currentTime === 0)'))
                     expect(page.locator('#edition-toggle')).to_have_count(0)
@@ -71,12 +68,12 @@ class Home(unittest.TestCase):
                 page.close()
 
     def test_responsive_lockup_clears_the_moving_lips_in_both_editions(self):
-        for scheme, photo in [('dark', '.art img'), ('light', '.ruth-day-art img')]:
+        for scheme in ('dark', 'light'):
+            photo = '.art img'
             page = self.new_page(color_scheme=scheme, reduced_motion='reduce')
             page.goto(self.url)
             page.wait_for_function(
-                'selector => { const i = document.querySelector(selector); return i && i.complete && i.naturalWidth >= 820; }',
-                arg=photo)
+                '() => { const i = document.querySelector(".art img"); return i && i.complete && i.naturalWidth === 1916; }')
             headline = page.get_by_role('heading', level=1, name=HEADLINE, exact=True)
             cta = page.locator('#signup-cta')
             for w, h in [(240, 320), (320, 568), (350, 349), (390, 844), (568, 320), (844, 390),

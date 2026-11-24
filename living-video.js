@@ -1,12 +1,12 @@
 /**
  * Real video playback for Ruth. No synthetic frames are generated here.
- * Import createLivingVideo for an ASCII consumer or native display.
+ * The DOM .photo element behind the video acts as the first-paint poster so
+ * the browser never fetches the poster image twice.
  */
 export function createLivingVideo(options = {}) {
   const root = options.root || document.body;
   const container = options.container || root.querySelector('.art');
   const photo = options.photo || root.querySelector('.photo');
-  const button = options.button || null;
   const visible = options.visible !== false;
   const doc = root.ownerDocument || document;
   const view = doc.defaultView || window;
@@ -41,7 +41,6 @@ export function createLivingVideo(options = {}) {
   video.setAttribute('webkit-playsinline', '');
   video.controls = false; video.loop = root.dataset.videoLoop === 'true';
   video.preload = 'none'; video.autoplay = false;
-  video.poster = root.dataset.videoPoster || photo?.currentSrc || photo?.src || '';
   video.disablePictureInPicture = true;
   video.crossOrigin = options.crossOrigin || 'anonymous';
 
@@ -53,14 +52,6 @@ export function createLivingVideo(options = {}) {
     state = next;
     root.dataset.videoState = next;
     video.dataset.state = next;
-    if (button) {
-      button.hidden = disposed || !configured || preview;
-      button.disabled = disposed || !configured || preview;
-      const label = ended ? 'Replay' : failed ? 'Retry' : playing || playPending ? 'Pause' : 'Play';
-      button.textContent = label;
-      button.setAttribute('aria-label', ended ? 'Replay hero motion' :
-        failed ? 'Retry hero motion' : playing || playPending ? 'Pause hero motion' : 'Play hero motion');
-    }
     const snapshot = stateIs();
     for (const listener of stateListeners) {
       try { listener(snapshot); } catch (error) { view.console?.warn('Video state listener failed', error); }
@@ -176,27 +167,13 @@ export function createLivingVideo(options = {}) {
       try { video.currentTime = 0; } catch {}
     }
     userPaused = false; manualAllowed = true; blocked = false;
-    if (failed) {
-      failed = false; sourceErrors = 0;
-      video.load();
-    }
+    if (failed) { failed = false; sourceErrors = 0; video.load(); }
     reconcile();
   }
   function pause() {
     if (disposed) return;
     userPaused = true;
     cancelPlayback(ended ? 'ended' : hasFrame ? 'paused' : 'poster');
-  }
-  function replay() {
-    if (disposed || !configured || preview) return;
-    ended = false;
-    userPaused = false;
-    manualAllowed = true;
-    blocked = false;
-    failed = false;
-    ensureLoaded();
-    try { video.currentTime = 0; } catch {}
-    reconcile();
   }
   function dispose() {
     if (disposed) return;
@@ -228,11 +205,6 @@ export function createLivingVideo(options = {}) {
   }, events);
   video.addEventListener('error', fail, events);
   video.addEventListener('waiting', () => { if (motionPermitted()) update('loading'); }, events);
-  button?.addEventListener('click', () => {
-    if (ended) replay();
-    else if (playing || playPending) pause();
-    else play();
-  }, events);
   reduced.addEventListener('change', () => { if (reduced.matches) manualAllowed = false; reconcile(); }, events);
   doc.addEventListener('visibilitychange', reconcile, events);
   view.addEventListener('pagehide', e => {
@@ -259,14 +231,9 @@ export function createLivingVideo(options = {}) {
   }
   reconcile();
   return {
-    video, play, pause, replay, dispose,
+    video, play, pause, dispose,
     get state() { return stateIs(); },
     onFrame(listener) { frameListeners.add(listener); scheduleFrame(); return () => { frameListeners.delete(listener); if (!frameListeners.size) stopFrames(); }; },
     onState(listener) { stateListeners.add(listener); listener(stateIs()); return () => stateListeners.delete(listener); },
   };
-}
-
-if (typeof document !== 'undefined' && document.body?.dataset.videoSrc &&
-    document.body.dataset.videoRenderer !== 'ascii' && document.body.dataset.videoAutoinit !== 'false') {
-  createLivingVideo();
 }

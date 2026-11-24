@@ -1,29 +1,29 @@
 /**
- * Ruth Night (Code) edition renderer:
- * One restrained fingertip-contact ASCII hint, then a full material transition
- * from monochrome marble into calibrated, ink-matched living glyphs.
- * Idle evolution runs at 12fps and sleeps automatically while the waitlist is
- * open or after 90 seconds of inactivity to respect battery life.
+ * Ruth unified photo-to-living-ASCII renderer for both Light and Dark themes:
+ * - Light mode: dark printer's ink (#11100f) glyphs on #ffffff, blended via
+ *   mix-blend-mode: multiply directly onto textured cotton paper (#f1edea).
+ * - Dark mode: luminous ivory (#f2f0eb) glyphs on pure obsidian (#000000).
+ * Reuses the DOM .photo image (zero duplicate poster download), runs idle
+ * living glyphs at 12fps, pauses when the waitlist opens, and sleeps after 90s.
  */
+import { createLivingVideo } from './living-video.js';
+
 const host = document.getElementById('shader');
-let controllerPromise;
-
-export function getNightController() {
-  return controllerPromise;
-}
-
 if (host && document.body.dataset.study === '16') {
-  controllerPromise = initializeAscii(host);
+  initializeAscii(host);
 }
 
 async function initializeAscii(host) {
   const body = document.body, photo = body.querySelector('.photo');
   const hasVideo = !!(body.dataset.videoSrc || body.dataset.videoWebm);
   const preview = new URLSearchParams(location.search).has('preview');
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)'), mobile = matchMedia('(max-width:650px)');
+  const light = matchMedia('(prefers-color-scheme: light)');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const mobile = matchMedia('(max-width:650px)');
   const optedIn = body.dataset.animate === 'true';
   const abort = new AbortController(), events = { signal: abort.signal };
-  let disposed = false, failed = false, ready = false, paused = false, manualAllowed = false;
+
+  let disposed = false, failed = false, ready = false, paused = false;
   let intersecting = true, managedPlaying = false, pageSuspended = false, videoController;
   let idleReady = false, idleElapsed = 0, sourceLuma, sampledFilmTime = -1;
   let idlePreparing = false, interiorCells, livingStrips = [];
@@ -32,19 +32,19 @@ async function initializeAscii(host) {
   let resizeObserver, intersectionObserver, waitlistObserver;
   let width = 1, height = 1, dpr = 1, columns = 1, rows = 1, cell = 5.5, row = 7.7;
   let cover = { x: 0, y: 0, width: 1, height: 1 };
-  const stateListeners = new Set();
 
   const ramp = ' .,:;=+itIH0#@';
   const shapes = { 5: 'csov', 6: 'xnuk' };
   const inkRatios = new Map();
-  const color = (value, fallback) => /^#[\da-f]{6}$/i.test(value || '') ? value : fallback;
-  const background = color(body.dataset.asciiBack, '#000000');
-  const foreground = color(body.dataset.asciiFront, '#f2f0eb');
   const bounded = (value, fallback, min, max) => {
     const n = Number(value);
     return value !== undefined && value !== '' && Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
   };
   const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+
+  // Dynamic theme palette: ink on white (multiplied onto cotton paper) in Light; ivory on black in Dark.
+  const backgroundColor = () => light.matches ? '#ffffff' : '#000000';
+  const foregroundColor = () => light.matches ? '#11100f' : '#f2f0eb';
 
   const canvases = Array.from({ length: 6 }, () => document.createElement('canvas'));
   const [canvas, ink, mask, treatment, sample, matte] = canvases;
@@ -55,22 +55,19 @@ async function initializeAscii(host) {
 
   const waitlistOpen = () => body.dataset.waitlistOpen === 'true';
   const hasDecodedFilm = () => media?.videoWidth > 0 && media.currentTime > 0;
-  const idleRunning = () => idleReady && (!reduced.matches || manualAllowed) && !idleSleeping;
+  const idleRunning = () => idleReady && !reduced.matches && !idleSleeping;
   const permitted = () => optedIn && ready && !failed && !disposed && !preview && !paused &&
     !waitlistOpen() && !document.hidden && !pageSuspended && intersecting &&
-    (!reduced.matches || manualAllowed || hasVideo && managedPlaying) &&
-    (!hasVideo || managedPlaying || idleRunning() || hasDecodedFilm());
+    !reduced.matches && (!hasVideo || managedPlaying || idleRunning() || hasDecodedFilm());
 
-  // Clean black point, smooth shadow toe, open highlights.
   const materialDensity = luminance => {
     const normalized = Math.max(0, Math.min(1, (luminance - .04) / .96));
     const lifted = Math.pow(normalized, .62);
     const shaped = Math.max(0, Math.min(1, lifted + .20 * (lifted - .42) * (1 - Math.abs(2 * lifted - 1))));
     return shaped * smooth((luminance - .04) / .06);
   };
-  const materialAlpha = density => .52 + .48 * density;
+  const materialAlpha = density => light.matches ? (.48 + .52 * density) : (.52 + .48 * density);
 
-  // One restrained exposure at fingertip/blindfold contact (frames 90..98 @ 30fps).
   const contactCuts = [[90, 0], [92, .46], [94, .46], [98, 0]];
   const contactRegion = [.462, .355, .095, .145];
   const fullAsciiPhase = filmTime => smooth((filmTime - 142 / 30) / 1.80);
@@ -86,7 +83,7 @@ async function initializeAscii(host) {
     return Math.min(1, materialAlpha(density) * (inkRatios.get(glyph) || 1));
   }
   function contactHint() {
-    if (preview || (reduced.matches && !manualAllowed) || !optedIn || idleReady || !media?.videoWidth) return 0;
+    if (preview || reduced.matches || !optedIn || idleReady || !media?.videoWidth) return 0;
     const f = media.currentTime * 30;
     if (f <= contactCuts[0][0] || f >= contactCuts[contactCuts.length - 1][0]) return 0;
     for (let i = 1; i < contactCuts.length; i++) {
@@ -100,38 +97,18 @@ async function initializeAscii(host) {
     clearTimeout(sleepTimer);
     if (!idleReady || disposed || paused || idleSleeping) return;
     sleepTimer = setTimeout(() => {
-      if (idleReady && !disposed) {
-        idleSleeping = true;
-        sync();
-      }
+      if (idleReady && !disposed) { idleSleeping = true; sync(); }
     }, 90_000);
   }
   function wakeIdle() {
     if (!idleReady || disposed || paused) return;
-    if (idleSleeping) {
-      idleSleeping = false;
-      sync();
-    }
+    if (idleSleeping) { idleSleeping = false; sync(); }
     scheduleIdleSleep();
   }
 
-  function snapshotState() {
-    const vState = videoController?.state;
-    const active = permitted() || !!vState?.playing;
-    return {
-      ready, failed, disposed, paused, idleReady, idleSleeping, active,
-      ended: !!vState?.ended,
-      playing: !!vState?.playing,
-      reducedMotion: reduced.matches,
-    };
-  }
   function reflect() {
     host.dataset.materialIdle = idleReady ? (permitted() ? 'running' : 'paused') : 'waiting';
     host.dataset.motion = failed ? 'fallback' : !ready ? 'loading' : permitted() ? 'running' : 'static';
-    const snap = snapshotState();
-    for (const listener of stateListeners) {
-      try { listener(snap); } catch {}
-    }
   }
   function stop() { if (frame) cancelAnimationFrame(frame); frame = 0; last = 0; }
   function sync() {
@@ -146,7 +123,6 @@ async function initializeAscii(host) {
     frame = 0;
     if (!permitted()) { last = 0; reflect(); return; }
     if (!last) last = now;
-    // 30fps during the blindfold-lift film; 12fps during gentle idle living code (~60% less CPU/GPU).
     const stepMs = idleRunning() ? (1000 / 12 - .25) : (1000 / 30 - .25);
     if (now - last >= stepMs) {
       const delta = Math.min(now - last, 200) / 1000;
@@ -155,7 +131,7 @@ async function initializeAscii(host) {
         if (hasDecodedFilm() && media.ended && !idleReady) { beginLivingCode(); reflect(); }
         if (idleRunning()) idleElapsed += delta;
         elapsed += delta;
-        render(elapsed);
+        render();
       } catch { fallback(); return; }
     }
     frame = requestAnimationFrame(tick);
@@ -173,7 +149,6 @@ async function initializeAscii(host) {
     abort.abort(); resizeObserver?.disconnect(); intersectionObserver?.disconnect(); waitlistObserver?.disconnect();
     videoController?.dispose(); canvas.remove();
     for (const item of canvases.slice(1)) item.width = item.height = 1;
-    stateListeners.clear();
   }
   function sourceSize(value) {
     return { width: value.videoWidth || value.naturalWidth, height: value.videoHeight || value.naturalHeight };
@@ -245,10 +220,17 @@ async function initializeAscii(host) {
       if (alpha < 1) interiorCells[bucket] = 0;
     }
     matteCtx.putImageData(samples, 0, 0);
+    paintInkFromLuma();
+    sampledFilmTime = value.videoWidth ? value.currentTime : -1;
+    if (idleReady) prepareLivingCode();
+    host.dataset.asciiColumns = String(columns); host.dataset.asciiRows = String(rows);
+  }
+  function paintInkFromLuma() {
+    if (!sourceLuma) return;
     inkCtx.clearRect(0, 0, width, height);
     inkCtx.textAlign = 'center'; inkCtx.textBaseline = 'middle';
     inkCtx.font = '500 ' + (row * .96) + 'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
-    inkCtx.fillStyle = foreground;
+    inkCtx.fillStyle = foregroundColor();
     for (let y = 0; y < rows; y++) for (let x = 0; x < columns; x++) {
       const index = y * columns + x;
       const density = materialDensity(sourceLuma[index]);
@@ -262,9 +244,6 @@ async function initializeAscii(host) {
     inkCtx.globalCompositeOperation = 'destination-in';
     inkCtx.drawImage(matte, 0, 0, columns * cell, rows * row);
     inkCtx.globalCompositeOperation = 'source-over';
-    sampledFilmTime = value.videoWidth ? value.currentTime : -1;
-    if (idleReady) prepareLivingCode();
-    host.dataset.asciiColumns = String(columns); host.dataset.asciiRows = String(rows);
   }
   function makeMask() {
     if (idleReady) return;
@@ -290,6 +269,7 @@ async function initializeAscii(host) {
     matte.width = sample.width; matte.height = sample.height;
     calibrateMarks();
     if (media?.videoWidth && (media.currentTime >= 2.74 || idleReady)) paintGlyphs(media);
+    else if (reduced.matches && image) paintGlyphs(image);
     makeMask();
   }
 
@@ -341,6 +321,7 @@ async function initializeAscii(host) {
   }
   function cacheLivingCode(simple = false) {
     if (!sourceLuma) throw new Error('Missing ASCII source');
+    const bg = backgroundColor(), fg = foregroundColor();
     const chars = ramp, candidates = [];
     const hash = (x, y) => { const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); };
     const sampleAt = (x, y) => sourceLuma[Math.max(0, Math.min(rows - 1, y)) * columns + Math.max(0, Math.min(columns - 1, x))];
@@ -358,7 +339,7 @@ async function initializeAscii(host) {
     const gw = cell * dpr, gh = row * dpr, sw = Math.ceil(gw) + 4, sh = Math.ceil(gh) + 4;
     const sheet = document.createElement('canvas'); sheet.width = sw * palette.length; sheet.height = sh;
     const sc = sheet.getContext('2d', { willReadFrequently: true }); if (!sc) throw new Error('Glyph raster unavailable');
-    sc.font = font; sc.textAlign = 'center'; sc.textBaseline = 'middle'; sc.fillStyle = foreground;
+    sc.font = font; sc.textAlign = 'center'; sc.textBaseline = 'middle'; sc.fillStyle = fg;
     for (let i = 0; i < palette.length; i++) {
       sc.save(); sc.setTransform(dpr, 0, 0, dpr, 0, 0); sc.beginPath(); sc.rect((i * sw + 2) / dpr, 2 / dpr, cell, row); sc.clip();
       sc.font = font; sc.fillText(palette[i], (i * sw + 2) / dpr + cell * .5, 2 / dpr + row * .5, cell * 1.08); sc.restore();
@@ -409,7 +390,6 @@ async function initializeAscii(host) {
       if (pool.length < 2) continue;
       item.forms = pool; item.targetCoverage = target; changing.push(item);
     }
-    const eligibleCount = changing.length;
     if (changing.length > budget) {
       const bins = new Map();
       for (const item of changing) {
@@ -442,19 +422,18 @@ async function initializeAscii(host) {
     while (groups.length > 300) { if (tileColumns <= tileRows * 2) tileColumns += 4; else tileRows += 2; groups = groupCells(); }
     livingStrips = groups;
     const stateCount = 8;
-    maskCtx.globalAlpha = 1; maskCtx.fillStyle = background; maskCtx.fillRect(0, 0, width, height);
+    maskCtx.globalAlpha = 1; maskCtx.fillStyle = bg; maskCtx.fillRect(0, 0, width, height);
     maskCtx.drawImage(ink, 0, 0, ink.width, ink.height, 0, 0, width, height);
     const base = maskCtx.getImageData(0, 0, mask.width, mask.height);
     const basePixels = new Uint32Array(base.data.buffer);
     const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-    const front = rgb(foreground), back = rgb(background);
+    const front = rgb(fg), back = rgb(bg);
     const colors = new Uint8ClampedArray(256 * 4);
     for (let alpha = 0; alpha < 256; alpha++) {
       for (let c = 0; c < 3; c++) colors[alpha * 4 + c] = back[c] + (front[c] - back[c]) * alpha / 255;
       colors[alpha * 4 + 3] = 255;
     }
     const tones = new Uint32Array(colors.buffer);
-    let atlasBytes = 0;
     for (const tile of groups) {
       const left = Math.round(tile.column * cell * dpr), top = Math.round(tile.row * row * dpr);
       const right = Math.min(mask.width, Math.round((tile.column + tileColumns) * cell * dpr));
@@ -481,7 +460,6 @@ async function initializeAscii(host) {
       sprite.width = tw * stateCount; sprite.height = th; tile.sprite = sprite;
       const spriteCtx = sprite.getContext('2d'), rgba = spriteCtx.createImageData(sprite.width, th);
       const out = new Uint32Array(rgba.data.buffer);
-      atlasBytes += out.byteLength;
       for (let state = 0; state < stateCount; state++) {
         const sx = state * tw;
         tile.tiles.push({ sx, sy: 0 });
@@ -511,10 +489,6 @@ async function initializeAscii(host) {
     sheet.width = sheet.height = 1;
     host.dataset.materialMode = simple ? 'glyph-tiles-simple' : 'glyph-tiles';
     host.dataset.materialBackend = 'canvas';
-    host.dataset.materialChangingCells = String(changing.length);
-    host.dataset.materialGroups = String(groups.length);
-    host.dataset.materialAtlasBytes = String(atlasBytes);
-    host.dataset.materialEligibleCells = String(eligibleCount);
   }
   function renderLivingCode() {
     if (!idleReady) return;
@@ -537,23 +511,26 @@ async function initializeAscii(host) {
     treatmentCtx.globalAlpha = 1;
   }
   function transition() {
-    if (preview || (reduced.matches && !manualAllowed && !idleReady) || !optedIn) return 0;
+    if (preview || !optedIn) return 0;
+    // Under reduced motion, show static ink/ivory ASCII plate immediately in Light mode (or marble in Dark).
+    if (reduced.matches) return light.matches ? 1 : 0;
     const filmTime = media?.videoWidth ? media.currentTime : 0;
     return fullAsciiPhase(filmTime);
   }
   function render() {
-    const living = idleReady;
+    const bg = backgroundColor();
+    const living = idleReady && !reduced.matches;
     if (!living) ctx.clearRect(0, 0, width, height);
     treatmentCtx.globalCompositeOperation = 'source-over'; treatmentCtx.globalAlpha = 1;
     if (living) renderLivingCode();
     else {
-      treatmentCtx.fillStyle = background; treatmentCtx.fillRect(0, 0, width, height);
+      treatmentCtx.fillStyle = bg; treatmentCtx.fillRect(0, 0, width, height);
       treatmentCtx.drawImage(ink, 0, 0, ink.width, ink.height, 0, 0, width, height);
     }
-    if (idleReady) {
+    if (living) {
       const arrival = smooth(idleElapsed / 2.4);
       if (arrival < 1) {
-        ctx.fillStyle = background; ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
         ctx.drawImage(ink, 0, 0, ink.width, ink.height, 0, 0, width, height);
       }
       ctx.globalAlpha = arrival;
@@ -578,6 +555,18 @@ async function initializeAscii(host) {
     }));
   }
 
+  function refreshThemePalette() {
+    document.documentElement.dataset.ruthTheme = light.matches ? 'day' : 'night';
+    if (!ready || disposed) return;
+    if (reduced.matches && image) {
+      paintGlyphs(image);
+    } else if (sourceLuma) {
+      paintInkFromLuma();
+      if (idleReady) prepareLivingCode();
+    }
+    render();
+  }
+
   function scheduleResize() {
     if (!ready || resizeFrame) return;
     resizeFrame = requestAnimationFrame(() => {
@@ -587,43 +576,19 @@ async function initializeAscii(host) {
     });
   }
 
-  function playMotion() {
-    if (disposed || failed || preview) return;
-    paused = false;
-    manualAllowed = true;
-    idleSleeping = false;
-    if (idleReady) {
-      sync();
-      return;
-    }
-    videoController?.play();
-    sync();
-  }
-  function pauseMotion() {
-    if (disposed) return;
-    paused = true;
-    clearTimeout(sleepTimer);
-    videoController?.pause();
-    sync();
-  }
-  function replayMotion() {
-    if (disposed || failed || preview) return;
-    paused = false;
-    manualAllowed = true;
-    idleReady = false;
-    idleSleeping = false;
-    idleElapsed = 0;
-    livingStrips = [];
-    makeMask();
-    videoController?.replay();
-    sync();
-  }
+  document.documentElement.dataset.ruthTheme = light.matches ? 'day' : 'night';
 
   try {
     if (!ctx || !inkCtx || !maskCtx || !treatmentCtx || !sampleCtx || !matteCtx) throw new Error('Canvas unavailable');
-    image = new Image(); image.decoding = 'async';
-    image.src = body.dataset.videoPoster || photo?.currentSrc || photo?.src || '/assets/video/gentle-lift-poster.webp';
-    await image.decode(); if (disposed) return;
+    if (photo) {
+      if (!photo.complete || !photo.naturalWidth) await photo.decode();
+      image = photo;
+    } else {
+      image = new Image(); image.crossOrigin = 'anonymous'; image.decoding = 'async';
+      image.src = body.dataset.videoPoster || '/assets/video/gentle-lift-poster.webp?v=8dc1fe6f9c';
+      await image.decode();
+    }
+    if (disposed) return;
     canvas.setAttribute('aria-hidden', 'true'); host.append(canvas);
     resize(); render(); ready = true; host.classList.add('ready');
     host.dataset.renderer = 'living-ascii-study16';
@@ -636,8 +601,6 @@ async function initializeAscii(host) {
     waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open'] });
     if (hasVideo) {
       body.dataset.videoRenderer = 'ascii';
-      const { createLivingVideo } = await import('./living-video.js');
-      if (disposed) return;
       videoController = createLivingVideo({
         root: body, visible: true, maxFrameRate: 20,
         onFrame(value) {
@@ -660,9 +623,12 @@ async function initializeAscii(host) {
     sync();
   } catch { fallback(); }
 
+  light.addEventListener('change', refreshThemePalette, events);
   reduced.addEventListener('change', () => {
-    if (reduced.matches) manualAllowed = false;
-    if (ready && !disposed) render();
+    if (ready && !disposed) {
+      if (reduced.matches && image) paintGlyphs(image);
+      render();
+    }
     sync();
   }, events);
   document.addEventListener('visibilitychange', sync, events);
@@ -670,18 +636,4 @@ async function initializeAscii(host) {
   ['pointerdown', 'keydown'].forEach(type => window.addEventListener(type, wakeIdle, { ...events, passive: true }));
   window.addEventListener('pagehide', e => { pageSuspended = true; if (e.persisted) sync(); else dispose(); }, events);
   window.addEventListener('pageshow', e => { if (e.persisted && !disposed) { pageSuspended = false; sync(); } }, events);
-
-  return {
-    play: playMotion,
-    pause: pauseMotion,
-    replay: replayMotion,
-    dispose,
-    get video() { return videoController?.video || null; },
-    get state() { return snapshotState(); },
-    onState(listener) {
-      stateListeners.add(listener);
-      listener(snapshotState());
-      return () => stateListeners.delete(listener);
-    },
-  };
 }

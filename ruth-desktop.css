@@ -1,29 +1,16 @@
 /* Desktop Swiss left-rail hero composition:
    Aligns the Ruth wordmark, statement, and waitlist directly to the exact
    left rail (--rail-left) shared with /about/ and /team/, giving Justitia's
-   rising hand and face wider breathing room on the right. */
+   rising hand and face wide breathing room on the right. */
 @media (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3),
        (min-width: 1024px) and (min-aspect-ratio: 4/3) {
   body {
     --art-height: var(--view-height);
   }
 
-  /* Shift horizontal crop slightly left so Justitia sits further right,
-     clearing the left-rail lockup cleanly during her blindfold-lift gesture. */
   .art .photo,
   .art .living-video {
     object-position: 10% var(--side-crop-y, 56.25%) !important;
-  }
-
-  .ruth-day-art {
-    --day-x: 10%;
-    --day-y: var(--side-crop-y, 56.25%);
-    /* Directional left-rail paper calm rather than a circular hole over her hand. */
-    mask-image: linear-gradient(90deg,
-      rgb(0 0 0 / .08) 0%,
-      rgb(0 0 0 / .16) 22%,
-      rgb(0 0 0 / .72) 39%,
-      black 53%);
   }
 
   .art .veil {
@@ -34,11 +21,21 @@
       transparent 55%);
   }
 
+  @media (prefers-color-scheme: light) {
+    .art .veil {
+      background: linear-gradient(90deg,
+        rgb(255 255 255 / .92) 0%,
+        rgb(255 255 255 / .80) 24%,
+        rgb(255 255 255 / .30) 40%,
+        transparent 54%);
+    }
+  }
+
   .page .hero-lockup {
     --brand-width: min(29vw, 39dvh, 390px);
     inset: 0 auto 0 0;
     display: grid;
-    width: min(46vw, calc(var(--rail-left) + 460px));
+    width: min(46vw, calc(var(--rail-left) + 480px));
     padding: 0 0 0 var(--rail-left);
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 17% minmax(0, 1fr) auto minmax(0, 1fr);
@@ -106,7 +103,6 @@
     max-height: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor, 20px) - max(20px, env(safe-area-inset-top)));
   }
 
-  /* Keep the brand mark softly present when space permits on desktop instead of erasing it. */
   @media (min-height: 640px) {
     body[data-waitlist-open="true"] .hero-lockup .ruth-home {
       visibility: visible;

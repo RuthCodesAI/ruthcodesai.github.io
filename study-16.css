@@ -48,7 +48,7 @@ body[data-design] > .masthead .site-nav {
   inset: 0 0 auto;
   height: max(84px, calc(env(safe-area-inset-top) + 74px));
   pointer-events: none;
-  background: linear-gradient(180deg, rgb(0 0 0 / .62) 0%, rgb(0 0 0 / .24) 55%, transparent 100%);
+  background: linear-gradient(180deg, rgb(0 0 0 / .74) 0%, rgb(0 0 0 / .34) 55%, transparent 100%);
 }
 
 .art {
@@ -88,8 +88,14 @@ body[data-design] > .masthead .site-nav {
 .veil {
   z-index: 3;
   background:
-    linear-gradient(90deg, rgb(0 0 0 / .36), transparent 54%, rgb(0 0 0 / .14) 86%, rgb(0 0 0 / .38)),
-    linear-gradient(180deg, rgb(0 0 0 / .44), transparent 22%);
+    linear-gradient(90deg, rgb(0 0 0 / .34), transparent 54%, rgb(0 0 0 / .14) 86%, rgb(0 0 0 / .36)),
+    linear-gradient(180deg,
+      rgb(0 0 0 / .52) 0%,
+      transparent 18%,
+      transparent 48%,
+      rgb(0 0 0 / .74) 64%,
+      rgb(0 0 0 / .90) 80%,
+      rgb(0 0 0 / .96) 100%);
 }
 
 .page {
@@ -330,7 +336,7 @@ body[data-waitlist-open="true"] .waitlist-panel {
   margin: 0 0 10px;
   padding-right: 40px;
   color: var(--sheet-muted);
-  font: 500 11px/1 var(--mono);
+  font: 520 11px/1 var(--sans);
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -390,7 +396,7 @@ body[data-waitlist-open="true"] .waitlist-panel {
 
 .waitlist-field input::placeholder {
   color: var(--sheet-muted);
-  opacity: .68;
+  opacity: .46;
 }
 
 .waitlist-field input:-webkit-autofill {
@@ -606,7 +612,7 @@ body[data-waitlist-compact="true"] #waitlist-privacy { display: none; }
        (orientation: portrait) and (max-height: 400px) {
   html { overflow-x: clip; overflow-y: auto; }
   body { position: relative; height: auto; overflow: visible; }
-  .art, body .ruth-day-art {
+  .art {
     position: absolute;
     inset: auto 0 0;
     z-index: 0;
