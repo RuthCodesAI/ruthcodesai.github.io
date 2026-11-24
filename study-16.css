@@ -174,12 +174,49 @@ h1::before {
 h1 .keep { white-space: nowrap; }
 
 body[data-waitlist-open="true"] :is(.ruth-home, h1) { visibility: hidden; }
+body[data-waitlist-open="true"] .direct-contact { display: none; }
 body[data-waitlist-open="true"] > .masthead { display: none; }
 
-/* Waitlist CTA and inverted archival correspondence card */
+/* Waitlist CTA and quiet direct prospective-client link */
 .waitlist {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   pointer-events: auto;
+}
+
+.direct-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 6px;
+  color: var(--quiet);
+  font: 480 14.5px/1.2 var(--sans);
+  letter-spacing: -.005em;
+  text-decoration: none;
+  transition: color .18s ease, opacity .18s ease;
+}
+
+.direct-contact:is(:hover, :focus-visible) {
+  color: var(--ink);
+}
+
+.direct-arrow {
+  display: block;
+  width: 14px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  opacity: .72;
+  transition: transform .22s var(--ease), opacity .18s ease;
+}
+
+.direct-contact:is(:hover, :focus-visible) .direct-arrow {
+  transform: translateX(3px);
+  opacity: 1;
 }
 
 .join {
@@ -603,6 +640,7 @@ body[data-waitlist-compact="true"] #waitlist-privacy { display: none; }
   .headline-lead, .headline-end { display: inline-block; max-width: 100%; }
   .join { min-height: 44px; }
   .join[aria-expanded="false"] { min-width: 160px; min-height: 46px; font-size: 18px; }
+  .direct-contact { min-height: 32px; margin-top: 2px; font-size: 13.5px; }
 }
 
 @media (max-width: 600px) and (orientation: portrait) {

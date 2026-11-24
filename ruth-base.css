@@ -615,6 +615,13 @@ input:focus-visible,
 
 .menu-plus::after { transform: rotate(90deg); }
 
+.menu-foot-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem 1.25rem;
+}
+
 .menu-privacy {
   display: inline-flex;
   align-items: center;

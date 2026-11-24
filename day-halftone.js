@@ -364,7 +364,7 @@ export function createDayHalftone(options) {
       auraActive = 0;
       return;
     }
-    const nodes = ['.ruth-home', 'h1', '#signup-cta']
+    const nodes = ['.ruth-home', 'h1', '#signup-cta', '.direct-contact']
       .map((s) => document.querySelector(s))
       .filter(Boolean);
     if (!nodes.length) { auraActive = 0; return; }

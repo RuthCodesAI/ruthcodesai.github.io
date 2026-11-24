@@ -181,6 +181,41 @@
   max-width: 44ch;
 }
 
+/* Compact 3-column Swiss operational specification band ("How Ruth runs") */
+.operations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(2rem, 4.5vw, 4rem);
+  row-gap: clamp(1.5rem, 3vw, 2.25rem);
+  margin-top: clamp(2.75rem, 5vw, 4.5rem);
+  padding-top: clamp(1.75rem, 3.2vw, 2.75rem);
+  border-top: 1px solid var(--line);
+}
+
+.operations-kicker {
+  grid-column: 1 / -1;
+  margin: 0 0 -.35rem;
+}
+
+.op-item {
+  min-width: 0;
+  padding-top: clamp(1.1rem, 2vw, 1.5rem);
+  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.op-item h2 {
+  margin: 0 0 .55rem;
+  font: 450 clamp(1.18rem, 1.38vw, 1.36rem)/1.22 var(--serif);
+  letter-spacing: -.022em;
+}
+
+.op-item p {
+  margin: 0;
+  color: color-mix(in srgb, var(--ink) 78%, var(--ground) 22%);
+  font: 420 .96rem/1.56 var(--sans);
+  max-width: 42ch;
+}
+
 .about .origin {
   margin-top: clamp(2.5rem, 4.5vw, 4.25rem);
   padding-top: clamp(1.5rem, 2.5vw, 2.1rem);
@@ -464,6 +499,13 @@
 }
 
 @media (max-width: 54rem) {
+  .operations {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.4rem;
+  }
+  .op-item p {
+    max-width: 56ch;
+  }
   .prose-block {
     grid-template-columns: minmax(0, 1fr);
     row-gap: .55rem;

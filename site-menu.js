@@ -44,8 +44,8 @@ export function initSiteMenu() {
 
   // Full-viewport Swiss archival monograph menu overlay.
   const entries = [
-    { num: '01', label: 'Home', sub: 'Independent counsel & infrastructure', href: '/' },
-    { num: '02', label: 'About', sub: 'Four pillars & origin', href: '/about/' },
+    { num: '01', label: 'Home', sub: 'Tailored legal infrastructure', href: '/' },
+    { num: '02', label: 'About', sub: 'Four pillars & how Ruth runs', href: '/about/' },
     { num: '03', label: 'Team', sub: 'Jonas Hertner & Joel Niklaus', href: '/team/' },
   ];
 
@@ -98,7 +98,10 @@ export function initSiteMenu() {
       </nav>
       <div class="site-menu-foot">
         ${waitlistTrigger}
-        <a class="menu-privacy" href="/privacy/"${isCurrent('/privacy/') ? ' aria-current="page"' : ''}>Privacy notice</a>
+        <div class="menu-foot-links">
+          <a class="menu-privacy" href="mailto:info@ruth.codes">Work with us</a>
+          <a class="menu-privacy" href="/privacy/"${isCurrent('/privacy/') ? ' aria-current="page"' : ''}>Privacy</a>
+        </div>
       </div>
     </div>
   `;
