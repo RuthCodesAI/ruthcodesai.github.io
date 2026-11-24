@@ -66,18 +66,19 @@
   </button>
   <section class="waitlist-panel" id="waitlist-panel" aria-labelledby="waitlist-title" inert aria-hidden="true">
     <div class="waitlist-sheet">
+      <p class="waitlist-kicker" aria-hidden="true">Early access</p>
       <h2 id="waitlist-title">Join the waitlist</h2>
       <form id="waitlist-form" method="post" action="https://ruth-waitlist-api.waitlist-api.workers.dev/waitlist" novalidate>
         <div class="waitlist-field">
           <label for="waitlist-email">Email address</label>
           <div class="waitlist-entry">
             <input id="waitlist-email" type="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" enterkeyhint="go" required maxlength="254" aria-describedby="waitlist-email-error waitlist-agreement">
-            <button class="waitlist-submit paper-action" type="submit" aria-describedby="waitlist-agreement" aria-keyshortcuts="Meta+Enter Control+Enter">Join</button>
+            <button class="waitlist-submit paper-action" type="submit" aria-describedby="waitlist-agreement" aria-keyshortcuts="Meta+Enter Control+Enter"><span class="action-text">Join</span><svg class="action-arrow" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5"/></svg></button>
           </div>
           <p id="waitlist-email-error" class="field-error" role="alert" hidden></p>
         </div>
         <p id="waitlist-agreement">By joining, you agree to receive Ruth launch updates by email.</p>
-        <p id="waitlist-privacy">No third-party tracking. <a href="/privacy/">Privacy notice</a>.</p>
+        <p id="waitlist-privacy"><a href="/privacy/">Privacy notice</a></p>
         <p id="waitlist-request-error" class="field-error" role="alert" hidden></p>
       </form>
       <div class="waitlist-result" hidden>

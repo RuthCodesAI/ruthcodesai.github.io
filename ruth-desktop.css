@@ -81,36 +81,41 @@
 
   .hero-lockup .waitlist-panel {
     left: 0;
-    transform: none;
-    width: min(432px, calc(100vw - 2 * var(--reading-gutter)));
+    transform: translateY(8px);
+    width: min(448px, calc(100vw - 2 * var(--reading-gutter)));
+  }
+
+  .hero-lockup .waitlist-panel[aria-hidden="false"] {
+    transform: translateY(0);
   }
 
   body:not([data-waitlist-open="true"]) .hero-lockup .waitlist { top: auto; }
 
   body[data-waitlist-open="true"] .hero-lockup .waitlist {
-    --panel-floor: max(20px, env(safe-area-inset-bottom), min(14dvh, 132px));
+    --panel-floor: max(20px, env(safe-area-inset-bottom), min(15dvh, 148px));
     position: fixed;
     left: var(--rail-left);
     top: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor));
     bottom: auto;
+    width: min(448px, calc(100vw - 2 * var(--reading-gutter)));
     margin: 0;
     transform: translateY(-100%);
   }
 
   .hero-lockup .waitlist-panel {
-    max-height: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor, 20px) - 48px - max(16px, env(safe-area-inset-top)));
+    max-height: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor, 20px) - max(20px, env(safe-area-inset-top)));
   }
 
   /* Keep the brand mark softly present when space permits on desktop instead of erasing it. */
   @media (min-height: 640px) {
     body[data-waitlist-open="true"] .hero-lockup .ruth-home {
       visibility: visible;
-      opacity: .22;
+      opacity: .34;
       pointer-events: none;
     }
     body[data-waitlist-open="true"] > .masthead {
       display: flex;
-      opacity: .72;
+      opacity: .76;
     }
     body[data-waitlist-open="true"] > .masthead:hover {
       opacity: 1;

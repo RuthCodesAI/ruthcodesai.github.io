@@ -260,58 +260,64 @@
 .inline-waitlist-entry {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  max-width: 420px;
-  align-items: end;
+  gap: 14px;
+  max-width: 440px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.inline-waitlist-entry:focus-within {
+  border-bottom-color: var(--ink);
+  box-shadow: 0 1px 0 var(--ink);
 }
 
 .inline-waitlist-entry input {
   width: 100%;
   min-width: 0;
   height: 44px;
-  padding: 0 0 5px;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
   background: transparent;
   color: var(--ink);
-  font: 420 1.08rem/1.2 var(--serif);
+  font: 410 1.12rem/1.2 var(--serif);
   outline: none;
-  caret-color: var(--accent);
-  transition: border-color .16s ease, box-shadow .16s ease;
-}
-
-.inline-waitlist-entry input:focus {
-  border-bottom-color: var(--ink);
-  box-shadow: 0 1px 0 var(--ink);
-}
-
-.inline-waitlist-entry input[aria-invalid="true"] {
-  border-bottom-color: var(--accent);
-  box-shadow: 0 1px 0 var(--accent);
+  caret-color: var(--ink);
 }
 
 .inline-waitlist-entry input::placeholder {
   color: var(--quiet);
-  opacity: .72;
+  opacity: .68;
 }
 
 .inline-waitlist-submit {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 9px;
   min-height: 44px;
-  min-width: 72px;
-  padding: 0 18px;
-  border: 1px solid transparent;
-  background: var(--ink);
-  color: var(--ground);
-  font: 530 .92rem/1 var(--sans);
-  letter-spacing: .005em;
+  min-width: 60px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 520 .94rem/1 var(--sans);
+  letter-spacing: -.005em;
   transition: opacity .16s ease;
 }
 
-.inline-waitlist-submit:hover { opacity: .86; }
-.inline-waitlist-submit:disabled { opacity: .6; cursor: progress; }
+.inline-waitlist-submit svg {
+  width: 15px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  transition: transform .2s var(--ease);
+}
+
+.inline-waitlist-submit:hover { opacity: .72; }
+.inline-waitlist-submit:hover svg { transform: translateX(3px); }
+.inline-waitlist-submit:disabled { opacity: .45; cursor: progress; }
 
 .inline-waitlist-note {
   margin: .75rem 0 0;

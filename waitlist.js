@@ -53,11 +53,12 @@ function initHomeWaitlist() {
   const emailError = form.querySelector('#waitlist-email-error');
   const requestError = form.querySelector('#waitlist-request-error');
   const join = form.querySelector('button[type="submit"]');
+  const joinText = join.querySelector('.action-text') || join;
   const result = document.querySelector('.waitlist-result');
   const status = document.querySelector('#waitlist-status');
   const done = result.querySelector('.waitlist-done');
   const invitation = triggerLabel.textContent;
-  const joinLabel = join.textContent;
+  const joinLabel = joinText.textContent;
   let open = false;
   let pending = false;
   let resetOnOpen = false;
@@ -165,7 +166,7 @@ function initHomeWaitlist() {
     if (value && document.activeElement === join) email.focus({ preventScroll: true });
     email.readOnly = value;
     join.disabled = value;
-    join.textContent = value ? 'Joining…' : joinLabel;
+    joinText.textContent = value ? 'Joining…' : joinLabel;
   }
 
   function showConfirmation() {
@@ -242,10 +243,11 @@ function initInlineWaitlists() {
     const form = container.querySelector('form');
     const email = container.querySelector('input[type="email"]');
     const submit = container.querySelector('button[type="submit"]');
+    const submitText = submit?.querySelector('.action-text') || submit;
     const error = container.querySelector('[data-waitlist-error]');
     const status = container.querySelector('[data-waitlist-status]');
     if (!form || !email || !submit || !error || !status) return;
-    const submitLabel = submit.textContent;
+    const submitLabel = submitText.textContent;
     let pending = false;
 
     function setError(message = '') {
@@ -269,7 +271,7 @@ function initInlineWaitlists() {
       form.setAttribute('aria-busy', 'true');
       email.readOnly = true;
       submit.disabled = true;
-      submit.textContent = 'Joining…';
+      submitText.textContent = 'Joining…';
       try {
         const outcome = await submitWaitlistEmail(form, address);
         if (outcome.kind === 'ok') {
@@ -286,7 +288,7 @@ function initInlineWaitlists() {
         form.setAttribute('aria-busy', 'false');
         email.readOnly = false;
         submit.disabled = false;
-        submit.textContent = submitLabel;
+        submitText.textContent = submitLabel;
       }
     });
 

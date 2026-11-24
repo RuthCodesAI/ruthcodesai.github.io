@@ -29,14 +29,15 @@
   --line: #34312d;
   --accent: #f2f0eb;
   --paper-texture: none;
-  /* Night edition waitlist card: warm archival rag paper on obsidian. */
-  --sheet-bg: #eeeae1;
-  --sheet-ink: #171614;
-  --sheet-muted: #54504b;
-  --sheet-rule: #b8b1a6;
-  --sheet-accent: #171614;
-  --sheet-border: rgb(255 255 255 / .12);
-  --sheet-shadow: 0 28px 72px rgb(0 0 0 / .62);
+  /* Night edition waitlist card: smoked obsidian gallery glass with ivory hairline. */
+  --sheet-bg: rgb(15 15 15 / .88);
+  --sheet-ink: #f2f0eb;
+  --sheet-muted: #a6a096;
+  --sheet-rule: rgb(242 240 235 / .24);
+  --sheet-accent: #f2f0eb;
+  --sheet-border: rgb(242 240 235 / .18);
+  --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .07);
+  --sheet-shadow: 0 2px 6px rgb(0 0 0 / .32), 0 28px 72px rgb(0 0 0 / .72);
 
   --serif: Newsreader, Georgia, serif;
   --sans: InterTight, system-ui, -apple-system, sans-serif;
@@ -63,14 +64,15 @@
     --line: #c7c0b7;
     --accent: #11100f;
     --paper-texture: url('/v2/assets/paper.webp') repeat;
-    /* Day edition waitlist card: inverted obsidian ink card on warm cotton paper. */
-    --sheet-bg: #141312;
-    --sheet-ink: #f2f0eb;
-    --sheet-muted: #bcb6ac;
-    --sheet-rule: #474440;
-    --sheet-accent: #f2f0eb;
-    --sheet-border: rgb(17 16 15 / .24);
-    --sheet-shadow: 0 28px 68px rgb(17 16 15 / .18);
+    /* Day edition waitlist card: heavy archival laid cotton stationery over halftone print. */
+    --sheet-bg: rgb(250 248 244 / .95);
+    --sheet-ink: #11100f;
+    --sheet-muted: #5f5b55;
+    --sheet-rule: rgb(17 16 15 / .24);
+    --sheet-accent: #11100f;
+    --sheet-border: rgb(17 16 15 / .16);
+    --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .85);
+    --sheet-shadow: 0 1px 2px rgb(17 16 15 / .05), 0 18px 46px rgb(17 16 15 / .10), 0 36px 84px rgb(17 16 15 / .07);
   }
 }
 
