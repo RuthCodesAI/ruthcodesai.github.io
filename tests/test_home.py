@@ -10,7 +10,7 @@ from playwright.sync_api import expect, sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HEADLINE = 'Outside counsel that builds your legal infrastructure.'
+HEADLINE = 'Independent counsel that builds your legal infrastructure.'
 
 
 class Quiet(SimpleHTTPRequestHandler):

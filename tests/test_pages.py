@@ -116,7 +116,7 @@ class Pages(unittest.TestCase):
         page = self.visit('/about/', 200, js=True)
         self.assertEqual(
             page.get_by_role('heading', level=1).inner_text().strip(),
-            'We act as outside counsel and build legal infrastructure within our clients’ organizations.',
+            'We act as independent counsel and build legal infrastructure within our clients’ organizations.',
         )
         self.assertEqual(page.locator('p.folio').inner_text().strip(), 'About Ruth')
         for mode, token in [('light', 'about-justitia-day'), ('dark', 'about-justitia-night')]:
