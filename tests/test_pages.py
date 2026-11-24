@@ -105,7 +105,7 @@ class Pages(unittest.TestCase):
         self.assertEqual(frames['iterations'], [1, 1, 1])
 
     def test_all_pages_share_wordmark_favicon_and_og_metadata(self):
-        for route in ('/', '/about/', '/team/', '/privacy/', '/imprint/'):
+        for route in ('/', '/about/', '/team/', '/privacy/'):
             with self.subTest(route=route):
                 page = self.visit(route, 200)
                 self.assertTrue(page.evaluate("document.querySelector('link[rel~=icon]')?.href.startsWith('data:image/svg+xml')"))
@@ -140,4 +140,4 @@ class Pages(unittest.TestCase):
                 page = self.visit(route, 200, js=True)
                 self.assertEqual(page.locator('[data-inline-waitlist] input[type="email"]').count(), 1)
                 self.assertEqual(page.locator('.site-colophon a[href="/privacy/"]').count(), 1)
-                self.assertEqual(page.locator('.site-colophon a[href="/imprint/"]').count(), 1)
+                self.assertEqual(page.locator('.site-colophon a[href="/imprint/"]').count(), 0)
