@@ -612,7 +612,7 @@ async function initializeHero(host) {
     if (canvas.isConnected) canvas.hidden = true;
     try {
       if (!dayController) {
-        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-theme1');
+        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-nocursor1');
         const { createDayHalftone } = await dayLoading;
         if (disposed || mode !== 'day') return;
         dayController = createDayHalftone({

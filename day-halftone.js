@@ -1,19 +1,16 @@
 /**
  * Ruth Day Mode: Original 234x132 Orthogonal Halftone + Living Blindfold-Lift,
- * followed by Living Stillness and Interactive 3D Mouse Wake.
+ * followed by Living Stillness.
  *
  * Choreography:
  *   Act I  (0.0s -> ~12.6s): Immediate Original Blindfold-Lift.
  *     Opens directly on the exact original 234x132 (0-degree orthogonal) halftone
  *     portrait on warm museum stock (zero scatter on initial load) and plays the
  *     full blindfold-lift animation smoothly at 60/120fps across all GPU dots.
- *   Act II (after head turns back to rest): Living Stillness & Interactive Mouse Wake.
- *     Once Justitia lowers her blindfold and her head returns to rest:
- *       - Gentle living stillness breathes subtly across the orthogonal print.
- *       - Interactive 3D magnetic mouse wake unlocks (hovering lifts nearby dots
- *         into 3D space with depth-of-field bokeh before they return cleanly into
- *         exact 0-degree orthogonal registration; clicking bare ground emits a
- *         radial dispersion ripple).
+ *   Act II (after head turns back to rest): Living Stillness.
+ *     Once Justitia lowers her blindfold and her head returns to rest, gentle
+ *     living stillness breathes subtly across the exact 0-degree orthogonal print
+ *     with zero pointer or cursor disturbance.
  *     Pauses automatically when the waitlist or menu opens, sleeps after 120s of
  *     inactivity, and renders the exact static orthogonal halftone under
  *     prefers-reduced-motion.
@@ -105,16 +102,12 @@ export function createDayHalftone(options) {
   // Structure-of-Arrays particle buffers (zero per-frame GC).
   let count = 0;
   let cellIdx, isFigure;
-  let tx, ty, x, y, z, vx, vy, vz;
-  let baseR, curR, swirlSign, mass, seed;
+  let tx, ty;
+  let baseR, curR, seed;
   let instanceData; // Float32Array(count * 8): [x, y, z, vx, vy, r, alpha, focus]
 
   // Live typography reading aura (protects Ruth / headline / CTA legibility cleanly).
   let auraCx = 0, auraCy = 0, auraRx = 1, auraRy = 1, auraActive = 0;
-
-  // Post-lift interactive 3D pointer magnetic wake & click acoustic ripple.
-  let ptrX = -9999, ptrY = -9999, ptrVx = 0, ptrVy = 0, ptrEnergy = 0, ptrInside = false;
-  let rippleX = -9999, rippleY = -9999, rippleAge = 99;
 
   // WebGL2 / WebGL1 / Canvas 2D backend.
   let gl = null, glExt = null, glProg = null, glQuadBuf = null, glInstBuf = null;
@@ -128,15 +121,6 @@ export function createDayHalftone(options) {
     let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263);
     h = Math.imul(h ^ (h >>> 13), 1274126177);
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-  }
-
-  function fieldNoise(px, py, scale) {
-    const u = px * scale, v = py * scale;
-    const n =
-      0.55 * Math.sin(u * 0.9 + Math.cos(v * 0.8 + 0.4)) +
-      0.30 * Math.cos(v * 1.45 - Math.sin(u * 1.15 - 0.9)) +
-      0.15 * Math.sin((u + v) * 2.1 + 1.3);
-    return 0.5 + 0.5 * clamp(n, -1, 1);
   }
 
   function initBackend() {
@@ -448,20 +432,11 @@ export function createDayHalftone(options) {
     isFigure = new Uint8Array(count);
     tx = new Float32Array(count);
     ty = new Float32Array(count);
-    x = new Float32Array(count);
-    y = new Float32Array(count);
-    z = new Float32Array(count);
-    vx = new Float32Array(count);
-    vy = new Float32Array(count);
-    vz = new Float32Array(count);
     baseR = new Float32Array(count);
     curR = new Float32Array(count);
-    swirlSign = new Float32Array(count);
-    mass = new Float32Array(count);
     seed = new Float32Array(count);
     instanceData = new Float32Array(count * 8);
 
-    const minDim = Math.min(width, height);
     for (let i = 0; i < count; i++) {
       const o = i * 7;
       const idx = list[o], px = list[o + 1], py = list[o + 2], r = list[o + 3];
@@ -469,17 +444,10 @@ export function createDayHalftone(options) {
 
       cellIdx[i] = idx;
       isFigure[i] = fig;
-      // Always start cleanly registered on the exact original 0-deg orthogonal halftone grid!
+      // Always stay cleanly registered on the exact original 0-deg orthogonal halftone grid.
       tx[i] = px; ty[i] = py;
-      x[i] = px; y[i] = py; z[i] = 0;
-      vx[i] = 0; vy[i] = 0; vz[i] = 0;
       baseR[i] = r; curR[i] = r;
       seed[i] = hash2(gc + 131, gr - 59);
-
-      const normR = clamp(r / (dotPitch * 0.47), 0, 1);
-      mass[i] = 0.76 + 0.50 * normR;
-      const flockNoise = fieldNoise(px, py, 2.9 / Math.max(320, minDim));
-      swirlSign[i] = flockNoise >= 0.5 ? 1 : -1;
     }
 
     if (!preservePhase) {
@@ -545,7 +513,6 @@ export function createDayHalftone(options) {
 
   function stepPhysics(dt) {
     if (!count) return;
-    const minDim = Math.min(width, height);
 
     // Act I: Original blindfold-lift animation plays undisturbed from start to finish.
     if (phase === 'waiting-lift') {
@@ -575,91 +542,8 @@ export function createDayHalftone(options) {
       return;
     }
 
-    // Act II (after head turns back): living stillness and interactive 3D mouse wake.
+    // Act II (after head turns back): living stillness on the exact orthogonal grid.
     breatheTime += dt;
-
-    if (ptrEnergy > 0) ptrEnergy = Math.max(0, ptrEnergy * Math.exp(-dt * 2.9) - 0.001);
-    ptrVx *= Math.exp(-dt * 5.8);
-    ptrVy *= Math.exp(-dt * 5.8);
-    if (rippleAge < 3.5) rippleAge += dt;
-
-    const hasPointer = ptrEnergy > 0.002;
-    const hasRipple = rippleAge < 1.8;
-    const ptrRadius = isPortraitViewport() ? 102 : 172;
-    const ptrRadSq = ptrRadius * ptrRadius;
-    const ripFront = rippleAge * minDim * 0.58;
-    const ripBand = minDim * 0.13;
-
-    const steps = dt > 0.022 ? 2 : 1;
-    const h = dt / steps;
-    const needsPhysics = hasPointer || hasRipple;
-
-    for (let st = 0; st < steps; st++) {
-      for (let i = 0; i < count; i++) {
-        let px = x[i], py = y[i], pz = z[i];
-        let vxi = vx[i], vyi = vy[i], vzi = vz[i];
-        const dx = tx[i] - px, dy = ty[i] - py, dz = -pz;
-
-        // Fast skip for resting dots when no pointer wake or click ripple is active.
-        if (!needsPhysics && dx === 0 && dy === 0 && dz === 0 && vxi === 0 && vyi === 0 && vzi === 0) {
-          continue;
-        }
-
-        const fig = isFigure[i];
-        const kHome = 18.5;
-        const damp = 6.1;
-        let ax = 0, ay = 0, az = 0;
-
-        // 1. Interactive 3D magnetic mouse cursor wake (unlocked after head turns back).
-        if (hasPointer) {
-          const rx = px - ptrX, ry = py - ptrY;
-          const d2 = rx * rx + ry * ry;
-          if (d2 < ptrRadSq && d2 > 0.5) {
-            const dist = Math.sqrt(d2);
-            const u = 1 - dist / ptrRadius;
-            const fall = u * u * ptrEnergy * (fig ? 1.0 : 0.42);
-            const inv = 1 / dist;
-            const nx = rx * inv, ny = ry * inv;
-            const swirl = swirlSign[i] * 560;
-            ax += (nx * 820 - ny * swirl + ptrVx * 2.3) * fall / mass[i];
-            ay += (ny * 820 + nx * swirl + ptrVy * 2.3) * fall / mass[i];
-            az += (4.0 * u * ptrEnergy * (fig ? 1.0 : 0.35)) / mass[i];
-          }
-        }
-
-        // 2. Bare-paper click acoustic dispersion shockwave.
-        if (hasRipple) {
-          const rx = px - rippleX, ry = py - rippleY;
-          const dist = Math.hypot(rx, ry);
-          const bandDiff = Math.abs(dist - ripFront);
-          if (bandDiff < ripBand && dist > 1) {
-            const env = (1 - bandDiff / ripBand) * Math.exp(-rippleAge * 2.0) * (fig ? 1.0 : 0.35);
-            const nx = rx / dist, ny = ry / dist;
-            const swirl = swirlSign[i] * 560;
-            ax += (nx * 980 - ny * swirl) * env / mass[i];
-            ay += (ny * 980 + nx * swirl) * env / mass[i];
-            az += 4.5 * env * (seed[i] - 0.35);
-          }
-        }
-
-        // Restoring damped 3D spring back onto exact (tx, ty, 0) Swiss orthogonal grid.
-        ax += dx * kHome - vxi * damp;
-        ay += dy * kHome - vyi * damp;
-        az += dz * 22.0 - vzi * 7.0;
-
-        vxi += ax * h; vyi += ay * h; vzi += az * h;
-        px += vxi * h; py += vyi * h; pz += vzi * h;
-
-        const dSq = dx * dx + dy * dy + dz * dz * 100;
-        const vSq = vxi * vxi + vyi * vyi + vzi * vzi * 100;
-        if (!hasPointer && !hasRipple && dSq < 0.001 && vSq < 0.025) {
-          px = tx[i]; py = ty[i]; pz = 0; vxi = 0; vyi = 0; vzi = 0;
-        }
-
-        x[i] = px; y[i] = py; z[i] = pz;
-        vx[i] = vxi; vy[i] = vyi; vz[i] = vzi;
-      }
-    }
   }
 
   function packInstances() {
@@ -670,8 +554,7 @@ export function createDayHalftone(options) {
 
     for (let i = 0; i < count; i++) {
       const o = i * 8;
-      const px = x[i], py = y[i], pz = z[i];
-      const vxi = vx[i], vyi = vy[i];
+      const px = tx[i], py = ty[i];
       const rNow = curR[i];
       const fig = isFigure[i];
 
@@ -686,9 +569,9 @@ export function createDayHalftone(options) {
 
       instanceData[o] = px;
       instanceData[o + 1] = py;
-      instanceData[o + 2] = pz;
-      instanceData[o + 3] = vxi;
-      instanceData[o + 4] = vyi;
+      instanceData[o + 2] = 0;
+      instanceData[o + 3] = 0;
+      instanceData[o + 4] = 0;
       instanceData[o + 5] = rad;
       instanceData[o + 6] = alpha;
       instanceData[o + 7] = 1.0;
@@ -825,7 +708,7 @@ export function createDayHalftone(options) {
       return;
     }
     if (!lastNow) lastNow = now;
-    const needsFast = phase !== 'settled' || ptrEnergy > 0.005 || rippleAge < 2.2;
+    const needsFast = phase !== 'settled';
     const minStep = needsFast ? 0 : (1000 / 24 - 0.5);
     const diff = now - lastNow;
     if (diff >= minStep) {
@@ -861,42 +744,6 @@ export function createDayHalftone(options) {
     });
   }
 
-  // Interactive mouse wake & bare-paper click ripple stay dormant until the blindfold lift
-  // finishes and Justitia's head turns back to rest!
-  function onPointerMove(e) {
-    if (!active || disposed || !liftCompleted || reduced.matches || waitlistOpen()) return;
-    const rect = host.getBoundingClientRect();
-    const nx = e.clientX - rect.left;
-    const ny = e.clientY - rect.top;
-    if (nx < 0 || ny < 0 || nx > rect.width || ny > rect.height) {
-      ptrInside = false;
-      return;
-    }
-    if (ptrInside) {
-      ptrVx = clamp((nx - ptrX) * 34, -1200, 1200);
-      ptrVy = clamp((ny - ptrY) * 34, -1200, 1200);
-    }
-    ptrX = nx;
-    ptrY = ny;
-    ptrInside = true;
-    ptrEnergy = Math.min(1, ptrEnergy + 0.78);
-    wake();
-  }
-
-  function onPointerDown(e) {
-    if (!active || disposed || !liftCompleted || reduced.matches || waitlistOpen()) return;
-    if (e.target.closest('a, button, input, form, .masthead, .waitlist, .ruth-home')) return;
-    const rect = host.getBoundingClientRect();
-    rippleX = e.clientX - rect.left;
-    rippleY = e.clientY - rect.top;
-    rippleAge = 0;
-    wake();
-  }
-
-  function onPointerLeave() {
-    ptrInside = false;
-  }
-
   const resizeObserver = new ResizeObserver(() => {
     updateReadingAura();
     scheduleResize();
@@ -915,9 +762,6 @@ export function createDayHalftone(options) {
   intersectionObserver.observe(host);
   waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open', 'data-menu-open'] });
   document.addEventListener('visibilitychange', sync, events);
-  window.addEventListener('pointermove', onPointerMove, { ...events, passive: true });
-  window.addEventListener('pointerdown', onPointerDown, { ...events, passive: true });
-  window.addEventListener('pointerleave', onPointerLeave, { ...events, passive: true });
   window.addEventListener('keydown', wake, { ...events, passive: true });
   window.addEventListener('pagehide', e => {
     pageSuspended = true;

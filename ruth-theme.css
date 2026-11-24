@@ -1,5 +1,7 @@
-/* Homepage Day (Swiss lithographic halftone over tactile gesso-and-graphite canvas)
-   and Night (ivory marble & living ASCII on pure #000000 obsidian). */
+/* Homepage Day (Swiss lithographic halftone on warm museum stock) & Night (marble-to-ASCII).
+   Dark mode: ivory marble & living ASCII on pure #000000 obsidian.
+   Light mode: pure printer's ink (#11100f) orthogonal halftone multiplied onto crisp
+   warm alabaster (#f5f3ee) with zero bitmap paper grain and zero photo flash. */
 .art > picture { display: contents; }
 
 .art .photo {
@@ -10,30 +12,11 @@
 }
 
 html[data-ruth-theme="day"] body[data-design] {
-  position: relative;
-  isolation: isolate;
   background: var(--ground);
 }
-html[data-ruth-theme="day"] body[data-design]::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-color: var(--ground);
-  background-image: url('/assets/day-gesso-canvas.webp?v=2026-am1');
-  background-image: var(--day-canvas);
-  background-position: center center;
-  background-size: cover;
-  background-repeat: no-repeat;
-}
 html[data-ruth-theme="day"] .art {
-  z-index: 1;
   background: #ffffff;
   mix-blend-mode: multiply;
-}
-html[data-ruth-theme="day"] .page {
-  z-index: 2;
 }
 html[data-ruth-theme="day"] .art .photo,
 html[data-ruth-theme="day"] .art .living-video {
@@ -47,37 +30,20 @@ html[data-ruth-theme="day"] .join { text-shadow: none; }
 
 @media (prefers-color-scheme: light) {
   html:not([data-ruth-theme="night"]) body[data-design] {
-    position: relative;
-    isolation: isolate;
     background: var(--ground);
   }
-  html:not([data-ruth-theme="night"]) body[data-design]::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-color: var(--ground);
-    background-image: url('/assets/day-gesso-canvas.webp?v=2026-am1');
-    background-image: var(--day-canvas);
-    background-position: center center;
-    background-size: cover;
-    background-repeat: no-repeat;
-  }
   html:not([data-ruth-theme="night"]) .art {
-    z-index: 1;
     background: #ffffff;
     mix-blend-mode: multiply;
   }
-  html:not([data-ruth-theme="night"]) .page {
-    z-index: 2;
-  }
   /* Hide the source chiaroscuro photo and Night video in Day mode so the
-     halftone ink droplets multiply cleanly onto the tactile gesso canvas. */
+     halftone ink droplets emerge cleanly out of warm alabaster museum stock. */
   html:not([data-ruth-theme="night"]) .art .photo,
   html:not([data-ruth-theme="night"]) .art .living-video {
     opacity: 0 !important;
   }
+  /* The GPU halftone shader renders the continuous edge-to-edge pinpoint sheet
+     and feathered reading aura behind Ruth / headline / CTA on both desktop and mobile. */
   html:not([data-ruth-theme="night"]) .art .veil {
     background: none;
   }
@@ -87,6 +53,5 @@ html[data-ruth-theme="day"] .join { text-shadow: none; }
 
 @media (forced-colors: active) {
   body[data-design] { background: Canvas; }
-  body[data-design]::before { display: none; }
   .art { display: none; }
 }

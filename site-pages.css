@@ -17,62 +17,22 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Day reading pages use the tactile chalk-gesso and graphite canvas softened by
-   a light translucent reading glaze, keeping <main> in auto stacking context so
-   .about-print multiplies cleanly onto the painted ground with zero box edge. */
-html[data-ruth-theme="day"] .reading-page {
-  position: relative;
-  isolation: isolate;
-  background-image: none;
-}
-
-html[data-ruth-theme="day"] .reading-page::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100lvh;
-  min-height: 100%;
-  z-index: -1;
-  pointer-events: none;
-  background-color: var(--ground);
-  background-image: linear-gradient(rgb(249 247 244 / .22), rgb(249 247 244 / .22)), url('/assets/day-gesso-canvas.webp?v=2026-am1');
-  background-image: linear-gradient(rgb(249 247 244 / .22), rgb(249 247 244 / .22)), var(--day-canvas);
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
+/* Text-led Day reading pages (/team/, /privacy/, /404.html) add a sculptural
+   graded Swiss halftone wave locked 1:1 on the exact 6.5px pitch in the upper-right
+   negative space; /about/ keeps the pure screen so Justitia's bust stands alone. */
+html[data-ruth-theme="day"] .reading-page:not(:has(.about-print)) {
+  background-image: var(--halftone-wash), var(--halftone-screen);
+  background-repeat: no-repeat, repeat;
+  background-position: right top, right top;
+  background-size: 624px 442px, 6.5px 6.5px;
 }
 
 @media (prefers-color-scheme: light) {
-  html:not([data-ruth-theme="night"]) .reading-page {
-    position: relative;
-    isolation: isolate;
-    background-image: none;
-  }
-
-  html:not([data-ruth-theme="night"]) .reading-page::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100lvh;
-    min-height: 100%;
-    z-index: -1;
-    pointer-events: none;
-    background-color: var(--ground);
-    background-image: linear-gradient(rgb(249 247 244 / .22), rgb(249 247 244 / .22)), url('/assets/day-gesso-canvas.webp?v=2026-am1');
-    background-image: linear-gradient(rgb(249 247 244 / .22), rgb(249 247 244 / .22)), var(--day-canvas);
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-  }
-}
-
-@media (forced-colors: active) {
-  .reading-page::before {
-    display: none;
+  html:not([data-ruth-theme="night"]) .reading-page:not(:has(.about-print)) {
+    background-image: var(--halftone-wash), var(--halftone-screen);
+    background-repeat: no-repeat, repeat;
+    background-position: right top, right top;
+    background-size: 624px 442px, 6.5px 6.5px;
   }
 }
 
