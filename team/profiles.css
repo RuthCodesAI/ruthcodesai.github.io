@@ -43,12 +43,13 @@
   block-size: auto;
   border-radius: 50%;
 }
-/* Use the same stepped line length for both approved biographies. */
-.founder > p {
+.founder > .bio {
   max-inline-size: 52ch;
   inline-size: min(100%, max(24ch, round(down, 100%, 4ch)));
   margin: clamp(1.4rem, 2.7vw, 2.5rem) 0 0;
 }
+.bio p { margin: 0; }
+.bio p + p { margin-block-start: .8em; }
 @media (max-width: 56rem) {
   .team h1 { margin-block-end: .24em; }
   .founder-index {

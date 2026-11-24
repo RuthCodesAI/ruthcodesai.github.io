@@ -193,10 +193,10 @@ class Pages(unittest.TestCase):
                     self.assertLessEqual(box['x'] + box['width'], photo['x'])
                     self.assertLess(box['y'], photo['y'] + photo['height'])
                     self.assertGreater(box['y'] + box['height'], photo['y'])
-                self.assertGreater(section.locator('p').last.bounding_box()['y'], photo['y'] + photo['height'])
+                self.assertGreater(section.locator('.bio').bounding_box()['y'], photo['y'] + photo['height'])
             self.assertEqual(*sizes)
 
-    def test_founder_homepages_on_names_and_portraits_only(self):
+    def test_founder_homepages_on_names_and_portraits(self):
         page = self.visit('/team/', 200)
         page.keyboard.press('Tab')
         for name, home in [('Jonas Hertner', 'https://jonashertner.com/'),
@@ -210,33 +210,40 @@ class Pages(unittest.TestCase):
                 target.focus()
                 self.assertTrue(target.evaluate("a => a.matches('a:focus-visible') && parseFloat(getComputedStyle(a).outlineWidth) > 0"))
             self.assertFalse(section.locator('.role').evaluate("p => !!(p.closest('a') || p.querySelector('a'))"))
-            hosts = section.locator(':scope > p a').evaluate_all('links => links.map(a => a.hostname)')
-            self.assertTrue({'niklaus.ai', 'jonashertner.com'}.isdisjoint(hosts))
 
-    def test_founder_bios_wrap_to_equal_lines(self):
+    def test_founder_biographies_share_a_reading_width(self):
         page = self.visit('/team/', 200)
+        paragraphs = page.locator('.founder p.bio, .founder .bio > p')
+        self.assertEqual(paragraphs.count(), 4)
         for width in (320, 375, 390, 430, 768, 1024, 1440):
-            page.set_viewport_size({'width': width, 'height': 900})
-            page.evaluate('document.fonts.ready')
-            counts = page.locator('section > p').evaluate_all("""nodes => nodes.map(p => {
-            const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
-            const range = document.createRange(), rows = new Set();
-            while (walker.nextNode()) {
-                range.selectNodeContents(walker.currentNode);
-                for (const r of range.getClientRects()) if (r.width) rows.add(Math.round((r.top - p.getBoundingClientRect().top) / parseFloat(getComputedStyle(p).lineHeight)));
-            }
-            return rows.size;
-        })""")
-            self.assertEqual(len(counts), 2)
-            self.assertGreater(min(counts), 1)
-            self.assertEqual(*counts, msg=f'{width}px: {counts}')
+            with self.subTest(width=width):
+                page.set_viewport_size({'width': width, 'height': 900})
+                page.evaluate('document.fonts.ready')
+                boxes = [paragraph.bounding_box() for paragraph in paragraphs.all()]
+                for box in boxes:
+                    self.assertGreater(box['x'], 0)
+                    self.assertLess(box['x'] + box['width'], width)
+                    self.assertGreater(box['width'], 0)
+                    self.assertAlmostEqual(box['width'], boxes[0]['width'], delta=1)
 
-    def test_jonas_bio_opens_with_his_practice(self):
+    def test_jonas_approved_bio_and_profile_links(self):
         page = self.visit('/team/', 200)
-        section = page.locator('section').filter(has=page.get_by_role('heading', name='Jonas Hertner'))
-        opening = section.locator('p').last.inner_text().partition('.')[0]
-        self.assertIn('disputes', opening)
-        self.assertNotIn('at Ruth', opening)
+        bio = page.get_by_role('region', name='Jonas Hertner').locator('.bio')
+        self.assertEqual(bio.locator('p').all_inner_texts(), [
+            'Jonas Hertner is an independent Swiss lawyer based in Zurich and Basel. He represents '
+            'clients in complex commercial disputes and advises boards and business owners on '
+            'governance. He worked at the Court of Appeal of Basel-Stadt before spending a decade '
+            'at Quinn Emanuel, where he helped establish the firm’s Swiss office and handled '
+            'cross-border litigation.',
+            'Jonas built OpenCaseLaw, an open dataset that brings together judgments, legislation '
+            'and regulatory decisions from across Switzerland.',
+            'At Ruth, he works with clients to optimize legal tasks and workflows to achieve '
+            'highest quality results.',
+        ])
+        self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in bio.get_by_role('link').all()], [
+            ('Jonas Hertner', 'https://jonashertner.com/profile/'),
+            ('OpenCaseLaw', 'https://opencaselaw.ch/ueber/'),
+        ])
 
     def test_joel_approved_bio_and_paper_links(self):
         page = self.visit('/team/', 200)
