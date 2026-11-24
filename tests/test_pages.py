@@ -132,7 +132,7 @@ class Pages(unittest.TestCase):
             img = section.locator('.founder-plate img')
             self.assertTrue(img.evaluate('i => i.complete && i.naturalWidth === 288'))
             box = img.bounding_box()
-            self.assertAlmostEqual(box['width'], box['height'], delta=1)
+            self.assertAlmostEqual(box['width'] / box['height'], 0.8, delta=0.03)
 
     def test_colophon_waitlist_present_on_about_and_team(self):
         for route in ('/about/', '/team/'):

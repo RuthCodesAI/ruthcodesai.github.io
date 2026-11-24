@@ -32,12 +32,13 @@
   display: flex;
   flex-wrap: wrap-reverse;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: clamp(14px, 2vw, 24px);
+  align-items: start;
+  gap: clamp(16px, 2.4vw, 28px);
 }
 
 .founder header > div {
   flex: 1 1 min-content;
+  padding-top: .15rem;
 }
 
 .founder h2 {
@@ -84,24 +85,20 @@
   font: 480 clamp(.9rem, 1.08vw, .98rem)/1.4 var(--sans);
 }
 
-/* Editorial rectangular plate preserving natural portrait color with cohesive framing */
+/* Frameless 4:5 editorial portraits resting directly on the page surface */
 .founder-plate {
   margin: 0;
   margin-inline-start: auto;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--ground) 92%, var(--ink) 8%);
   flex: none;
 }
 
 .founder-plate img {
   display: block;
-  inline-size: min(clamp(4.75rem, 8vw, 7.25rem), 25vw);
-  block-size: min(clamp(4.75rem, 8vw, 7.25rem), 25vw);
+  inline-size: min(clamp(4.6rem, 7vw, 6.4rem), 24vw);
+  aspect-ratio: 4 / 5;
+  block-size: auto;
   object-fit: cover;
-  object-position: 50% 20%;
-  border-radius: 1px;
+  object-position: 50% 18%;
   filter: contrast(1.02) saturate(.92);
 }
 
