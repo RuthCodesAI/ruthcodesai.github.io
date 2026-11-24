@@ -242,7 +242,7 @@ class Pages(unittest.TestCase):
         ])
         self.assertEqual([(a.inner_text(), a.get_attribute('href')) for a in bio.get_by_role('link').all()], [
             ('Jonas Hertner', 'https://jonashertner.com/profile/'),
-            ('OpenCaseLaw', 'https://opencaselaw.ch/ueber/'),
+            ('OpenCaseLaw', 'https://opencaselaw.ch/'),
         ])
 
     def test_joel_approved_bio_and_paper_links(self):
