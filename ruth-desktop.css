@@ -22,12 +22,11 @@
   }
 
   @media (prefers-color-scheme: light) {
+    /* On desktop Day mode, the GPU halftone shader applies a tailored radial reading
+       aura right behind Ruth / headline / CTA so the full-sheet pinpoint dot matrix
+       and Justitia's rising forearm stay visible without a boxy gradient wall. */
     .art .veil {
-      background: linear-gradient(90deg,
-        rgb(255 255 255 / .92) 0%,
-        rgb(255 255 255 / .80) 24%,
-        rgb(255 255 255 / .30) 40%,
-        transparent 54%);
+      background: none;
     }
   }
 
