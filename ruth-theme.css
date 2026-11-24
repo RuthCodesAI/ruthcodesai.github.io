@@ -1,6 +1,4 @@
-/* Homepage Day (Print) vs Night (Code) layer visibility and masking.
-   Responds automatically to system prefers-color-scheme and explicit
-   data-ruth-theme="day"|"night" user toggles. */
+/* Homepage Day (Print) vs Night (Code) layer visibility following system appearance. */
 .art > picture,
 .ruth-day-art > picture { display: contents; }
 
@@ -13,83 +11,28 @@
 
 .ruth-day-art { display: none; }
 
-/* Day (Print) Edition: active via system light preference OR explicit day toggle */
 @media (prefers-color-scheme: light) {
-  :root:not([data-ruth-theme="night"]) body[data-design] {
+  body[data-design] {
     background: var(--ground) var(--paper-texture);
     background-size: 512px 448px;
   }
-  :root:not([data-ruth-theme="night"]) .art { display: none; }
-  :root:not([data-ruth-theme="night"]) .ruth-day-art { display: block; }
-  :root:not([data-ruth-theme="night"]) :is(h1, .join)::before { background: none; }
-  :root:not([data-ruth-theme="night"]) .join { text-shadow: none; }
-  :root:not([data-ruth-theme="night"]) .top-scrim {
+  .art { display: none; }
+  .ruth-day-art { display: block; }
+  :is(h1, .join)::before { background: none; }
+  .join { text-shadow: none; }
+  .top-scrim {
     background: linear-gradient(180deg, rgb(241 237 234 / .65) 0%, transparent 100%);
   }
-  :root:not([data-ruth-theme="night"]) body[data-design] > .masthead .site-nav {
+  body[data-design] > .masthead .site-nav {
     padding: 0 14px;
     background: rgb(241 237 234 / .92);
     backdrop-filter: blur(6px);
     border: 1px solid rgb(17 16 15 / .14);
   }
-  :root:not([data-ruth-theme="night"]) body[data-design] .edition-toggle {
-    color: var(--ink);
-  }
-  :root:not([data-ruth-theme="night"]) .motion-control {
-    background: rgb(241 237 234 / .92);
-    border-color: rgb(17 16 15 / .14);
-    color: var(--ink);
-  }
-}
-
-:root[data-ruth-theme="day"] body[data-design] {
-  background: var(--ground) var(--paper-texture);
-  background-size: 512px 448px;
-}
-:root[data-ruth-theme="day"] .art { display: none; }
-:root[data-ruth-theme="day"] .ruth-day-art { display: block; }
-:root[data-ruth-theme="day"] :is(h1, .join)::before { background: none; }
-:root[data-ruth-theme="day"] .join { text-shadow: none; }
-:root[data-ruth-theme="day"] .top-scrim {
-  background: linear-gradient(180deg, rgb(241 237 234 / .65) 0%, transparent 100%);
-}
-:root[data-ruth-theme="day"] body[data-design] > .masthead .site-nav {
-  padding: 0 14px;
-  background: rgb(241 237 234 / .92);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgb(17 16 15 / .14);
-}
-:root[data-ruth-theme="day"] body[data-design] .edition-toggle {
-  color: var(--ink);
-}
-:root[data-ruth-theme="day"] .motion-control {
-  background: rgb(241 237 234 / .92);
-  border-color: rgb(17 16 15 / .14);
-  color: var(--ink);
-}
-
-:root[data-ruth-theme="night"] body[data-design] {
-  background: #000000;
-}
-:root[data-ruth-theme="night"] .art { display: block; }
-:root[data-ruth-theme="night"] .ruth-day-art { display: none; }
-:root[data-ruth-theme="night"] body[data-design] > .masthead .site-nav {
-  padding: 0;
-  background: transparent;
-  backdrop-filter: none;
-  border: 0;
-}
-:root[data-ruth-theme="night"] body[data-design] .edition-toggle {
-  color: rgb(242 240 235 / .82);
-}
-:root[data-ruth-theme="night"] .motion-control {
-  background: rgb(0 0 0 / .68);
-  border-color: rgb(255 255 255 / .16);
-  color: rgb(242 240 235 / .86);
 }
 
 @media (forced-colors: active) {
-  :root body[data-design] { background: Canvas; }
+  body[data-design] { background: Canvas; }
   .ruth-day-art { visibility: hidden; }
 }
 

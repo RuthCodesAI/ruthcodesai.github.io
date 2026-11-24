@@ -51,38 +51,6 @@ body[data-design] > .masthead .site-nav {
   background: linear-gradient(180deg, rgb(0 0 0 / .62) 0%, rgb(0 0 0 / .24) 55%, transparent 100%);
 }
 
-/* Motion pause/play/replay control (WCAG 2.2 SC 2.2.2) */
-.motion-control {
-  position: fixed;
-  z-index: 6;
-  inset-block-end: max(18px, env(safe-area-inset-bottom));
-  inset-inline-end: var(--rail-right);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-inline-size: 54px;
-  min-block-size: 36px;
-  padding: 0 11px;
-  border: 1px solid rgb(255 255 255 / .16);
-  background: rgb(0 0 0 / .68);
-  backdrop-filter: blur(6px);
-  color: rgb(242 240 235 / .86);
-  font: 510 11px/1 var(--sans);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  transition: color .18s ease, background-color .18s ease, border-color .18s ease, opacity .18s ease;
-}
-
-.motion-control:is(:hover, :focus-visible) {
-  color: var(--ink);
-  border-color: var(--accent);
-}
-
-body[data-waitlist-open="true"] .motion-control {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .art {
   position: fixed;
   inset: calc(var(--view-height) - var(--art-height)) 0 auto;

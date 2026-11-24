@@ -124,17 +124,9 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-ruth-theme="day"]) .about-print {
+  .about-print {
     mix-blend-mode: normal;
   }
-}
-
-:root[data-ruth-theme="night"] .about-print {
-  mix-blend-mode: normal;
-}
-
-:root[data-ruth-theme="day"] .about-print {
-  mix-blend-mode: multiply;
 }
 
 /* Architectural three-point principles band */

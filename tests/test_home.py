@@ -63,16 +63,11 @@ class Home(unittest.TestCase):
                         arg=visible)
                     self.assertTrue(page.locator('video').evaluate_all(
                         'videos => videos.every(video => video.paused && video.currentTime === 0)'))
-                    expect(page.locator('#edition-toggle')).to_be_visible()
-                    expect(page.locator('#motion-toggle')).to_be_visible()
+                    expect(page.locator('#edition-toggle')).to_have_count(0)
+                    expect(page.locator('#motion-toggle')).to_have_count(0)
                     expect(page.get_by_role('heading', name=HEADLINE, exact=True)).to_be_visible()
                     expect(page.locator('#signup-cta')).to_have_attribute('aria-expanded', 'false')
                 self.assertEqual(films, [])
-                # Manual edition toggle flips edition and persists in sessionStorage
-                before = page.locator('html').get_attribute('data-ruth-theme')
-                page.locator('#edition-toggle').click()
-                expected = 'night' if before == 'day' else 'day'
-                expect(page.locator('html')).to_have_attribute('data-ruth-theme', expected)
                 page.close()
 
     def test_responsive_lockup_clears_the_moving_lips_in_both_editions(self):
@@ -153,11 +148,6 @@ class Home(unittest.TestCase):
         page.locator('#signup-cta').click()
         expect(shader).to_have_attribute('data-material-idle', 'paused')
         page.keyboard.press('Escape')
-        expect(shader).to_have_attribute('data-material-idle', 'running')
-        # Motion toggle pauses and resumes living ASCII.
-        page.locator('#motion-toggle').click()
-        expect(shader).to_have_attribute('data-material-idle', 'paused')
-        page.locator('#motion-toggle').click()
         expect(shader).to_have_attribute('data-material-idle', 'running')
 
     def waitlist_page(self):
