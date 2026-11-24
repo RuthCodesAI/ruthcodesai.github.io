@@ -199,106 +199,73 @@ input:focus-visible,
   width: auto;
 }
 
-/* Bespoke Ruth Swiss index trigger (editorial label + halftone-dot & hairline glyph)
+/* Wordless Ruth 3x3 diagonal-graded halftone matrix trigger (6.5px pitch, 18x18)
    and full-viewport archival monograph overlay */
 .menu-toggle {
   display: none;
   position: relative;
   isolation: isolate;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  min-width: 44px;
-  min-height: 44px;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
-  font: 520 .84rem/1 var(--sans);
-  letter-spacing: .01em;
   pointer-events: auto;
   transition: opacity .18s ease, transform .2s var(--ease);
 }
 
 .menu-toggle:active {
-  transform: scale(.97);
+  transform: scale(.94);
 }
 
-.menu-toggle-label {
-  display: inline-block;
-  font: 520 .84rem/1 var(--sans);
-  letter-spacing: .005em;
-  transition: opacity .2s ease;
-}
-
-.menu-glyph {
-  position: relative;
+.menu-matrix {
   display: block;
-  flex: none;
-  width: 19px;
-  height: 11px;
+  width: 18px;
+  height: 18px;
+  overflow: visible;
 }
 
-.menu-glyph .mg-top,
-.menu-glyph .mg-bot {
-  position: absolute;
-  right: 0;
-  height: 1.35px;
-  background: currentColor;
+.menu-matrix .mm-d {
+  transform-box: fill-box;
   transform-origin: center;
-  transition: transform .34s var(--ease), top .34s var(--ease), width .28s var(--ease);
+  transition: transform .3s var(--ease), opacity .24s ease;
+  transition-delay: calc(var(--d, 0) * 22ms);
 }
 
-.menu-glyph .mg-top {
-  top: 1.5px;
-  width: 19px;
-}
-
-.menu-glyph .mg-bot {
-  top: 8.5px;
-  width: 12px;
-}
-
-/* Signature Ruth circular halftone dot anchoring the lower-left of the glyph */
-.menu-glyph .mg-dot {
-  position: absolute;
-  left: 0;
-  top: 7.75px;
-  width: 2.8px;
-  height: 2.8px;
-  border-radius: 999px;
-  background: currentColor;
-  transform-origin: center;
-  transition: transform .3s var(--ease), opacity .22s ease;
+.menu-matrix .mm-cross {
+  transform-box: view-box;
+  transform-origin: 9px 9px;
+  opacity: 0;
+  transform: scale(.55) rotate(-45deg);
+  transition: transform .34s var(--ease), opacity .22s ease;
 }
 
 @media (hover: hover) {
-  .menu-toggle:hover .mg-dot {
-    transform: translateX(1.8px) scale(1.12);
-  }
-  .menu-toggle:hover .mg-bot {
-    width: 13.5px;
+  .menu-toggle:hover .mm-d {
+    transform: scale(1.16);
   }
 }
 
-.menu-toggle[aria-expanded="true"] .mg-top,
-.site-menu[aria-hidden="false"] .menu-glyph.is-close .mg-top {
-  top: 4.8px;
-  width: 18px;
-  transform: rotate(45deg);
-}
-
-.menu-toggle[aria-expanded="true"] .mg-bot,
-.site-menu[aria-hidden="false"] .menu-glyph.is-close .mg-bot {
-  top: 4.8px;
-  width: 18px;
-  transform: rotate(-45deg);
-}
-
-.menu-toggle[aria-expanded="true"] .mg-dot,
-.site-menu[aria-hidden="false"] .menu-glyph.is-close .mg-dot {
+.menu-toggle[aria-expanded="true"] .mm-d,
+.site-menu[aria-hidden="false"] .menu-close .mm-d {
   opacity: 0;
-  transform: translate(7.5px, -3.5px) scale(.1);
+  transform: scale(.15);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-cross,
+.site-menu[aria-hidden="false"] .menu-close .mm-cross {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  transition-delay: 50ms;
+}
+
+/* On the closed sheet, prime the close button's matrix so opening reveals the morph */
+.menu-close .mm-d {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .site-menu {
@@ -384,9 +351,8 @@ input:focus-visible,
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 44px;
+  height: 44px;
   margin-right: 0;
   padding: 0;
   border: 0;
@@ -395,8 +361,8 @@ input:focus-visible,
   transition: opacity .18s ease, transform .2s var(--ease);
 }
 
-.menu-close:hover { opacity: .68; }
-.menu-close:active { transform: scale(.97); }
+.menu-close:hover { opacity: .66; }
+.menu-close:active { transform: scale(.94); }
 
 .site-menu-nav {
   flex: 1 0 auto;
@@ -611,6 +577,7 @@ body[data-menu-open="true"] {
   }
   .has-menu-js .reading-edition .masthead .menu-toggle {
     display: inline-flex;
+    justify-content: flex-end;
     margin-right: 0;
   }
 }
@@ -619,9 +586,9 @@ body[data-menu-open="true"] {
   .reading-edition .site-menu { display: none !important; }
 }
 
-/* Homepage switches to the top-right architectural index placard whenever it is
-   not in desktop left-rail composition (phones, portrait tablets like 768x1024,
-   and short landscape phones), so inline links never collide with Justitia. */
+/* Homepage switches to a matte circular optical loupe medallion holding the
+   3x3 graded halftone matrix whenever not in desktop left-rail composition,
+   echoing Ruth's circular halftone dot without boxy chrome over artwork. */
 @media not all and (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3) {
   .has-menu-js body[data-design] > .masthead {
     inset-inline-start: auto;
@@ -632,41 +599,39 @@ body[data-menu-open="true"] {
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle {
     display: inline-flex;
-    padding: 0 13px 0 15px;
-    gap: 11px;
+    justify-content: center;
+    padding: 0;
     margin-right: 0;
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle::before {
     content: "";
     position: absolute;
-    inset: 4px 0;
+    inset: 1px;
     z-index: -1;
-    background: rgb(11 11 11 / .74);
-    border: 1px solid rgb(242 240 235 / .20);
-    border-bottom-color: rgb(242 240 235 / .42);
-    box-shadow: 0 6px 20px rgb(0 0 0 / .48), inset 0 1px 0 rgb(255 255 255 / .09);
-    backdrop-filter: blur(18px) saturate(120%);
-    -webkit-backdrop-filter: blur(18px) saturate(120%);
-    transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    border-radius: 50%;
+    background: rgb(12 12 12 / .74);
+    border: 1px solid rgb(242 240 235 / .22);
+    box-shadow: 0 4px 20px rgb(0 0 0 / .50);
+    backdrop-filter: blur(20px) saturate(115%);
+    -webkit-backdrop-filter: blur(20px) saturate(115%);
+    transition: background-color .18s ease, border-color .18s ease, transform .22s var(--ease);
   }
   @media (hover: hover) {
     .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
-      border-color: rgb(242 240 235 / .36);
-      border-bottom-color: rgb(242 240 235 / .68);
+      background: rgb(16 16 16 / .84);
+      border-color: rgb(242 240 235 / .40);
     }
   }
   @media (prefers-color-scheme: light) {
     .has-menu-js body[data-design] > .masthead .menu-toggle::before {
-      background: rgb(249 247 242 / .90);
-      border: 1px solid rgb(17 16 15 / .16);
-      border-bottom-color: rgb(17 16 15 / .38);
-      box-shadow: 0 4px 16px rgb(17 16 15 / .08), 0 1px 2px rgb(17 16 15 / .05), inset 0 1px 0 rgb(255 255 255 / .92);
+      background: rgb(246 244 239 / .93);
+      border: 1px solid rgb(17 16 15 / .14);
+      box-shadow: 0 2px 14px rgb(17 16 15 / .10);
     }
     @media (hover: hover) {
       .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
-        background: rgb(252 251 248 / .96);
+        background: rgb(250 248 244 / .98);
         border-color: rgb(17 16 15 / .28);
-        border-bottom-color: rgb(17 16 15 / .62);
       }
     }
   }
@@ -793,7 +758,8 @@ body[data-menu-open="true"] {
   .menu-kicker,
   .menu-row,
   .site-menu-foot,
-  .menu-glyph span,
+  .menu-matrix .mm-d,
+  .menu-matrix .mm-cross,
   .menu-toggle,
   .menu-close,
   .masthead .site-nav a::after {
