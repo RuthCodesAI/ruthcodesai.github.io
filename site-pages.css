@@ -52,7 +52,7 @@
 
 .folio {
   margin: 0 0 .85rem;
-  color: var(--accent);
+  color: var(--quiet);
   font: 500 .78rem/1.5 var(--mono);
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -87,7 +87,7 @@
 
 .about h1 {
   margin: 0 0 clamp(1.1rem, 2.2vw, 1.9rem);
-  color: var(--accent);
+  color: var(--quiet);
   font: 500 .78rem/1.4 var(--mono);
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -146,7 +146,7 @@
 .principle-num {
   display: block;
   margin-bottom: .7rem;
-  color: var(--accent);
+  color: var(--quiet);
   font: 500 .76rem/1 var(--mono);
   letter-spacing: .1em;
 }
@@ -213,7 +213,7 @@
 }
 
 .prose-num {
-  color: var(--accent);
+  color: var(--quiet);
   font: 500 .76rem/1 var(--mono);
   letter-spacing: .1em;
   flex: none;
@@ -245,7 +245,7 @@
 
 .colophon-kicker {
   margin: 0 0 .55rem;
-  color: var(--accent);
+  color: var(--quiet);
   font: 500 .74rem/1 var(--mono);
   letter-spacing: .11em;
   text-transform: uppercase;
@@ -379,13 +379,14 @@
   width: 17px;
   height: 12px;
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--quiet);
   stroke-width: 1.35;
-  transition: transform .18s var(--ease);
+  transition: transform .18s var(--ease), stroke .18s ease;
 }
 
 .colophon-next:is(:hover, :focus-visible) svg {
   transform: translateX(3px);
+  stroke: var(--ink);
 }
 
 .colophon-links {

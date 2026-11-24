@@ -1,6 +1,6 @@
 .team-kicker {
   margin: 0 0 .85rem;
-  color: var(--accent);
+  color: var(--quiet);
   font: 500 .78rem/1.4 var(--mono);
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -67,14 +67,15 @@
   width: .42em;
   height: .42em;
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--quiet);
   stroke-width: 1.75;
   transform: translateY(-.12em);
-  transition: transform .18s var(--ease);
+  transition: transform .18s var(--ease), stroke .18s ease;
 }
 
 .founder h2 a:is(:hover, :focus-visible) .founder-ext-arrow {
   transform: translate(.08em, -.2em);
+  stroke: var(--ink);
 }
 
 .founder .role {
@@ -142,7 +143,7 @@
     width: 11px;
     height: 11px;
     fill: none;
-    stroke: var(--accent);
+    stroke: var(--quiet);
     stroke-width: 1.5;
   }
   .founders {

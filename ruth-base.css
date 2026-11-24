@@ -27,14 +27,14 @@
   --quiet: rgb(var(--muted-rgb));
   --muted: var(--quiet);
   --line: #34312d;
-  --accent: #d4ab94;
+  --accent: #f2f0eb;
   --paper-texture: none;
   /* Night edition waitlist card: warm archival rag paper on obsidian. */
   --sheet-bg: #eeeae1;
   --sheet-ink: #171614;
   --sheet-muted: #54504b;
   --sheet-rule: #b8b1a6;
-  --sheet-accent: #744232;
+  --sheet-accent: #171614;
   --sheet-border: rgb(255 255 255 / .12);
   --sheet-shadow: 0 28px 72px rgb(0 0 0 / .62);
 
@@ -61,14 +61,14 @@
     --quiet: rgb(var(--muted-rgb));
     --muted: var(--quiet);
     --line: #c7c0b7;
-    --accent: #744232;
+    --accent: #11100f;
     --paper-texture: url('/v2/assets/paper.webp') repeat;
     /* Day edition waitlist card: inverted obsidian ink card on warm cotton paper. */
     --sheet-bg: #141312;
     --sheet-ink: #f2f0eb;
     --sheet-muted: #bcb6ac;
     --sheet-rule: #474440;
-    --sheet-accent: #d4ab94;
+    --sheet-accent: #f2f0eb;
     --sheet-border: rgb(17 16 15 / .24);
     --sheet-shadow: 0 28px 68px rgb(17 16 15 / .18);
   }
@@ -97,7 +97,7 @@
 * { box-sizing: border-box; }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
   color: var(--ink);
 }
 
