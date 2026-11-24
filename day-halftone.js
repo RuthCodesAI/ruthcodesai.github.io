@@ -24,8 +24,8 @@
  *     and renders the exact static orthogonal halftone under prefers-reduced-motion.
  */
 
-const GRID_URL = '/assets/justitia-day-grid.rht?v=2026-ht3';
-const LIFT_URL = '/assets/justitia-day-lift.rht?v=2026-ht3';
+const GRID_URL = '/assets/justitia-day-grid.rht?v=2026-ht4';
+const LIFT_URL = '/assets/justitia-day-lift.rht?v=2026-ht4';
 
 let cachedGridPromise = null;
 let cachedLiftPromise = null;
@@ -56,23 +56,26 @@ async function loadLiftTrack() {
       const decompressed = await new Response(res.body.pipeThrough(ds)).arrayBuffer();
       const view = new DataView(decompressed);
       const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
-      if (magic !== 'RHT1') return null;
+      if (magic !== 'RHT1' && magic !== 'RHT2') return null;
       const cols = view.getUint16(4, true);
       const rows = view.getUint16(6, true);
       const nFrames = view.getUint16(8, true);
       const fps = view.getUint8(10);
+      const isV2 = magic === 'RHT2';
+      const maxVal = isV2 ? view.getUint8(11) : 63;
+      const mask = maxVal; // power-of-two minus 1 (63 or 127)
       const cellCount = cols * rows;
-      const raw = new Uint8Array(decompressed, 11);
+      const raw = new Uint8Array(decompressed, isV2 ? 12 : 11);
       const frames = new Uint8Array(nFrames * cellCount);
       frames.set(raw.subarray(0, cellCount), 0);
       for (let f = 1; f < nFrames; f++) {
         const prevOff = (f - 1) * cellCount;
         const curOff = f * cellCount;
         for (let i = 0; i < cellCount; i++) {
-          frames[curOff + i] = (frames[prevOff + i] + raw[curOff + i]) & 0x3F;
+          frames[curOff + i] = (frames[prevOff + i] + raw[curOff + i]) & mask;
         }
       }
-      return { cols, rows, nFrames, fps, frames };
+      return { cols, rows, nFrames, fps, maxVal, frames };
     }).catch(() => null);
   }
   return cachedLiftPromise;
@@ -517,10 +520,11 @@ export function createDayHalftone(options) {
     host.dataset.halftoneDots = String(count);
   }
 
-  // Smooth 60/120fps Catmull-Rom cubic interpolation of the original blindfold-lift track.
+  // Silky 60/120fps linear blend across motion-compensated 24fps zero-deadband keyframes
+  // (zero Catmull-Rom ringing, zero deadband popping, 2x native temporal resolution).
   function sampleLiftRadii(tSec) {
     if (!liftTrack) return false;
-    const { cols, rows, nFrames, fps, frames } = liftTrack;
+    const { cols, rows, nFrames, fps, maxVal, frames } = liftTrack;
     const cellCount = cols * rows;
     const isPortrait = isPortraitViewport();
     const fPos = tSec * fps;
@@ -531,30 +535,15 @@ export function createDayHalftone(options) {
 
     const f1 = Math.floor(fPos);
     const u = fPos - f1;
-    const f0 = Math.max(0, f1 - 1);
     const f2 = Math.min(nFrames - 1, f1 + 1);
-    const f3 = Math.min(nFrames - 1, f1 + 2);
-    const o0 = f0 * cellCount, o1 = f1 * cellCount, o2 = f2 * cellCount, o3 = f3 * cellCount;
-    const u2 = u * u, u3 = u2 * u;
+    const o1 = f1 * cellCount, o2 = f2 * cellCount;
+    const invMax = 1 / (maxVal || 63);
 
     for (let i = 0; i < count; i++) {
       const idx = cellIdx[i];
-      const p0 = frames[o0 + idx];
       const p1 = frames[o1 + idx];
       const p2 = frames[o2 + idx];
-      const p3 = frames[o3 + idx];
-      let v;
-      if (p0 === p1 && p1 === p2 && p2 === p3) {
-        v = p1 / 63;
-      } else {
-        const cr = 0.5 * (
-          (2 * p1) +
-          (-p0 + p2) * u +
-          (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 +
-          (-p0 + 3 * p1 - 3 * p2 + p3) * u3
-        );
-        v = clamp(cr / 63, 0, 1);
-      }
+      const v = (p1 === p2 ? p1 : (p1 + (p2 - p1) * u)) * invMax;
 
       let nextR = radiusFromValue(v, dotPitch, isPortrait);
       if (isPortrait) {
