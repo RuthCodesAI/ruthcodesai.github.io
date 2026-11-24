@@ -40,7 +40,8 @@
   align-items: center;
   justify-content: space-between;
   gap: .75rem 1.5rem;
-  padding-block: var(--masthead-padding);
+  padding-top: max(var(--masthead-padding), env(safe-area-inset-top));
+  padding-bottom: var(--masthead-padding);
   border-bottom: 1px solid var(--line);
 }
 

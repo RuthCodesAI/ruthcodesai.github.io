@@ -211,10 +211,47 @@ input:focus-visible,
   height: 44px;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   color: inherit;
   pointer-events: auto;
   transition: opacity .18s ease, transform .2s var(--ease);
+}
+
+/* Signature matte circular optical loupe medallion shared across every mobile
+   and tablet view, keeping the 3x3 halftone matrix razor-clear above both
+   Justitia artwork and reading-page halftone washes with exact 0.0px lock. */
+.menu-toggle::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(18 18 18 / .92);
+  border: 1px solid rgb(242 240 235 / .22);
+  box-shadow: 0 4px 18px rgb(0 0 0 / .44);
+  transition: background-color .18s ease, border-color .18s ease, transform .22s var(--ease);
+}
+
+@media (hover: hover) {
+  .menu-toggle:hover::before {
+    background: rgb(24 24 24 / .98);
+    border-color: rgb(242 240 235 / .46);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .menu-toggle::before {
+    background: #f7f5f0;
+    border: 1px solid rgb(17 16 15 / .17);
+    box-shadow: 0 2px 12px rgb(17 16 15 / .08);
+  }
+  @media (hover: hover) {
+    .menu-toggle:hover::before {
+      background: #fbfaf7;
+      border-color: rgb(17 16 15 / .36);
+    }
+  }
 }
 
 .menu-toggle:active {
@@ -227,6 +264,11 @@ input:focus-visible,
   height: 18px;
   overflow: visible;
   transition: transform .36s var(--ease);
+}
+
+/* Optical centering correction for the diagonal-graded 3x3 halftone weight */
+.menu-toggle[aria-expanded="false"] .menu-matrix {
+  transform: translate(.35px, .35px);
 }
 
 .menu-matrix .mm-d {
@@ -246,7 +288,7 @@ input:focus-visible,
 
 @media (hover: hover) {
   .menu-toggle:hover .mm-d {
-    transform: scale(1.16);
+    transform: scale(1.14);
   }
   .menu-close:hover .menu-matrix {
     transform: rotate(90deg);
@@ -254,7 +296,7 @@ input:focus-visible,
 }
 
 /* Open morph: 4 cardinal dots dissolve cleanly while 5 diagonal halftone dots
-   equalize into a symmetric 1.44px-corner / 1.85px-center Halftone Constellation x */
+   equalize into a symmetric 1.44px-corner / 1.88px-center Halftone Constellation x */
 .menu-toggle[aria-expanded="true"] .mm-card,
 .site-menu[aria-hidden="false"] .menu-close .mm-card {
   opacity: 0;
@@ -263,24 +305,24 @@ input:focus-visible,
 
 .menu-toggle[aria-expanded="true"] .mm-nw,
 .site-menu[aria-hidden="false"] .menu-close .mm-nw {
-  transform: scale(.76);
+  transform: scale(.81);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-ne,
 .site-menu[aria-hidden="false"] .menu-close .mm-ne,
 .menu-toggle[aria-expanded="true"] .mm-sw,
 .site-menu[aria-hidden="false"] .menu-close .mm-sw {
-  transform: scale(1.2);
+  transform: scale(1.11);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-ctr,
 .site-menu[aria-hidden="false"] .menu-close .mm-ctr {
-  transform: scale(1.48);
+  transform: scale(1.4);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-se,
 .site-menu[aria-hidden="false"] .menu-close .mm-se {
-  transform: scale(2);
+  transform: scale(1.56);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-cross,
@@ -386,6 +428,7 @@ input:focus-visible,
   margin-right: 0;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   color: var(--ink);
   transition: transform .2s var(--ease);
@@ -641,14 +684,15 @@ body[data-menu-open="true"] {
   overflow: hidden !important;
 }
 
-/* Inner reading pages switch to the monograph menu at <= 680px. */
+/* Inner reading pages switch to the monograph menu at <= 680px, centered inside
+   the circular medallion for exact 0.0px lock with .menu-close. */
 @media (max-width: 680px) {
   .has-menu-js .reading-edition .masthead .site-nav {
     display: none;
   }
   .has-menu-js .reading-edition .masthead .menu-toggle {
     display: inline-flex;
-    justify-content: flex-end;
+    justify-content: center;
     margin-right: 0;
   }
 }
@@ -657,9 +701,9 @@ body[data-menu-open="true"] {
   .reading-edition .site-menu { display: none !important; }
 }
 
-/* Homepage switches to a matte circular optical loupe medallion holding the
-   3x3 graded halftone matrix whenever not in desktop left-rail composition,
-   echoing Ruth's circular halftone dot without boxy chrome over artwork. */
+/* Homepage switches to a frosted obsidian (Night) or luminous alabaster (Day)
+   circular optical medallion over Justitia artwork whenever not in desktop
+   left-rail composition. */
 @media not all and (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3) {
   .has-menu-js body[data-design] > .masthead {
     inset-inline-start: auto;
@@ -675,34 +719,28 @@ body[data-menu-open="true"] {
     margin-right: 0;
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle::before {
-    content: "";
-    position: absolute;
-    inset: 1px;
-    z-index: -1;
-    border-radius: 50%;
-    background: rgb(12 12 12 / .74);
-    border: 1px solid rgb(242 240 235 / .22);
-    box-shadow: 0 4px 20px rgb(0 0 0 / .50);
+    background: rgb(14 14 14 / .78);
+    border: 1px solid rgb(242 240 235 / .24);
+    box-shadow: 0 4px 20px rgb(0 0 0 / .52);
     backdrop-filter: blur(20px) saturate(115%);
     -webkit-backdrop-filter: blur(20px) saturate(115%);
-    transition: background-color .18s ease, border-color .18s ease, transform .22s var(--ease);
   }
   @media (hover: hover) {
     .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
-      background: rgb(16 16 16 / .84);
-      border-color: rgb(242 240 235 / .40);
+      background: rgb(18 18 18 / .88);
+      border-color: rgb(242 240 235 / .44);
     }
   }
   @media (prefers-color-scheme: light) {
     .has-menu-js body[data-design] > .masthead .menu-toggle::before {
-      background: rgb(246 244 239 / .93);
-      border: 1px solid rgb(17 16 15 / .14);
+      background: rgb(247 245 240 / .95);
+      border: 1px solid rgb(17 16 15 / .17);
       box-shadow: 0 2px 14px rgb(17 16 15 / .10);
     }
     @media (hover: hover) {
       .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
-        background: rgb(250 248 244 / .98);
-        border-color: rgb(17 16 15 / .28);
+        background: rgb(251 250 247 / .99);
+        border-color: rgb(17 16 15 / .34);
       }
     }
   }
@@ -729,7 +767,8 @@ body[data-menu-open="true"] {
    single-screen 3-column Swiss architectural spread so nothing clips off-screen. */
 @media (max-height: 520px) {
   .site-menu-inner {
-    padding-block: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-bottom));
+    padding-top: max(var(--masthead-padding), env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
   .site-menu-head {
     padding-bottom: 8px;

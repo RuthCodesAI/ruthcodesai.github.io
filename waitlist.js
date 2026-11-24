@@ -1,4 +1,4 @@
-import './site-menu.js?v=2026-pos1';
+import './site-menu.js?v=2026-r2';
 
 const SERVICE_ERROR = 'We couldn’t confirm your signup. Please try again.';
 
