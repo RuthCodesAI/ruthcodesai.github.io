@@ -30,6 +30,7 @@
   --accent: #f2f0eb;
   --halftone-screen: none;
   --halftone-wash: none;
+  --day-canvas: none;
   /* Night edition waitlist card: smoked obsidian gallery glass with ivory hairline. */
   --sheet-bg: rgb(15 15 15 / .88);
   --sheet-ink: #f2f0eb;
@@ -70,18 +71,22 @@
 :root[data-ruth-theme="day"] {
   color-scheme: light;
   --ink-rgb: 17 16 15;
-  --ground-rgb: 245 243 238;
-  --muted-rgb: 88 85 79;
+  --ground-rgb: 244 242 237;
+  --muted-rgb: 72 70 66;
   --ink: rgb(var(--ink-rgb));
-  --ground: #f5f3ee;
+  --ground: #f4f2ed;
   --quiet: rgb(var(--muted-rgb));
   --muted: var(--quiet);
-  --line: #d4cfc7;
+  --line: rgb(17 16 15 / .15);
   --accent: #11100f;
-  /* Crisp 6.5px 0-degree orthogonal Swiss halftone screen & graded architectural wash. */
+  /* Crisp 6.5px 0-degree orthogonal Swiss halftone screen & tactile gesso-graphite canvas. */
   --halftone-screen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6.5' height='6.5' viewBox='0 0 6.5 6.5'%3E%3Ccircle cx='3.25' cy='3.25' r='.7' fill='%2311100f' fill-opacity='.135'/%3E%3C/svg%3E");
   --halftone-wash: url('/assets/halftone-wash.svg?v=2026-htbg1');
-  /* Day edition waitlist card: crisp dot-free archival ivory stationery card over halftone print. */
+  --day-canvas: image-set(
+    url('/assets/day-gesso-canvas.avif?v=2026-am1') type('image/avif'),
+    url('/assets/day-gesso-canvas.webp?v=2026-am1') type('image/webp')
+  );
+  /* Day edition waitlist card: crisp dot-free archival ivory stationery card over gesso print. */
   --sheet-bg: rgb(252 251 248 / .97);
   --sheet-ink: #11100f;
   --sheet-muted: #5f5b55;
@@ -90,19 +95,19 @@
   --sheet-border: rgb(17 16 15 / .15);
   --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .9);
   --sheet-shadow: 0 1px 2px rgb(17 16 15 / .05), 0 18px 46px rgb(17 16 15 / .10), 0 36px 84px rgb(17 16 15 / .07);
-  --medallion-bg: #f7f5f0;
+  --medallion-bg: rgb(251 250 247 / .94);
   --medallion-bg-hover: #fbfaf7;
-  --medallion-border: rgb(17 16 15 / .17);
+  --medallion-border: rgb(17 16 15 / .18);
   --medallion-border-hover: rgb(17 16 15 / .36);
   --medallion-shadow: 0 2px 12px rgb(17 16 15 / .08);
   --medallion-inv-bg: #11100f;
   --medallion-inv-bg-hover: #211f1d;
-  --medallion-inv-ink: #f5f3ee;
+  --medallion-inv-ink: #f4f2ed;
   --medallion-inv-border: rgb(17 16 15 / .94);
   --medallion-inv-shadow: 0 3px 14px rgb(17 16 15 / .18);
-  --home-medallion-bg: rgb(247 245 240 / .95);
-  --home-medallion-bg-hover: rgb(251 250 247 / .99);
-  --home-medallion-border: rgb(17 16 15 / .17);
+  --home-medallion-bg: rgb(251 250 247 / .94);
+  --home-medallion-bg-hover: rgb(252 251 248 / .99);
+  --home-medallion-border: rgb(17 16 15 / .18);
   --home-medallion-border-hover: rgb(17 16 15 / .34);
   --home-medallion-shadow: 0 2px 14px rgb(17 16 15 / .10);
 }
@@ -111,16 +116,20 @@
   :root:not([data-ruth-theme="night"]) {
     color-scheme: light;
     --ink-rgb: 17 16 15;
-    --ground-rgb: 245 243 238;
-    --muted-rgb: 88 85 79;
+    --ground-rgb: 244 242 237;
+    --muted-rgb: 72 70 66;
     --ink: rgb(var(--ink-rgb));
-    --ground: #f5f3ee;
+    --ground: #f4f2ed;
     --quiet: rgb(var(--muted-rgb));
     --muted: var(--quiet);
-    --line: #d4cfc7;
+    --line: rgb(17 16 15 / .15);
     --accent: #11100f;
     --halftone-screen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6.5' height='6.5' viewBox='0 0 6.5 6.5'%3E%3Ccircle cx='3.25' cy='3.25' r='.7' fill='%2311100f' fill-opacity='.135'/%3E%3C/svg%3E");
     --halftone-wash: url('/assets/halftone-wash.svg?v=2026-htbg1');
+    --day-canvas: image-set(
+      url('/assets/day-gesso-canvas.avif?v=2026-am1') type('image/avif'),
+      url('/assets/day-gesso-canvas.webp?v=2026-am1') type('image/webp')
+    );
     --sheet-bg: rgb(252 251 248 / .97);
     --sheet-ink: #11100f;
     --sheet-muted: #5f5b55;
@@ -129,19 +138,19 @@
     --sheet-border: rgb(17 16 15 / .15);
     --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .9);
     --sheet-shadow: 0 1px 2px rgb(17 16 15 / .05), 0 18px 46px rgb(17 16 15 / .10), 0 36px 84px rgb(17 16 15 / .07);
-    --medallion-bg: #f7f5f0;
+    --medallion-bg: rgb(251 250 247 / .94);
     --medallion-bg-hover: #fbfaf7;
-    --medallion-border: rgb(17 16 15 / .17);
+    --medallion-border: rgb(17 16 15 / .18);
     --medallion-border-hover: rgb(17 16 15 / .36);
     --medallion-shadow: 0 2px 12px rgb(17 16 15 / .08);
     --medallion-inv-bg: #11100f;
     --medallion-inv-bg-hover: #211f1d;
-    --medallion-inv-ink: #f5f3ee;
+    --medallion-inv-ink: #f4f2ed;
     --medallion-inv-border: rgb(17 16 15 / .94);
     --medallion-inv-shadow: 0 3px 14px rgb(17 16 15 / .18);
-    --home-medallion-bg: rgb(247 245 240 / .95);
-    --home-medallion-bg-hover: rgb(251 250 247 / .99);
-    --home-medallion-border: rgb(17 16 15 / .17);
+    --home-medallion-bg: rgb(251 250 247 / .94);
+    --home-medallion-bg-hover: rgb(252 251 248 / .99);
+    --home-medallion-border: rgb(17 16 15 / .18);
     --home-medallion-border-hover: rgb(17 16 15 / .34);
     --home-medallion-shadow: 0 2px 14px rgb(17 16 15 / .10);
   }
@@ -436,20 +445,24 @@ input:focus-visible,
 }
 
 html[data-ruth-theme="day"] .site-menu::before {
-  background-image: var(--halftone-wash), var(--halftone-screen);
-  background-repeat: no-repeat, repeat;
-  background-position: right top, right top;
-  background-size: 624px 442px, 6.5px 6.5px;
-  opacity: .84;
+  background-color: var(--ground);
+  background-image: linear-gradient(rgb(249 247 244 / .28), rgb(249 247 244 / .28)), url('/assets/day-gesso-canvas.webp?v=2026-am1');
+  background-image: linear-gradient(rgb(249 247 244 / .28), rgb(249 247 244 / .28)), var(--day-canvas);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
 }
 
 @media (prefers-color-scheme: light) {
   html:not([data-ruth-theme="night"]) .site-menu::before {
-    background-image: var(--halftone-wash), var(--halftone-screen);
-    background-repeat: no-repeat, repeat;
-    background-position: right top, right top;
-    background-size: 624px 442px, 6.5px 6.5px;
-    opacity: .84;
+    background-color: var(--ground);
+    background-image: linear-gradient(rgb(249 247 244 / .28), rgb(249 247 244 / .28)), url('/assets/day-gesso-canvas.webp?v=2026-am1');
+    background-image: linear-gradient(rgb(249 247 244 / .28), rgb(249 247 244 / .28)), var(--day-canvas);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
   }
 }
 
@@ -1015,6 +1028,7 @@ body[data-menu-open="true"] {
     --accent: Highlight;
     --halftone-screen: none;
     --halftone-wash: none;
+    --day-canvas: none;
     --sheet-bg: Canvas;
     --sheet-ink: CanvasText;
     --sheet-muted: CanvasText;
