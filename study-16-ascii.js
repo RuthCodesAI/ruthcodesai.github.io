@@ -20,6 +20,15 @@ async function initializeHero(host) {
   const hasVideo = !!(body.dataset.videoSrc || body.dataset.videoWebm);
   const preview = new URLSearchParams(location.search).has('preview');
   const light = matchMedia('(prefers-color-scheme: light)');
+  const storedTheme = () => {
+    try {
+      const t = localStorage.getItem('ruth-theme');
+      return t === 'day' || t === 'night' ? t : null;
+    } catch {
+      return null;
+    }
+  };
+  const resolvedTheme = () => storedTheme() || (light.matches ? 'day' : 'night');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width:650px)');
   const optedIn = body.dataset.animate === 'true';
@@ -28,7 +37,7 @@ async function initializeHero(host) {
   let disposed = false, failed = false, ready = false, paused = false;
   let intersecting = true, managedPlaying = false, pageSuspended = false;
   let videoController = null, dayController = null, dayLoading = null;
-  let nightInitialized = false, mode = light.matches ? 'day' : 'night';
+  let nightInitialized = false, mode = resolvedTheme();
   let idleReady = false, idleElapsed = 0, sourceLuma, sampledFilmTime = -1;
   let idlePreparing = false, interiorCells, livingStrips = [];
   let idleSleeping = false, sleepTimer = 0;
@@ -603,7 +612,7 @@ async function initializeHero(host) {
     if (canvas.isConnected) canvas.hidden = true;
     try {
       if (!dayController) {
-        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-nowhirl1');
+        if (!dayLoading) dayLoading = import('./day-halftone.js?v=2026-theme1');
         const { createDayHalftone } = await dayLoading;
         if (disposed || mode !== 'day') return;
         dayController = createDayHalftone({
@@ -646,7 +655,7 @@ async function initializeHero(host) {
     });
   }
 
-  document.documentElement.dataset.ruthTheme = light.matches ? 'day' : 'night';
+  document.documentElement.dataset.ruthTheme = resolvedTheme();
 
   try {
     if (!ctx || !inkCtx || !maskCtx || !treatmentCtx || !sampleCtx || !matteCtx) throw new Error('Canvas unavailable');
@@ -667,15 +676,20 @@ async function initializeHero(host) {
     waitlistObserver = new MutationObserver(() => sync());
     waitlistObserver.observe(body, { attributes: true, attributeFilter: ['data-waitlist-open', 'data-menu-open'] });
 
-    if (light.matches) await activateDay(true);
+    if (resolvedTheme() === 'day') await activateDay(true);
     else activateNight();
   } catch { fallback(); }
 
-  light.addEventListener('change', () => {
+  const applyResolvedTheme = () => {
     if (disposed) return;
-    if (light.matches) activateDay(true);
+    const next = resolvedTheme();
+    if (next === mode) return;
+    if (next === 'day') activateDay(true);
     else activateNight();
-  }, events);
+  };
+
+  light.addEventListener('change', applyResolvedTheme, events);
+  window.addEventListener('ruththemechange', applyResolvedTheme, events);
   reduced.addEventListener('change', () => {
     if (disposed) return;
     if (mode === 'day') {

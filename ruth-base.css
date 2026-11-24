@@ -39,6 +39,16 @@
   --sheet-border: rgb(242 240 235 / .18);
   --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .07);
   --sheet-shadow: 0 2px 6px rgb(0 0 0 / .32), 0 28px 72px rgb(0 0 0 / .72);
+  --medallion-bg: rgb(18 18 18 / .92);
+  --medallion-bg-hover: rgb(24 24 24 / .98);
+  --medallion-border: rgb(242 240 235 / .22);
+  --medallion-border-hover: rgb(242 240 235 / .46);
+  --medallion-shadow: 0 4px 18px rgb(0 0 0 / .44);
+  --home-medallion-bg: rgb(14 14 14 / .78);
+  --home-medallion-bg-hover: rgb(18 18 18 / .88);
+  --home-medallion-border: rgb(242 240 235 / .24);
+  --home-medallion-border-hover: rgb(242 240 235 / .44);
+  --home-medallion-shadow: 0 4px 20px rgb(0 0 0 / .52);
 
   --serif: Newsreader, Georgia, serif;
   --sans: InterTight, system-ui, -apple-system, sans-serif;
@@ -52,8 +62,43 @@
   --masthead-padding: clamp(.75rem, 1.5vw, 1.35rem);
 }
 
+:root[data-ruth-theme="day"] {
+  color-scheme: light;
+  --ink-rgb: 17 16 15;
+  --ground-rgb: 245 243 238;
+  --muted-rgb: 88 85 79;
+  --ink: rgb(var(--ink-rgb));
+  --ground: #f5f3ee;
+  --quiet: rgb(var(--muted-rgb));
+  --muted: var(--quiet);
+  --line: #d4cfc7;
+  --accent: #11100f;
+  /* Crisp 6.5px 0-degree orthogonal Swiss halftone screen & graded architectural wash. */
+  --halftone-screen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6.5' height='6.5' viewBox='0 0 6.5 6.5'%3E%3Ccircle cx='3.25' cy='3.25' r='.7' fill='%2311100f' fill-opacity='.135'/%3E%3C/svg%3E");
+  --halftone-wash: url('/assets/halftone-wash.svg?v=2026-htbg1');
+  /* Day edition waitlist card: crisp dot-free archival ivory stationery card over halftone print. */
+  --sheet-bg: rgb(252 251 248 / .97);
+  --sheet-ink: #11100f;
+  --sheet-muted: #5f5b55;
+  --sheet-rule: rgb(17 16 15 / .24);
+  --sheet-accent: #11100f;
+  --sheet-border: rgb(17 16 15 / .15);
+  --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .9);
+  --sheet-shadow: 0 1px 2px rgb(17 16 15 / .05), 0 18px 46px rgb(17 16 15 / .10), 0 36px 84px rgb(17 16 15 / .07);
+  --medallion-bg: #f7f5f0;
+  --medallion-bg-hover: #fbfaf7;
+  --medallion-border: rgb(17 16 15 / .17);
+  --medallion-border-hover: rgb(17 16 15 / .36);
+  --medallion-shadow: 0 2px 12px rgb(17 16 15 / .08);
+  --home-medallion-bg: rgb(247 245 240 / .95);
+  --home-medallion-bg-hover: rgb(251 250 247 / .99);
+  --home-medallion-border: rgb(17 16 15 / .17);
+  --home-medallion-border-hover: rgb(17 16 15 / .34);
+  --home-medallion-shadow: 0 2px 14px rgb(17 16 15 / .10);
+}
+
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-ruth-theme="night"]) {
     color-scheme: light;
     --ink-rgb: 17 16 15;
     --ground-rgb: 245 243 238;
@@ -64,10 +109,8 @@
     --muted: var(--quiet);
     --line: #d4cfc7;
     --accent: #11100f;
-    /* Crisp 6.5px 0-degree orthogonal Swiss halftone screen & graded architectural wash. */
     --halftone-screen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6.5' height='6.5' viewBox='0 0 6.5 6.5'%3E%3Ccircle cx='3.25' cy='3.25' r='.7' fill='%2311100f' fill-opacity='.135'/%3E%3C/svg%3E");
     --halftone-wash: url('/assets/halftone-wash.svg?v=2026-htbg1');
-    /* Day edition waitlist card: crisp dot-free archival ivory stationery card over halftone print. */
     --sheet-bg: rgb(252 251 248 / .97);
     --sheet-ink: #11100f;
     --sheet-muted: #5f5b55;
@@ -76,6 +119,16 @@
     --sheet-border: rgb(17 16 15 / .15);
     --sheet-highlight: inset 0 1px 0 rgb(255 255 255 / .9);
     --sheet-shadow: 0 1px 2px rgb(17 16 15 / .05), 0 18px 46px rgb(17 16 15 / .10), 0 36px 84px rgb(17 16 15 / .07);
+    --medallion-bg: #f7f5f0;
+    --medallion-bg-hover: #fbfaf7;
+    --medallion-border: rgb(17 16 15 / .17);
+    --medallion-border-hover: rgb(17 16 15 / .36);
+    --medallion-shadow: 0 2px 12px rgb(17 16 15 / .08);
+    --home-medallion-bg: rgb(247 245 240 / .95);
+    --home-medallion-bg-hover: rgb(251 250 247 / .99);
+    --home-medallion-border: rgb(17 16 15 / .17);
+    --home-medallion-border-hover: rgb(17 16 15 / .34);
+    --home-medallion-shadow: 0 2px 14px rgb(17 16 15 / .10);
   }
 }
 
@@ -127,14 +180,25 @@ input:focus-visible,
   position: fixed;
   z-index: 30;
   left: var(--rail-left);
-  top: -120px;
-  padding: 12px 18px;
+  top: 12px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   background: var(--ink);
   color: var(--ground);
   font: 520 15px/1.2 var(--sans);
   text-decoration: none;
 }
-.skip:focus { top: 12px; }
+.skip:focus {
+  width: auto;
+  height: auto;
+  padding: 12px 18px;
+  overflow: visible;
+  clip-path: none;
+}
 
 /* Shared navigation */
 .site-nav {
@@ -227,30 +291,16 @@ input:focus-visible,
   inset: 1px;
   z-index: -1;
   border-radius: 50%;
-  background: rgb(18 18 18 / .92);
-  border: 1px solid rgb(242 240 235 / .22);
-  box-shadow: 0 4px 18px rgb(0 0 0 / .44);
+  background: var(--medallion-bg);
+  border: 1px solid var(--medallion-border);
+  box-shadow: var(--medallion-shadow);
   transition: background-color .18s ease, border-color .18s ease, transform .22s var(--ease);
 }
 
 @media (hover: hover) {
   .menu-toggle:hover::before {
-    background: rgb(24 24 24 / .98);
-    border-color: rgb(242 240 235 / .46);
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  .menu-toggle::before {
-    background: #f7f5f0;
-    border: 1px solid rgb(17 16 15 / .17);
-    box-shadow: 0 2px 12px rgb(17 16 15 / .08);
-  }
-  @media (hover: hover) {
-    .menu-toggle:hover::before {
-      background: #fbfaf7;
-      border-color: rgb(17 16 15 / .36);
-    }
+    background: var(--medallion-bg-hover);
+    border-color: var(--medallion-border-hover);
   }
 }
 
@@ -362,8 +412,16 @@ input:focus-visible,
   background: radial-gradient(circle at 82% 14%, rgb(242 240 235 / .045), transparent 56%);
 }
 
+html[data-ruth-theme="day"] .site-menu::before {
+  background-image: var(--halftone-wash), var(--halftone-screen);
+  background-repeat: no-repeat, repeat;
+  background-position: right top, right top;
+  background-size: 624px 442px, 6.5px 6.5px;
+  opacity: .84;
+}
+
 @media (prefers-color-scheme: light) {
-  .site-menu::before {
+  html:not([data-ruth-theme="night"]) .site-menu::before {
     background-image: var(--halftone-wash), var(--halftone-screen);
     background-repeat: no-repeat, repeat;
     background-position: right top, right top;
@@ -442,30 +500,16 @@ input:focus-visible,
   inset: 1px;
   z-index: -1;
   border-radius: 50%;
-  background: rgb(18 18 18 / .92);
-  border: 1px solid rgb(242 240 235 / .22);
-  box-shadow: 0 4px 18px rgb(0 0 0 / .44);
+  background: var(--medallion-bg);
+  border: 1px solid var(--medallion-border);
+  box-shadow: var(--medallion-shadow);
   transition: background-color .18s ease, border-color .18s ease;
 }
 
 @media (hover: hover) {
   .menu-close:hover::before {
-    background: rgb(24 24 24 / .98);
-    border-color: rgb(242 240 235 / .46);
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  .menu-close::before {
-    background: #f7f5f0;
-    border: 1px solid rgb(17 16 15 / .17);
-    box-shadow: 0 2px 12px rgb(17 16 15 / .08);
-  }
-  @media (hover: hover) {
-    .menu-close:hover::before {
-      background: #fbfaf7;
-      border-color: rgb(17 16 15 / .36);
-    }
+    background: var(--medallion-bg-hover);
+    border-color: var(--medallion-border-hover);
   }
 }
 
@@ -680,6 +724,63 @@ input:focus-visible,
   text-underline-offset: .25em;
 }
 
+/* Discreet Day / Night mode switcher:
+   - Desktop reading pages: inline inside .colophon-links alongside Privacy
+   - Desktop homepage: anchored quietly bottom-left on --rail-left
+   - Mobile (all routes): inside .site-menu-foot */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--quiet);
+  font: 460 .9rem/1.2 var(--sans);
+  letter-spacing: -.005em;
+  transition: color .18s ease, opacity .18s ease;
+}
+
+.theme-switch:is(:hover, :focus-visible) {
+  color: var(--ink);
+}
+
+.theme-glyph {
+  display: block;
+  width: 11px;
+  height: 11px;
+  flex: none;
+  transition: transform .38s var(--ease);
+}
+
+.theme-switch[data-theme="night"] .theme-glyph {
+  transform: rotate(180deg);
+}
+
+.home-theme-foot {
+  display: none;
+  position: fixed;
+  z-index: 6;
+  inset-block-end: max(var(--masthead-padding), env(safe-area-inset-bottom));
+  inset-inline-start: var(--rail-left);
+  pointer-events: auto;
+}
+
+.home-theme-foot .theme-switch {
+  font-size: .84rem;
+  font-weight: 480;
+  opacity: .88;
+}
+
+.home-theme-foot .theme-switch:is(:hover, :focus-visible) {
+  opacity: 1;
+}
+
+body[data-waitlist-open="true"] .home-theme-foot {
+  display: none !important;
+}
+
 body[data-menu-open="true"] {
   overflow: hidden !important;
 }
@@ -694,6 +795,9 @@ body[data-menu-open="true"] {
     display: inline-flex;
     justify-content: center;
     margin-right: 0;
+  }
+  .has-menu-js .reading-edition .colophon-links .theme-switch {
+    display: none;
   }
 }
 
@@ -719,29 +823,16 @@ body[data-menu-open="true"] {
     margin-right: 0;
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle::before {
-    background: rgb(14 14 14 / .78);
-    border: 1px solid rgb(242 240 235 / .24);
-    box-shadow: 0 4px 20px rgb(0 0 0 / .52);
+    background: var(--home-medallion-bg);
+    border: 1px solid var(--home-medallion-border);
+    box-shadow: var(--home-medallion-shadow);
     backdrop-filter: blur(20px) saturate(115%);
     -webkit-backdrop-filter: blur(20px) saturate(115%);
   }
   @media (hover: hover) {
     .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
-      background: rgb(18 18 18 / .88);
-      border-color: rgb(242 240 235 / .44);
-    }
-  }
-  @media (prefers-color-scheme: light) {
-    .has-menu-js body[data-design] > .masthead .menu-toggle::before {
-      background: rgb(247 245 240 / .95);
-      border: 1px solid rgb(17 16 15 / .17);
-      box-shadow: 0 2px 14px rgb(17 16 15 / .10);
-    }
-    @media (hover: hover) {
-      .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
-        background: rgb(251 250 247 / .99);
-        border-color: rgb(17 16 15 / .34);
-      }
+      background: var(--home-medallion-bg-hover);
+      border-color: var(--home-medallion-border-hover);
     }
   }
 }
@@ -760,6 +851,9 @@ body[data-menu-open="true"] {
   }
   body[data-design] .site-menu {
     display: none !important;
+  }
+  .has-menu-js body[data-design] .home-theme-foot {
+    display: flex;
   }
 }
 
@@ -873,6 +967,7 @@ body[data-menu-open="true"] {
   .menu-matrix .mm-cross,
   .menu-toggle,
   .menu-close,
+  .theme-glyph,
   .masthead .site-nav a::after {
     transition: none !important;
   }

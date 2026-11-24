@@ -11,6 +11,132 @@
 
 const WORDMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1831 714" aria-hidden="true" focusable="false"><g fill="currentColor"><path fill-rule="evenodd" d="M0 0H267C417 0 505 70 505 185C505 283 439 344 340 369L484 598C508 636 535 673 563 700H421L222 379H126V576C126 627 135 671 149 700H0C14 671 23 627 23 576V124C23 74 14 30 0 0ZM126 58V321H255C350 321 405 272 405 185C405 103 350 58 250 58Z"/><path transform="translate(561 0)" d="M0 214H131C119 246 114 282 114 327V527C114 609 145 654 207 654C254 654 300 619 333 569V327C333 282 328 246 316 214H445C433 246 428 282 428 327V587C428 635 435 672 450 700H333V642C294 690 245 714 184 714C73 714 17 649 17 540V327C17 282 12 246 0 214Z"/><path transform="translate(1042 0)" d="M0 230H64V124L162 89C155 127 152 159 152 195V230H292V286H152V566C152 624 171 653 212 653C246 653 273 640 301 616L324 646C283 692 242 714 188 714C107 714 60 664 60 579V286H0Z"/><path transform="translate(1386 0)" d="M0 0H125C114 33 109 72 109 121V286C146 240 191 214 251 214C358 214 411 279 411 388V587C411 635 418 672 433 700H298C311 672 316 635 316 587V404C316 322 287 279 230 279C182 279 138 311 109 354V587C109 635 116 672 131 700H0C13 672 18 635 18 587V121C18 72 12 33 0 0Z"/></g></svg>`;
 const ARROW_SVG = `<svg class="menu-arrow" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5"/></svg>`;
+const THEME_GLYPH_SVG = `<svg class="theme-glyph" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="4.8" fill="none" stroke="currentColor" stroke-width="1.15"/><path d="M6 1.2a4.8 4.8 0 0 0 0 9.6z" fill="currentColor"/></svg>`;
+const THEME_KEY = 'ruth-theme';
+
+function initThemeSwitcher(isHome, menuFootLinks) {
+  const lightMq = matchMedia('(prefers-color-scheme: light)');
+  const readStored = () => {
+    try {
+      const t = localStorage.getItem(THEME_KEY);
+      return t === 'day' || t === 'night' ? t : null;
+    } catch {
+      return null;
+    }
+  };
+  const osTheme = () => (lightMq.matches ? 'day' : 'night');
+  const currentTheme = () => readStored() || osTheme();
+
+  const buttons = [];
+  function makeButton() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theme-switch';
+    btn.innerHTML = `${THEME_GLYPH_SVG}<span class="theme-label"></span>`;
+    btn.addEventListener('click', () => {
+      const next = currentTheme() === 'day' ? 'night' : 'day';
+      try {
+        if (next === osTheme()) localStorage.removeItem(THEME_KEY);
+        else localStorage.setItem(THEME_KEY, next);
+      } catch { /* storage unavailable */ }
+      applyTheme(next, true);
+    });
+    buttons.push(btn);
+    return btn;
+  }
+
+  // Mobile: discreetly inside the monograph menu footer.
+  if (menuFootLinks) {
+    menuFootLinks.prepend(makeButton());
+  }
+
+  // Larger views: discreetly in the footer (.colophon-links on reading pages,
+  // or anchored bottom-left on the Swiss rail on the full-viewport homepage).
+  const colophonLinks = document.querySelector('.site-colophon .colophon-links');
+  if (colophonLinks) {
+    colophonLinks.prepend(makeButton());
+  } else if (isHome) {
+    const homeFoot = document.createElement('div');
+    homeFoot.className = 'home-theme-foot';
+    homeFoot.append(makeButton());
+    document.body.append(homeFoot);
+  }
+
+  function syncAboutPicture(theme, overridden) {
+    const pic = document.querySelector('picture.about-print');
+    if (!pic) return;
+    const sources = [...pic.querySelectorAll('source')];
+    const darkSrc = sources.find(s => (s.dataset.origMedia || s.media).includes('dark'));
+    const lightSrc = sources.find(s => (s.dataset.origMedia || s.media).includes('light'));
+    if (darkSrc && !darkSrc.dataset.origMedia) darkSrc.dataset.origMedia = darkSrc.media;
+    if (lightSrc && !lightSrc.dataset.origMedia) lightSrc.dataset.origMedia = lightSrc.media;
+    const img = pic.querySelector('img');
+    if (img && !img.dataset.origSrc) img.dataset.origSrc = img.getAttribute('src') || '';
+
+    if (overridden) {
+      if (darkSrc) darkSrc.media = theme === 'night' ? 'all' : 'not all';
+      if (lightSrc) lightSrc.media = theme === 'day' ? 'all' : 'not all';
+      if (img) img.src = theme === 'night' ? '/assets/about-justitia-night.webp' : img.dataset.origSrc;
+    } else {
+      if (darkSrc) darkSrc.media = darkSrc.dataset.origMedia;
+      if (lightSrc) lightSrc.media = lightSrc.dataset.origMedia;
+      if (img && img.dataset.origSrc) img.src = img.dataset.origSrc;
+    }
+  }
+
+  function syncThemeColorMeta(theme, overridden) {
+    const metas = [...document.querySelectorAll('meta[name="theme-color"]')];
+    const lightMeta = metas.find(m => (m.dataset.origMedia || m.media).includes('light'));
+    const darkMeta = metas.find(m => (m.dataset.origMedia || m.media).includes('dark'));
+    if (lightMeta && !lightMeta.dataset.origMedia) lightMeta.dataset.origMedia = lightMeta.media;
+    if (darkMeta && !darkMeta.dataset.origMedia) darkMeta.dataset.origMedia = darkMeta.media;
+    if (overridden) {
+      if (lightMeta) lightMeta.media = theme === 'day' ? 'all' : 'not all';
+      if (darkMeta) darkMeta.media = theme === 'night' ? 'all' : 'not all';
+    } else {
+      if (lightMeta) lightMeta.media = lightMeta.dataset.origMedia;
+      if (darkMeta) darkMeta.media = darkMeta.dataset.origMedia;
+    }
+  }
+
+  function applyTheme(theme, notify = false) {
+    const overridden = readStored() !== null;
+    if (overridden || isHome) {
+      document.documentElement.dataset.ruthTheme = theme;
+    } else {
+      delete document.documentElement.dataset.ruthTheme;
+    }
+    syncAboutPicture(theme, overridden);
+    syncThemeColorMeta(theme, overridden);
+
+    const nextLabel = theme === 'day' ? 'Dark' : 'Light';
+    const aria = theme === 'day' ? 'Switch to dark mode' : 'Switch to light mode';
+    for (const btn of buttons) {
+      btn.dataset.theme = theme;
+      btn.setAttribute('aria-label', aria);
+      const labelEl = btn.querySelector('.theme-label');
+      if (labelEl) labelEl.textContent = nextLabel;
+    }
+
+    if (notify) {
+      window.dispatchEvent(new CustomEvent('ruththemechange', { detail: { theme } }));
+    }
+  }
+
+  applyTheme(currentTheme(), false);
+
+  lightMq.addEventListener('change', () => {
+    if (readStored() === null) {
+      applyTheme(osTheme(), false);
+    }
+  });
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === THEME_KEY) {
+      applyTheme(currentTheme(), true);
+    }
+  });
+}
 
 export function initSiteMenu() {
   const masthead = document.querySelector('body > .masthead');
@@ -99,7 +225,6 @@ export function initSiteMenu() {
       <div class="site-menu-foot">
         ${waitlistTrigger}
         <div class="menu-foot-links">
-          <a class="menu-privacy" href="mailto:info@ruth.codes">Work with us</a>
           <a class="menu-privacy" href="/privacy/"${isCurrent('/privacy/') ? ' aria-current="page"' : ''}>Privacy</a>
         </div>
       </div>
@@ -107,6 +232,7 @@ export function initSiteMenu() {
   `;
 
   document.body.append(sheet);
+  initThemeSwitcher(isHome, sheet.querySelector('.menu-foot-links'));
 
   const closeBtn = sheet.querySelector('.menu-close');
   const waitlistBtn = sheet.querySelector('[data-menu-waitlist]');

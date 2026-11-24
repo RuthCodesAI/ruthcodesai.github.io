@@ -11,27 +11,44 @@
   height: 100%;
 }
 
+html[data-ruth-theme="day"] body[data-design] {
+  background: var(--ground);
+}
+html[data-ruth-theme="day"] .art {
+  background: #ffffff;
+  mix-blend-mode: multiply;
+}
+html[data-ruth-theme="day"] .art .photo,
+html[data-ruth-theme="day"] .art .living-video {
+  opacity: 0 !important;
+}
+html[data-ruth-theme="day"] .art .veil {
+  background: none;
+}
+html[data-ruth-theme="day"] :is(h1, .join)::before { background: none; }
+html[data-ruth-theme="day"] .join { text-shadow: none; }
+
 @media (prefers-color-scheme: light) {
-  body[data-design] {
+  html:not([data-ruth-theme="night"]) body[data-design] {
     background: var(--ground);
   }
-  .art {
+  html:not([data-ruth-theme="night"]) .art {
     background: #ffffff;
     mix-blend-mode: multiply;
   }
   /* Hide the source chiaroscuro photo and Night video in Day mode so the
      halftone ink droplets emerge cleanly out of warm alabaster museum stock. */
-  .art .photo,
-  .art .living-video {
+  html:not([data-ruth-theme="night"]) .art .photo,
+  html:not([data-ruth-theme="night"]) .art .living-video {
     opacity: 0 !important;
   }
   /* The GPU halftone shader renders the continuous edge-to-edge pinpoint sheet
      and feathered reading aura behind Ruth / headline / CTA on both desktop and mobile. */
-  .art .veil {
+  html:not([data-ruth-theme="night"]) .art .veil {
     background: none;
   }
-  :is(h1, .join)::before { background: none; }
-  .join { text-shadow: none; }
+  html:not([data-ruth-theme="night"]) :is(h1, .join)::before { background: none; }
+  html:not([data-ruth-theme="night"]) .join { text-shadow: none; }
 }
 
 @media (forced-colors: active) {

@@ -20,8 +20,15 @@
 /* Text-led Day reading pages (/team/, /privacy/, /404.html) add a sculptural
    graded Swiss halftone wave locked 1:1 on the exact 6.5px pitch in the upper-right
    negative space; /about/ keeps the pure screen so Justitia's bust stands alone. */
+html[data-ruth-theme="day"] .reading-page:not(:has(.about-print)) {
+  background-image: var(--halftone-wash), var(--halftone-screen);
+  background-repeat: no-repeat, repeat;
+  background-position: right top, right top;
+  background-size: 624px 442px, 6.5px 6.5px;
+}
+
 @media (prefers-color-scheme: light) {
-  .reading-page:not(:has(.about-print)) {
+  html:not([data-ruth-theme="night"]) .reading-page:not(:has(.about-print)) {
     background-image: var(--halftone-wash), var(--halftone-screen);
     background-repeat: no-repeat, repeat;
     background-position: right top, right top;
@@ -121,7 +128,7 @@
   display: block;
   aspect-ratio: 840 / 874;
   overflow: hidden;
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal;
 }
 
 .about-print img {
@@ -132,9 +139,13 @@
   object-position: 50% 42%;
 }
 
-@media (prefers-color-scheme: dark) {
-  .about-print {
-    mix-blend-mode: normal;
+html[data-ruth-theme="day"] .about-print {
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-ruth-theme="night"]) .about-print {
+    mix-blend-mode: multiply;
   }
 }
 

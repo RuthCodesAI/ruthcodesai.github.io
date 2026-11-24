@@ -21,11 +21,15 @@
       transparent 55%);
   }
 
+  html[data-ruth-theme="day"] .art .veil {
+    background: none;
+  }
+
   @media (prefers-color-scheme: light) {
     /* On desktop Day mode, the GPU halftone shader applies a tailored radial reading
        aura right behind Ruth / headline / CTA so the full-sheet pinpoint dot matrix
        and Justitia's rising forearm stay visible without a boxy gradient wall. */
-    .art .veil {
+    html:not([data-ruth-theme="night"]) .art .veil {
       background: none;
     }
   }
@@ -71,13 +75,8 @@
   .hero-lockup .waitlist {
     grid-row: 4;
     align-self: start;
-    align-items: flex-start;
     top: auto;
     margin: clamp(16px, 2.6dvh, 30px) 0 0;
-  }
-
-  .hero-lockup .direct-contact {
-    margin-top: clamp(2px, 1.2dvh, 10px);
   }
 
   .hero-lockup .waitlist-panel {

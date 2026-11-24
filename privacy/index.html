@@ -23,9 +23,10 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preload" as="font" type="font/woff2" href="/assets/Newsreader-Latin.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="/assets/InterTight-Latin.woff2" crossorigin>
-  <link rel="stylesheet" href="/ruth-base.css?v=2026-r2">
-  <link rel="stylesheet" href="/site-pages.css?v=2026-r2">
-  <script type="module" src="/site-menu.js?v=2026-r2"></script>
+  <script>(()=>{try{const t=localStorage.getItem('ruth-theme');if(t==='day'||t==='night')document.documentElement.dataset.ruthTheme=t;}catch{}})();</script>
+  <link rel="stylesheet" href="/ruth-base.css?v=2026-theme1">
+  <link rel="stylesheet" href="/site-pages.css?v=2026-theme1">
+  <script type="module" src="/site-menu.js?v=2026-theme1"></script>
 </head>
 <body class="reading-page reading-edition">
 <a class="skip" href="#main">Skip to content</a>
@@ -43,7 +44,7 @@
   <div class="prose-sections">
     <section class="prose-block">
       <h2><span class="prose-num" aria-hidden="true">01</span>Cookies and browser storage</h2>
-      <p>We set no cookies and store no browser preferences. Appearance follows your device settings automatically, and fonts and media are served directly from this domain.</p>
+      <p>We set no cookies. Appearance follows your device settings automatically; if you switch between light and dark mode, that preference is stored locally in your browser. Fonts and media are served directly from this domain.</p>
     </section>
     <section class="prose-block">
       <h2><span class="prose-num" aria-hidden="true">02</span>Waitlist signups</h2>
@@ -63,7 +64,6 @@
   <div class="colophon-meta">
     <a class="colophon-next" href="/">Return to homepage <svg viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5"/></svg></a>
     <div class="colophon-links">
-      <a href="mailto:info@ruth.codes">Work with us</a>
       <a href="/privacy/" aria-current="page">Privacy</a>
     </div>
   </div>
