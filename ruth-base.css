@@ -226,40 +226,68 @@ input:focus-visible,
   width: 18px;
   height: 18px;
   overflow: visible;
+  transition: transform .36s var(--ease);
 }
 
 .menu-matrix .mm-d {
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform .3s var(--ease), opacity .24s ease;
-  transition-delay: calc(var(--d, 0) * 22ms);
+  transition: transform .34s var(--ease), opacity .24s ease;
+  transition-delay: calc(var(--d, 0) * 18ms);
 }
 
 .menu-matrix .mm-cross {
   transform-box: view-box;
   transform-origin: 9px 9px;
   opacity: 0;
-  transform: scale(.55) rotate(-45deg);
-  transition: transform .34s var(--ease), opacity .22s ease;
+  transform: scale(.45);
+  transition: transform .36s var(--ease), opacity .26s ease;
 }
 
 @media (hover: hover) {
   .menu-toggle:hover .mm-d {
     transform: scale(1.16);
   }
+  .menu-close:hover .menu-matrix {
+    transform: rotate(90deg);
+  }
 }
 
-.menu-toggle[aria-expanded="true"] .mm-d,
-.site-menu[aria-hidden="false"] .menu-close .mm-d {
+/* Open morph: 4 cardinal dots dissolve cleanly while 5 diagonal halftone dots
+   equalize into a symmetric 1.44px-corner / 1.85px-center Halftone Constellation x */
+.menu-toggle[aria-expanded="true"] .mm-card,
+.site-menu[aria-hidden="false"] .menu-close .mm-card {
   opacity: 0;
-  transform: scale(.15);
+  transform: scale(.1);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-nw,
+.site-menu[aria-hidden="false"] .menu-close .mm-nw {
+  transform: scale(.76);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-ne,
+.site-menu[aria-hidden="false"] .menu-close .mm-ne,
+.menu-toggle[aria-expanded="true"] .mm-sw,
+.site-menu[aria-hidden="false"] .menu-close .mm-sw {
+  transform: scale(1.2);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-ctr,
+.site-menu[aria-hidden="false"] .menu-close .mm-ctr {
+  transform: scale(1.48);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-se,
+.site-menu[aria-hidden="false"] .menu-close .mm-se {
+  transform: scale(2);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-cross,
 .site-menu[aria-hidden="false"] .menu-close .mm-cross {
   opacity: 1;
-  transform: scale(1) rotate(0deg);
-  transition-delay: 50ms;
+  transform: scale(1);
+  transition-delay: 55ms;
 }
 
 /* On the closed sheet, prime the close button's matrix so opening reveals the morph */
@@ -348,9 +376,11 @@ input:focus-visible,
 }
 
 .menu-close {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   width: 44px;
   height: 44px;
   margin-right: 0;
@@ -358,11 +388,45 @@ input:focus-visible,
   border: 0;
   background: transparent;
   color: var(--ink);
-  transition: opacity .18s ease, transform .2s var(--ease);
+  transition: transform .2s var(--ease);
 }
 
-.menu-close:hover { opacity: .66; }
-.menu-close:active { transform: scale(.94); }
+/* Matte circular optical medallion matching Home's trigger at exact 0.0px lock,
+   keeping the Halftone Constellation x razor-clear above the graded halftone wash */
+.menu-close::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(18 18 18 / .92);
+  border: 1px solid rgb(242 240 235 / .22);
+  box-shadow: 0 4px 18px rgb(0 0 0 / .44);
+  transition: background-color .18s ease, border-color .18s ease;
+}
+
+@media (hover: hover) {
+  .menu-close:hover::before {
+    background: rgb(24 24 24 / .98);
+    border-color: rgb(242 240 235 / .46);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .menu-close::before {
+    background: #f7f5f0;
+    border: 1px solid rgb(17 16 15 / .17);
+    box-shadow: 0 2px 12px rgb(17 16 15 / .08);
+  }
+  @media (hover: hover) {
+    .menu-close:hover::before {
+      background: #fbfaf7;
+      border-color: rgb(17 16 15 / .36);
+    }
+  }
+}
+
+.menu-close:active { transform: scale(.93); }
 
 .site-menu-nav {
   flex: 1 0 auto;
@@ -758,6 +822,7 @@ body[data-menu-open="true"] {
   .menu-kicker,
   .menu-row,
   .site-menu-foot,
+  .menu-matrix,
   .menu-matrix .mm-d,
   .menu-matrix .mm-cross,
   .menu-toggle,

@@ -28,9 +28,10 @@ export function initSiteMenu() {
       : '(min-width: 681px)'
   );
 
-  // Wordless Ruth 3x3 diagonal-graded halftone matrix (exact 6.5px pitch matching
-  // the site's lithographic ground, 18x18 matching Ruth's x-height) morphing to x.
-  const MATRIX_SVG = `<svg class="menu-matrix" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false"><g class="mm-dots" fill="currentColor"><circle class="mm-d" style="--d:0" cx="2.5" cy="2.5" r="1.9"/><circle class="mm-d" style="--d:1" cx="9" cy="2.5" r="1.55"/><circle class="mm-d" style="--d:2" cx="15.5" cy="2.5" r="1.2"/><circle class="mm-d" style="--d:1" cx="2.5" cy="9" r="1.55"/><circle class="mm-d" style="--d:2" cx="9" cy="9" r="1.25"/><circle class="mm-d" style="--d:3" cx="15.5" cy="9" r=".95"/><circle class="mm-d" style="--d:2" cx="2.5" cy="15.5" r="1.2"/><circle class="mm-d" style="--d:3" cx="9" cy="15.5" r=".95"/><circle class="mm-d" style="--d:4" cx="15.5" cy="15.5" r=".72"/></g><g class="mm-cross" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="square"><path class="mm-x1" d="M2.5 2.5L15.5 15.5"/><path class="mm-x2" d="M15.5 2.5L2.5 15.5"/></g></svg>`;
+  // Wordless Ruth 3x3 diagonal-graded halftone matrix (6.5px pitch, 18x18)
+  // whose 4 cardinal dots dissolve while its 5 diagonal dots equalize into a
+  // symmetric Halftone Constellation x threaded by two fine hairlines.
+  const MATRIX_SVG = `<svg class="menu-matrix" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false"><g class="mm-cross" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"><path d="M2.5 2.5L15.5 15.5"/><path d="M15.5 2.5L2.5 15.5"/></g><g class="mm-dots" fill="currentColor"><circle class="mm-d mm-diag mm-nw" style="--d:0" cx="2.5" cy="2.5" r="1.9"/><circle class="mm-d mm-card" style="--d:1" cx="9" cy="2.5" r="1.55"/><circle class="mm-d mm-diag mm-ne" style="--d:2" cx="15.5" cy="2.5" r="1.2"/><circle class="mm-d mm-card" style="--d:1" cx="2.5" cy="9" r="1.55"/><circle class="mm-d mm-diag mm-ctr" style="--d:2" cx="9" cy="9" r="1.25"/><circle class="mm-d mm-card" style="--d:3" cx="15.5" cy="9" r=".95"/><circle class="mm-d mm-diag mm-sw" style="--d:2" cx="2.5" cy="15.5" r="1.2"/><circle class="mm-d mm-card" style="--d:3" cx="9" cy="15.5" r=".95"/><circle class="mm-d mm-diag mm-se" style="--d:4" cx="15.5" cy="15.5" r=".72"/></g></svg>`;
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.id = 'site-menu-toggle';
