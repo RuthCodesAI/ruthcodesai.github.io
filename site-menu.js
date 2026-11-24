@@ -28,7 +28,8 @@ export function initSiteMenu() {
       : '(min-width: 681px)'
   );
 
-  // Architectural two-hairline toggle button inside masthead.
+  // Bespoke Ruth Swiss index trigger: editorial label + halftone-dot & hairline glyph.
+  const GLYPH_HTML = `<span class="menu-glyph" aria-hidden="true"><span class="mg-top"></span><span class="mg-dot"></span><span class="mg-bot"></span></span>`;
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.id = 'site-menu-toggle';
@@ -36,7 +37,7 @@ export function initSiteMenu() {
   toggle.setAttribute('aria-expanded', 'false');
   toggle.setAttribute('aria-controls', 'site-menu');
   toggle.setAttribute('aria-label', 'Open navigation menu');
-  toggle.innerHTML = `<span class="menu-bars" aria-hidden="true"><span></span><span></span></span>`;
+  toggle.innerHTML = `<span class="menu-toggle-label" aria-hidden="true">Menu</span>${GLYPH_HTML}`;
   masthead.append(toggle);
 
   // Full-viewport Swiss archival monograph menu overlay.
@@ -86,7 +87,8 @@ export function initSiteMenu() {
       <div class="site-menu-head">
         <a class="menu-imprint" href="/" aria-label="Ruth">${WORDMARK_SVG}</a>
         <button type="button" class="menu-close" aria-label="Close navigation menu">
-          <span class="menu-bars is-close" aria-hidden="true"><span></span><span></span></span>
+          <span class="menu-toggle-label" aria-hidden="true">Close</span>
+          <span class="menu-glyph is-close" aria-hidden="true"><span class="mg-top"></span><span class="mg-dot"></span><span class="mg-bot"></span></span>
         </button>
       </div>
       <nav class="site-menu-nav" aria-label="Mobile navigation">

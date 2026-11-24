@@ -199,59 +199,106 @@ input:focus-visible,
   width: auto;
 }
 
-/* Architectural two-hairline mobile menu toggle & archival monograph overlay (<= 680px) */
+/* Bespoke Ruth Swiss index trigger (editorial label + halftone-dot & hairline glyph)
+   and full-viewport archival monograph overlay */
 .menu-toggle {
   display: none;
   position: relative;
   isolation: isolate;
   align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
+  font: 520 .84rem/1 var(--sans);
+  letter-spacing: .01em;
   pointer-events: auto;
-  transition: opacity .18s ease, transform .18s var(--ease);
+  transition: opacity .18s ease, transform .2s var(--ease);
 }
 
 .menu-toggle:active {
-  transform: scale(.96);
+  transform: scale(.97);
 }
 
-.menu-bars {
+.menu-toggle-label {
+  display: inline-block;
+  font: 520 .84rem/1 var(--sans);
+  letter-spacing: .005em;
+  transition: opacity .2s ease;
+}
+
+.menu-glyph {
   position: relative;
   display: block;
-  width: 20px;
-  height: 12px;
+  flex: none;
+  width: 19px;
+  height: 11px;
 }
 
-.menu-bars span {
+.menu-glyph .mg-top,
+.menu-glyph .mg-bot {
   position: absolute;
   right: 0;
-  width: 20px;
   height: 1.35px;
   background: currentColor;
   transform-origin: center;
-  transition: transform .32s var(--ease), top .32s var(--ease), width .28s var(--ease), opacity .2s ease;
+  transition: transform .34s var(--ease), top .34s var(--ease), width .28s var(--ease);
 }
 
-.menu-bars span:first-child { top: 2px; }
-.menu-bars span:last-child { top: 9px; width: 14px; }
+.menu-glyph .mg-top {
+  top: 1.5px;
+  width: 19px;
+}
 
-.menu-toggle[aria-expanded="true"] .menu-bars span:first-child,
-.site-menu[aria-hidden="false"] .menu-bars.is-close span:first-child {
-  top: 5.5px;
-  width: 20px;
+.menu-glyph .mg-bot {
+  top: 8.5px;
+  width: 12px;
+}
+
+/* Signature Ruth circular halftone dot anchoring the lower-left of the glyph */
+.menu-glyph .mg-dot {
+  position: absolute;
+  left: 0;
+  top: 7.75px;
+  width: 2.8px;
+  height: 2.8px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform .3s var(--ease), opacity .22s ease;
+}
+
+@media (hover: hover) {
+  .menu-toggle:hover .mg-dot {
+    transform: translateX(1.8px) scale(1.12);
+  }
+  .menu-toggle:hover .mg-bot {
+    width: 13.5px;
+  }
+}
+
+.menu-toggle[aria-expanded="true"] .mg-top,
+.site-menu[aria-hidden="false"] .menu-glyph.is-close .mg-top {
+  top: 4.8px;
+  width: 18px;
   transform: rotate(45deg);
 }
 
-.menu-toggle[aria-expanded="true"] .menu-bars span:last-child,
-.site-menu[aria-hidden="false"] .menu-bars.is-close span:last-child {
-  top: 5.5px;
-  width: 20px;
+.menu-toggle[aria-expanded="true"] .mg-bot,
+.site-menu[aria-hidden="false"] .menu-glyph.is-close .mg-bot {
+  top: 4.8px;
+  width: 18px;
   transform: rotate(-45deg);
+}
+
+.menu-toggle[aria-expanded="true"] .mg-dot,
+.site-menu[aria-hidden="false"] .menu-glyph.is-close .mg-dot {
+  opacity: 0;
+  transform: translate(7.5px, -3.5px) scale(.1);
 }
 
 .site-menu {
@@ -284,7 +331,7 @@ input:focus-visible,
     background-repeat: no-repeat, repeat;
     background-position: right top, right top;
     background-size: 624px 442px, 6.5px 6.5px;
-    opacity: 1;
+    opacity: .84;
   }
 }
 
@@ -336,18 +383,20 @@ input:focus-visible,
 .menu-close {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-right: -12px;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  margin-right: 0;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--ink);
-  transition: opacity .18s ease;
+  transition: opacity .18s ease, transform .2s var(--ease);
 }
 
 .menu-close:hover { opacity: .68; }
+.menu-close:active { transform: scale(.97); }
 
 .site-menu-nav {
   flex: 1 0 auto;
@@ -562,7 +611,7 @@ body[data-menu-open="true"] {
   }
   .has-menu-js .reading-edition .masthead .menu-toggle {
     display: inline-flex;
-    margin-right: -12px;
+    margin-right: 0;
   }
 }
 
@@ -570,7 +619,7 @@ body[data-menu-open="true"] {
   .reading-edition .site-menu { display: none !important; }
 }
 
-/* Homepage switches to the top-right frosted architectural wafer whenever it is
+/* Homepage switches to the top-right architectural index placard whenever it is
    not in desktop left-rail composition (phones, portrait tablets like 768x1024,
    and short landscape phones), so inline links never collide with Justitia. */
 @media not all and (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3) {
@@ -583,25 +632,42 @@ body[data-menu-open="true"] {
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle {
     display: inline-flex;
-    margin-right: -2px;
+    padding: 0 13px 0 15px;
+    gap: 11px;
+    margin-right: 0;
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle::before {
     content: "";
     position: absolute;
-    inset: 2px;
+    inset: 4px 0;
     z-index: -1;
-    background: rgb(12 12 12 / .64);
-    border: 1px solid rgb(242 240 235 / .18);
-    box-shadow: 0 2px 14px rgb(0 0 0 / .44), inset 0 1px 0 rgb(255 255 255 / .08);
-    backdrop-filter: blur(12px) saturate(110%);
-    -webkit-backdrop-filter: blur(12px) saturate(110%);
-    transition: background-color .18s ease, border-color .18s ease;
+    background: rgb(11 11 11 / .74);
+    border: 1px solid rgb(242 240 235 / .20);
+    border-bottom-color: rgb(242 240 235 / .42);
+    box-shadow: 0 6px 20px rgb(0 0 0 / .48), inset 0 1px 0 rgb(255 255 255 / .09);
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  @media (hover: hover) {
+    .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
+      border-color: rgb(242 240 235 / .36);
+      border-bottom-color: rgb(242 240 235 / .68);
+    }
   }
   @media (prefers-color-scheme: light) {
     .has-menu-js body[data-design] > .masthead .menu-toggle::before {
-      background: rgb(247 244 239 / .88);
-      border: 1px solid rgb(17 16 15 / .15);
-      box-shadow: 0 2px 10px rgb(17 16 15 / .07), inset 0 1px 0 rgb(255 255 255 / .72);
+      background: rgb(249 247 242 / .90);
+      border: 1px solid rgb(17 16 15 / .16);
+      border-bottom-color: rgb(17 16 15 / .38);
+      box-shadow: 0 4px 16px rgb(17 16 15 / .08), 0 1px 2px rgb(17 16 15 / .05), inset 0 1px 0 rgb(255 255 255 / .92);
+    }
+    @media (hover: hover) {
+      .has-menu-js body[data-design] > .masthead .menu-toggle:hover::before {
+        background: rgb(252 251 248 / .96);
+        border-color: rgb(17 16 15 / .28);
+        border-bottom-color: rgb(17 16 15 / .62);
+      }
     }
   }
 }
@@ -727,8 +793,9 @@ body[data-menu-open="true"] {
   .menu-kicker,
   .menu-row,
   .site-menu-foot,
-  .menu-bars span,
+  .menu-glyph span,
   .menu-toggle,
+  .menu-close,
   .masthead .site-nav a::after {
     transition: none !important;
   }
