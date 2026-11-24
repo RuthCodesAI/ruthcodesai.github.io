@@ -122,19 +122,26 @@
   }
 }
 
-/* Architectural four-pillar 2x2 Swiss grid */
+/* Architectural four-pillar 2x2 Swiss specification grid */
 .principles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(2.5rem, 6vw, 5.75rem);
-  row-gap: clamp(2.25rem, 4vw, 3.5rem);
+  column-gap: clamp(2.25rem, 6vw, 5.75rem);
+  row-gap: clamp(2rem, 3.8vw, 3.25rem);
   margin-top: clamp(2.75rem, 5vw, 4.75rem);
-  padding-top: clamp(2rem, 3.5vw, 3rem);
+  padding-top: clamp(1.75rem, 3.2vw, 2.75rem);
   border-top: 1px solid var(--line);
+}
+
+.principles-kicker {
+  grid-column: 1 / -1;
+  margin: 0 0 -.45rem;
 }
 
 .principle {
   min-width: 0;
+  padding-top: clamp(1.25rem, 2.2vw, 1.75rem);
+  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
 }
 
 .principle-num {
@@ -177,7 +184,7 @@
   white-space: nowrap;
 }
 
-/* Legal & monograph prose pages (/privacy/, /imprint/) */
+/* Legal & monograph prose pages (/privacy/): full-width Swiss broadsheet ledger */
 .prose-page h1 {
   margin-bottom: .35em;
   font-size: clamp(2.6rem, 6vw, 4.6rem);
@@ -185,7 +192,7 @@
 
 .prose-lead {
   max-width: 54ch;
-  margin: 0 0 clamp(2rem, 4vw, 3.25rem);
+  margin: 0 0 clamp(2.25rem, 4.2vw, 3.5rem);
   color: var(--quiet);
   font-size: clamp(1.2rem, 1.55vw, 1.48rem);
   line-height: 1.45;
@@ -193,18 +200,30 @@
 
 .prose-sections {
   display: grid;
-  gap: clamp(1.75rem, 3vw, 2.5rem);
-  max-width: 58ch;
-  padding-top: clamp(1.5rem, 2.8vw, 2.25rem);
   border-top: 1px solid var(--line);
+}
+
+.prose-block {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.35fr);
+  column-gap: clamp(2rem, 5vw, 5.5rem);
+  row-gap: .65rem;
+  align-items: baseline;
+  padding-block: clamp(1.5rem, 2.8vw, 2.25rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.prose-block:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .prose-block h2 {
   display: flex;
   align-items: baseline;
   gap: .85rem;
-  margin: 0 0 .55rem;
-  font: 450 clamp(1.28rem, 1.6vw, 1.5rem)/1.25 var(--serif);
+  margin: 0;
+  font: 440 clamp(1.24rem, 1.55vw, 1.48rem)/1.25 var(--serif);
 }
 
 .prose-num {
@@ -216,11 +235,13 @@
 
 .prose-block p {
   margin: 0;
-  color: var(--quiet);
-  font: 430 1rem/1.6 var(--sans);
+  max-width: 54ch;
+  color: color-mix(in srgb, var(--ink) 80%, var(--ground) 20%);
+  font: 420 1.02rem/1.62 var(--sans);
 }
 
 .prose-block p + p {
+  grid-column: 2;
   margin-top: .75rem;
 }
 
@@ -314,11 +335,11 @@
 .inline-waitlist-submit:hover svg { transform: translateX(3px); }
 .inline-waitlist-submit:disabled { opacity: .45; cursor: progress; }
 
-.inline-waitlist-note {
+.reading-page .inline-waitlist-note {
   margin: .75rem 0 0;
   color: var(--quiet);
   font: 430 .82rem/1.45 var(--sans);
-  max-width: 58ch;
+  max-width: none;
 }
 
 .inline-waitlist-note a {
@@ -428,9 +449,12 @@
 }
 
 @media (max-width: 54rem) {
-  .principles {
+  .prose-block {
     grid-template-columns: minmax(0, 1fr);
-    gap: 1.75rem;
+    row-gap: .55rem;
+  }
+  .prose-block p + p {
+    grid-column: 1;
   }
   .site-colophon {
     grid-template-columns: minmax(0, 1fr);
@@ -446,16 +470,20 @@
 }
 
 @media (max-width: 43rem) {
+  .principles {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.5rem;
+  }
   .about-opening {
     grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
   .about-print {
-    aspect-ratio: 4 / 3;
-    max-width: 32rem;
+    aspect-ratio: 840 / 874;
+    max-width: 24rem;
   }
   .about-print img {
-    object-position: 50% 24%;
+    object-position: 50% 42%;
   }
 }
 

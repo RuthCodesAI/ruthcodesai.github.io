@@ -38,6 +38,10 @@
   }
   :is(h1, .join)::before { background: none; }
   .join { text-shadow: none; }
+  .waitlist-panel {
+    background-image: linear-gradient(rgb(250 248 244 / .86), rgb(250 248 244 / .86)), var(--paper-texture);
+    background-size: auto, 512px 448px;
+  }
 }
 
 @media (forced-colors: active) {

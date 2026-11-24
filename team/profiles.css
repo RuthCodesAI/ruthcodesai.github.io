@@ -26,6 +26,11 @@
   padding-top: clamp(1.6rem, 2.6vw, 2.35rem);
   scroll-margin-top: 1.5rem;
   min-width: 0;
+  transition: border-top-color .22s ease;
+}
+
+.founder:target {
+  border-top-color: var(--ink);
 }
 
 .founder header {
@@ -123,31 +128,39 @@
     gap: 0 1.65rem;
     margin-bottom: clamp(1.25rem, 3vw, 2rem);
   }
-  .founder-index a {
+  .reading-edition main .founder-index a {
     display: inline-flex;
     align-items: center;
-    gap: .5em;
+    gap: .45em;
     min-height: 44px;
-    font: 500 .98rem/1.2 var(--sans);
+    color: var(--quiet);
+    font: 500 .96rem/1.2 var(--sans);
     text-decoration: none;
+    transition: color .18s ease;
   }
-  .founder-index a:is(:hover, :focus-visible) {
+  .reading-edition main .founder-index a:is(:hover, :focus-visible) {
+    color: var(--ink);
     text-decoration: underline;
+    text-decoration-thickness: 1px;
     text-decoration-color: var(--accent);
-    text-underline-offset: .25em;
+    text-underline-offset: .28em;
   }
   .founder-index svg {
     width: 11px;
     height: 11px;
     fill: none;
-    stroke: var(--quiet);
-    stroke-width: 1.5;
+    stroke: currentColor;
+    stroke-width: 1.45;
+    transition: transform .18s var(--ease);
+  }
+  .reading-edition main .founder-index a:is(:hover, :focus-visible) svg {
+    transform: translateY(2px);
   }
   .founders {
     grid-template-columns: minmax(0, 1fr);
     row-gap: clamp(2.75rem, 7vw, 4.25rem);
   }
   .founder {
-    width: min(100%, 52ch);
+    width: 100%;
   }
 }

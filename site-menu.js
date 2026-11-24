@@ -22,7 +22,11 @@ export function initSiteMenu() {
   const isHome = document.body.hasAttribute('data-design');
   const inlineWaitlist = document.querySelector('[data-inline-waitlist]');
   const currentPath = location.pathname.replace(/index\.html$/, '') || '/';
-  const mqDesktop = matchMedia('(min-width: 681px)');
+  const mqDesktop = matchMedia(
+    isHome
+      ? '(min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3), (min-width: 1024px) and (min-aspect-ratio: 4/3)'
+      : '(min-width: 681px)'
+  );
 
   // Architectural two-hairline toggle button inside masthead.
   const toggle = document.createElement('button');

@@ -88,7 +88,7 @@
   body:not([data-waitlist-open="true"]) .hero-lockup .waitlist { top: auto; }
 
   body[data-waitlist-open="true"] .hero-lockup .waitlist {
-    --panel-floor: max(20px, env(safe-area-inset-bottom), min(15dvh, 148px));
+    --panel-floor: max(28px, env(safe-area-inset-bottom), min(11dvh, 112px));
     position: fixed;
     left: var(--rail-left);
     top: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor));
@@ -99,21 +99,28 @@
   }
 
   .hero-lockup .waitlist-panel {
-    max-height: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor, 20px) - max(20px, env(safe-area-inset-top)));
+    max-height: calc(var(--waitlist-viewport, 100dvh) - var(--panel-floor, 28px) - max(76px, env(safe-area-inset-top)));
   }
 
-  @media (min-height: 640px) {
-    body[data-waitlist-open="true"] .hero-lockup .ruth-home {
-      visibility: visible;
-      opacity: .34;
-      pointer-events: none;
-    }
+  /* Always keep the top-left masthead quietly accessible on desktop when waitlist opens */
+  @media (min-height: 600px) {
     body[data-waitlist-open="true"] > .masthead {
       display: flex;
       opacity: .76;
     }
     body[data-waitlist-open="true"] > .masthead:hover {
       opacity: 1;
+    }
+  }
+
+  /* Only retain the dimmed Ruth wordmark above the waitlist card on tall viewports
+     where generous vertical separation is guaranteed (never clipped on 1280x720 laptops). */
+  @media (min-height: 780px) {
+    body[data-waitlist-open="true"] .hero-lockup .ruth-home {
+      visibility: visible;
+      opacity: .3;
+      transform: translateY(-18px);
+      pointer-events: none;
     }
   }
 

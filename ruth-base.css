@@ -81,6 +81,9 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: .24s;
@@ -139,6 +142,7 @@ input:focus-visible,
 }
 
 .masthead .site-nav a {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -155,11 +159,21 @@ input:focus-visible,
   transition: color .18s ease, opacity .18s ease;
 }
 
-.masthead .site-nav a:is([aria-current="page"], :hover, :focus-visible) {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: .34em;
-  text-decoration-color: var(--accent);
+.masthead .site-nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9px;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .26s var(--ease);
+}
+
+.masthead .site-nav a:is([aria-current="page"], :hover, :focus-visible)::after {
+  transform: scaleX(1);
 }
 
 /* Shared wordmark link */
@@ -537,25 +551,34 @@ body[data-menu-open="true"] {
   overflow: hidden !important;
 }
 
+/* Inner reading pages switch to the monograph menu at <= 680px. */
 @media (max-width: 680px) {
-  .has-menu-js .masthead .site-nav {
+  .has-menu-js .reading-edition .masthead .site-nav {
     display: none;
   }
-  .has-menu-js .masthead .menu-toggle {
-    display: inline-flex;
-  }
-  /* On inner reading pages, nudge toggle right so hairlines align flush with right rail */
   .has-menu-js .reading-edition .masthead .menu-toggle {
+    display: inline-flex;
     margin-right: -12px;
   }
-  /* On mobile Home, lock toggle to top-right inside a precision frosted architectural wafer
-     so it stays 100% legible over Justitia's halftone dots (Day) and marble hair (Night)
-     and matches the exact top-right thumb coordinates of inner pages and the close x. */
+}
+
+@media (min-width: 681px) {
+  .reading-edition .site-menu { display: none !important; }
+}
+
+/* Homepage switches to the top-right frosted architectural wafer whenever it is
+   not in desktop left-rail composition (phones, portrait tablets like 768x1024,
+   and short landscape phones), so inline links never collide with Justitia. */
+@media not all and (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3) {
   .has-menu-js body[data-design] > .masthead {
     inset-inline-start: auto;
     inset-inline-end: var(--rail-right);
   }
+  .has-menu-js body[data-design] > .masthead .site-nav {
+    display: none;
+  }
   .has-menu-js body[data-design] > .masthead .menu-toggle {
+    display: inline-flex;
     margin-right: -2px;
   }
   .has-menu-js body[data-design] > .masthead .menu-toggle::before {
@@ -579,8 +602,120 @@ body[data-menu-open="true"] {
   }
 }
 
-@media (min-width: 681px) {
-  .site-menu { display: none !important; }
+@media (min-width: 900px) and (min-height: 550px) and (min-aspect-ratio: 4/3),
+       (min-width: 1024px) and (min-aspect-ratio: 4/3) {
+  .has-menu-js body[data-design] > .masthead {
+    inset-inline-start: var(--rail-left);
+    inset-inline-end: auto;
+  }
+  .has-menu-js body[data-design] > .masthead .site-nav {
+    display: flex;
+  }
+  .has-menu-js body[data-design] > .masthead .menu-toggle {
+    display: none;
+  }
+  body[data-design] .site-menu {
+    display: none !important;
+  }
+}
+
+/* Compact phone landscape (e.g. 667x375): transform monograph sheet into a
+   single-screen 3-column Swiss architectural spread so nothing clips off-screen. */
+@media (max-height: 520px) {
+  .site-menu-inner {
+    padding-block: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-bottom));
+  }
+  .site-menu-head {
+    padding-bottom: 8px;
+  }
+  .menu-imprint svg {
+    height: 22px;
+  }
+  .site-menu-nav {
+    padding-block: .65rem;
+  }
+  .menu-kicker {
+    margin-bottom: .55rem;
+  }
+  .menu-link {
+    padding-block: .75rem;
+  }
+  .menu-title {
+    font-size: clamp(1.5rem, 4.4vw, 1.95rem);
+  }
+  .menu-num {
+    padding-top: .34rem;
+  }
+  .menu-current {
+    padding-top: .36rem;
+  }
+  .menu-arrow {
+    margin-top: .58rem;
+  }
+  .menu-sub {
+    margin-top: .22rem;
+    font-size: .8rem;
+  }
+  .site-menu-foot {
+    padding-top: .55rem;
+  }
+}
+
+@media (max-height: 520px) and (min-width: 520px) {
+  .menu-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .menu-row {
+    border: 0;
+  }
+  .menu-row:first-child {
+    border-top: 0;
+  }
+  .menu-row + .menu-row {
+    border-left: 1px solid var(--line);
+    padding-left: clamp(.85rem, 2.2vw, 1.35rem);
+  }
+  .menu-row:not(:last-child) {
+    padding-right: clamp(.85rem, 2.2vw, 1.35rem);
+  }
+  .menu-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: .28rem;
+    column-gap: .5rem;
+    padding-block: .9rem;
+    height: 100%;
+    align-content: start;
+  }
+  .menu-num {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: 0;
+  }
+  .menu-current,
+  .menu-arrow {
+    grid-column: 2;
+    grid-row: 1;
+    padding-top: 0;
+    margin-top: 0;
+    align-self: center;
+  }
+  .menu-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: .32rem;
+    font-size: clamp(1.55rem, 3.4vw, 1.95rem);
+  }
+  .menu-sub {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: .08rem;
+    font-size: .78rem;
+    line-height: 1.35;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -589,7 +724,8 @@ body[data-menu-open="true"] {
   .menu-row,
   .site-menu-foot,
   .menu-bars span,
-  .menu-toggle {
+  .menu-toggle,
+  .masthead .site-nav a::after {
     transition: none !important;
   }
   .menu-kicker,

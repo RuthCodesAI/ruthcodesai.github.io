@@ -136,7 +136,7 @@ body[data-design] > .masthead .site-nav a {
   aspect-ratio: 1831 / 714;
   pointer-events: auto;
   text-decoration: none;
-  transition: opacity .22s var(--ease);
+  transition: opacity .22s var(--ease), transform .26s var(--ease);
 }
 
 .ruth-home svg {
@@ -257,10 +257,11 @@ body[data-waitlist-open="true"] > .masthead { display: none; }
 
 .join[aria-expanded="true"] {
   position: absolute;
-  top: 18px;
-  right: 22px;
+  top: 20px;
+  right: 20px;
   z-index: 3;
   display: grid;
+  place-content: center;
   place-items: center;
   min-width: 44px;
   width: 44px;
@@ -537,6 +538,7 @@ body[data-waitlist-compact="true"] #waitlist-privacy { display: none; }
 @media (max-width: 480px) {
   .join { min-width: 143px; min-height: 44px; gap: 17px; font-size: 17px; }
   .join[aria-expanded="false"] { min-width: 164px; min-height: 48px; font-size: 18.5px; }
+  .join[aria-expanded="true"] { top: 12px; right: 6px; }
   .waitlist-sheet { padding: 23px 22px 21px; }
   .waitlist-sheet h2 { font-size: 32px; margin-bottom: 18px; }
   .waitlist-field input { font-size: 18px; }
