@@ -44,6 +44,11 @@
   --medallion-border: rgb(242 240 235 / .22);
   --medallion-border-hover: rgb(242 240 235 / .46);
   --medallion-shadow: 0 4px 18px rgb(0 0 0 / .44);
+  --medallion-inv-bg: #f2f0eb;
+  --medallion-inv-bg-hover: #ffffff;
+  --medallion-inv-ink: #0a0a0a;
+  --medallion-inv-border: rgb(242 240 235 / .92);
+  --medallion-inv-shadow: 0 4px 20px rgb(0 0 0 / .48);
   --home-medallion-bg: rgb(14 14 14 / .78);
   --home-medallion-bg-hover: rgb(18 18 18 / .88);
   --home-medallion-border: rgb(242 240 235 / .24);
@@ -90,6 +95,11 @@
   --medallion-border: rgb(17 16 15 / .17);
   --medallion-border-hover: rgb(17 16 15 / .36);
   --medallion-shadow: 0 2px 12px rgb(17 16 15 / .08);
+  --medallion-inv-bg: #11100f;
+  --medallion-inv-bg-hover: #211f1d;
+  --medallion-inv-ink: #f5f3ee;
+  --medallion-inv-border: rgb(17 16 15 / .94);
+  --medallion-inv-shadow: 0 3px 14px rgb(17 16 15 / .18);
   --home-medallion-bg: rgb(247 245 240 / .95);
   --home-medallion-bg-hover: rgb(251 250 247 / .99);
   --home-medallion-border: rgb(17 16 15 / .17);
@@ -124,6 +134,11 @@
     --medallion-border: rgb(17 16 15 / .17);
     --medallion-border-hover: rgb(17 16 15 / .36);
     --medallion-shadow: 0 2px 12px rgb(17 16 15 / .08);
+    --medallion-inv-bg: #11100f;
+    --medallion-inv-bg-hover: #211f1d;
+    --medallion-inv-ink: #f5f3ee;
+    --medallion-inv-border: rgb(17 16 15 / .94);
+    --medallion-inv-shadow: 0 3px 14px rgb(17 16 15 / .18);
     --home-medallion-bg: rgb(247 245 240 / .95);
     --home-medallion-bg-hover: rgb(251 250 247 / .99);
     --home-medallion-border: rgb(17 16 15 / .17);
@@ -345,47 +360,55 @@ input:focus-visible,
   }
 }
 
-/* Open morph: 4 cardinal dots dissolve cleanly while 5 diagonal halftone dots
-   equalize into a symmetric 1.44px-corner / 1.88px-center Halftone Constellation x */
-.menu-toggle[aria-expanded="true"] .mm-card,
-.site-menu[aria-hidden="false"] .menu-close .mm-card {
-  opacity: 0;
-  transform: scale(.1);
-}
-
+/* Open morph: all 9 halftone dots are conserved as the 4 cardinal dots glide
+   45 degrees inward into the inner diagonal slots, forming a pure-dot x
+   with zero wire lines on an inverse-plate circular medallion. */
 .menu-toggle[aria-expanded="true"] .mm-nw,
 .site-menu[aria-hidden="false"] .menu-close .mm-nw {
-  transform: scale(.81);
+  transform: scale(.764);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-ne,
 .site-menu[aria-hidden="false"] .menu-close .mm-ne,
 .menu-toggle[aria-expanded="true"] .mm-sw,
 .site-menu[aria-hidden="false"] .menu-close .mm-sw {
-  transform: scale(1.11);
+  transform: scale(1.046);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-ctr,
 .site-menu[aria-hidden="false"] .menu-close .mm-ctr {
-  transform: scale(1.4);
+  transform: scale(1.104);
 }
 
 .menu-toggle[aria-expanded="true"] .mm-se,
 .site-menu[aria-hidden="false"] .menu-close .mm-se {
-  transform: scale(1.56);
+  transform: scale(1.478);
 }
 
-.menu-toggle[aria-expanded="true"] .mm-cross,
-.site-menu[aria-hidden="false"] .menu-close .mm-cross {
-  opacity: 1;
-  transform: scale(1);
-  transition-delay: 55ms;
+.menu-toggle[aria-expanded="true"] .mm-n,
+.site-menu[aria-hidden="false"] .menu-close .mm-n {
+  transform: translate(3.25px, 3.25px) scale(.921);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-e,
+.site-menu[aria-hidden="false"] .menu-close .mm-e {
+  transform: translate(-3.25px, 3.25px) scale(1.273);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-s,
+.site-menu[aria-hidden="false"] .menu-close .mm-s {
+  transform: translate(-3.25px, -3.25px) scale(1.273);
+}
+
+.menu-toggle[aria-expanded="true"] .mm-w,
+.site-menu[aria-hidden="false"] .menu-close .mm-w {
+  transform: translate(3.25px, -3.25px) scale(.921);
 }
 
 /* On the closed sheet, prime the close button's matrix so opening reveals the morph */
 .menu-close .mm-d {
   opacity: 1;
-  transform: scale(1);
+  transform: translate(0, 0) scale(1);
 }
 
 .site-menu {
@@ -488,28 +511,28 @@ html[data-ruth-theme="day"] .site-menu::before {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--ink);
+  color: var(--medallion-inv-ink);
   transition: transform .2s var(--ease);
 }
 
-/* Matte circular optical medallion matching Home's trigger at exact 0.0px lock,
-   keeping the Halftone Constellation x razor-clear above the graded halftone wash */
+/* Inverse-plate circular optical medallion matching the open button at 0.0px lock:
+   solid ink disc with alabaster dots in Day mode, solid ivory disc with obsidian dots in Night mode */
 .menu-close::before {
   content: "";
   position: absolute;
   inset: 1px;
   z-index: -1;
   border-radius: 50%;
-  background: var(--medallion-bg);
-  border: 1px solid var(--medallion-border);
-  box-shadow: var(--medallion-shadow);
-  transition: background-color .18s ease, border-color .18s ease;
+  background: var(--medallion-inv-bg);
+  border: 1px solid var(--medallion-inv-border);
+  box-shadow: var(--medallion-inv-shadow);
+  transition: background-color .18s ease, border-color .18s ease, transform .22s var(--ease);
 }
 
 @media (hover: hover) {
   .menu-close:hover::before {
-    background: var(--medallion-bg-hover);
-    border-color: var(--medallion-border-hover);
+    background: var(--medallion-inv-bg-hover);
+    border-color: var(--medallion-inv-bg-hover);
   }
 }
 
