@@ -1,33 +1,31 @@
 /**
- * Ruth Day Mode: 3D Chaotic-to-Orthogonal Halftone & Living Blindfold-Lift.
+ * Ruth Day Mode: Original 234x132 Orthogonal Halftone + Living Blindfold-Lift,
+ * followed by Occasional Sublime 3D Chaotic Particle Whirls & Interactive Mouse Wake.
  *
- * Reconstructs the exact 234x132 (30,888-dot) orthogonal 0-degree Swiss halftone
- * matrix directly from assets/justitia-day-grid.rht (30 KB) and streams the full
- * 77-keyframe blindfold-lift track from assets/justitia-day-lift.rht (268 KB),
- * rendering every dot as an individual GPU-simulated analytic SDF particle at
- * native Retina DPR (WebGL2/WebGL1 instanced with automatic Canvas 2D fallback).
- *
- * Three-act sublime choreography:
- *   Act I  (0.0-4.1s): 3D Chaotic Constellation -> Crystalline Orthogonal Lock.
- *     Sculptural dots emerge from deep 3D perspective space (z in [-0.85, +0.95])
- *     with real optical depth-of-field blur, calligraphic velocity stretch, 3D
- *     divergence-free curl-torus ribbons, and counter-rotating Coriolis spirals,
- *     snapping into razor-sharp 0-degree registration on the z = 0 cotton paper
- *     plane as the background pinpoint matrix ripples outward into place.
- *   Act II (4.6-17.2s): Living 60/120fps Vector Blindfold Lift.
- *     Justitia raises her left hand, lifts the corner of her blindfold to see,
- *     and lowers it back to rest via smooth Catmull-Rom cubic interpolation of
- *     all 30,888 dot radii with subtle kinetic print recoil along moving edges
- *     and a live GPU reading aura protecting typography legibility.
- *   Act III (17.2s+): Sublime Living Stillness & Interactive 3D Magnetic Field.
- *     Whisper-subtle diagonal press sheen, silky 3D magnetic curl-vortex cursor
- *     wake, and radial chaotic dispersion ripple on bare-paper clicks. Pauses
- *     automatically when the waitlist opens, sleeps after 90s of inactivity,
- *     and renders the exact static orthogonal print under reduced motion.
+ * Choreography:
+ *   Act I  (0.0s -> ~12.6s): Immediate Original Blindfold-Lift.
+ *     Opens directly on the exact original 234x132 (0-degree orthogonal) halftone
+ *     portrait on warm cotton rag paper (zero chaotic scatter on initial load) and
+ *     plays the full blindfold-lift animation smoothly at 60/120fps via Catmull-Rom
+ *     cubic interpolation across all 30,888 GPU vector dots.
+ *   Act II (after head turns back to rest): Living Stillness, Occasional Chaotic
+ *     Whirls & Interactive 3D Mouse Wake.
+ *     Once Justitia lowers her blindfold and her head returns to rest:
+ *       - Interactive 3D magnetic mouse wake unlocks (hovering lifts nearby dots
+ *         into 3D space with depth-of-field bokeh and calligraphic velocity stretch
+ *         before they spiral cleanly back into exact 0-degree orthogonal registration;
+ *         clicking bare cotton paper emits a radial acoustic dispersion ripple).
+ *       - From time to time (first whirl ~4.2s after settling, then every 14-21s),
+ *         a sublime chaotic particle whirl sweeps across the halftone dots, rotating
+ *         across three organic 3D motifs (traveling silk cyclone, twin counter-vortex
+ *         eddies, and a full-sculpture diagonal wind gust) before recrystallizing
+ *         seamlessly back into crisp orthogonal print registration.
+ *     Pauses automatically when the waitlist opens, sleeps after 120s of inactivity,
+ *     and renders the exact static orthogonal halftone under prefers-reduced-motion.
  */
 
-const GRID_URL = '/assets/justitia-day-grid.rht?v=2026-ht2';
-const LIFT_URL = '/assets/justitia-day-lift.rht?v=2026-ht2';
+const GRID_URL = '/assets/justitia-day-grid.rht?v=2026-ht3';
+const LIFT_URL = '/assets/justitia-day-lift.rht?v=2026-ht3';
 
 let cachedGridPromise = null;
 let cachedLiftPromise = null;
@@ -65,7 +63,6 @@ async function loadLiftTrack() {
       const fps = view.getUint8(10);
       const cellCount = cols * rows;
       const raw = new Uint8Array(decompressed, 11);
-      // Reconstruct absolute 0..63 quantized frames from delta bytes.
       const frames = new Uint8Array(nFrames * cellCount);
       frames.set(raw.subarray(0, cellCount), 0);
       for (let f = 1; f < nFrames; f++) {
@@ -82,7 +79,7 @@ async function loadLiftTrack() {
 }
 
 export function createDayHalftone(options) {
-  const { host, photo, body, reduced, mobile, onFrame } = options;
+  const { host, photo, body, reduced, onFrame } = options;
   const preview = new URLSearchParams(location.search).has('preview');
   const optedIn = body.dataset.animate === 'true';
   const abort = new AbortController(), events = { signal: abort.signal };
@@ -96,33 +93,35 @@ export function createDayHalftone(options) {
 
   let disposed = false, active = false, paused = false, intersecting = true;
   let pageSuspended = false, sleeping = false;
-  let phase = 'loading'; // 'assembling' | 'hold' | 'lifting' | 'settled'
+  // Lifecycle phases: 'waiting-lift' -> 'lifting' -> 'settled' <-> 'whirl'
+  let phase = 'waiting-lift';
+  let liftCompleted = false;
   let rafId = 0, resizeFrame = 0, sleepTimer = 0;
-  let lastNow = 0, elapsed = 0, liftElapsed = 0, breatheTime = 0;
+  let lastNow = 0, elapsed = 0, liftElapsed = 0, settledElapsed = 0, breatheTime = 0;
   let width = 1, height = 1, dpr = 1, dotPitch = 6.8;
   let cover = { x: 0, y: 0, width: 1, height: 1 };
 
-  let grid = null;     // { cols, rows, data }
-  let liftTrack = null; // { cols, rows, nFrames, fps, frames }
+  let grid = null;
+  let liftTrack = null;
 
-  // Structure-of-Arrays particle buffers for all visible dots (up to 30,888).
+  // Structure-of-Arrays particle buffers (zero per-frame GC).
   let count = 0;
-  let cellIdx;         // index into 234x132 source grid
-  let isFigure;        // 1 = sculptural figure dot (3D chaotic flight), 0 = background register dot
-  let tx, ty;          // exact 0-deg orthogonal target coordinates (CSS px)
-  let x, y, z;         // live 3D position (z = 0 is cotton rag paper plane)
-  let vx, vy, vz;      // live 3D velocity
-  let baseR, curR;     // target & live radius (CSS px)
-  let delay, span, swirlSign, mass, seed, prom;
-  let instanceData;    // Float32Array(count * 8): [x, y, z, vx, vy, r, alpha, focus]
+  let cellIdx, isFigure;
+  let tx, ty, x, y, z, vx, vy, vz;
+  let baseR, curR, swirlSign, mass, seed;
+  let instanceData; // Float32Array(count * 8): [x, y, z, vx, vy, r, alpha, focus]
 
-  // Live typography reading-aura bounds (updated via ResizeObserver so text stays AAA crisp
-  // even as Justitia's rising forearm passes nearby during Act II).
+  // Live typography reading aura (protects Ruth / headline / CTA legibility cleanly).
   let auraCx = 0, auraCy = 0, auraRx = 1, auraRy = 1, auraActive = 0;
 
-  // Interactive 3D pointer magnetic wake & click shockwave.
+  // Post-lift interactive 3D pointer magnetic wake & click acoustic ripple.
   let ptrX = -9999, ptrY = -9999, ptrVx = 0, ptrVy = 0, ptrEnergy = 0, ptrInside = false;
   let rippleX = -9999, rippleY = -9999, rippleAge = 99;
+
+  // Post-lift occasional chaotic particle whirl scheduler & state.
+  let whirlCount = 0;
+  let nextWhirlAt = 4.2;
+  let whirl = { active: false, motif: 0, age: 0, duration: 4.8, dir: 1, seed: 0 };
 
   // WebGL2 / WebGL1 / Canvas 2D backend.
   let gl = null, glExt = null, glProg = null, glQuadBuf = null, glInstBuf = null;
@@ -131,7 +130,6 @@ export function createDayHalftone(options) {
   const waitlistOpen = () => body.dataset.waitlistOpen === 'true';
   const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
   const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
-  const smoother = t => { t = clamp(t, 0, 1); return t * t * t * (t * (t * 6 - 15) + 10); };
 
   function hash2(a, b) {
     let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263);
@@ -139,10 +137,10 @@ export function createDayHalftone(options) {
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   }
 
-  // Smooth periodic-free 2-octave divergence-free 2D curl + vertical 3D lift component.
+  // Smooth 2-octave divergence-free 2D curl + 3D vertical lift component.
   function curl3At(px, py, pz, t, scale, out) {
     const sx = px * scale, sy = py * scale, sz = pz * 1.35;
-    const t1 = t * 0.52, t2 = t * 0.86;
+    const t1 = t * 0.56, t2 = t * 0.92;
 
     const a1 = sx * 0.84 + sy * 0.54 + sz * 0.42 + t1;
     const b1 = -sx * 0.49 + sy * 0.87 - sz * 0.36 - t1 * 0.81;
@@ -156,13 +154,13 @@ export function createDayHalftone(options) {
     const b2 = sx2 * 0.78 + sy2 * 0.62 + t2 * 0.69;
     const sA2 = Math.sin(a2), cA2 = Math.cos(a2);
     const sB2 = Math.sin(b2), cB2 = Math.cos(b2);
-    const w2 = 0.48;
+    const w2 = 0.52;
     const d2dx = w2 * (cA2 * 0.61 * cB2 - sA2 * sB2 * 0.78);
     const d2dy = w2 * (cA2 * (-0.79) * cB2 - sA2 * sB2 * 0.62);
 
     out[0] = d1dy + d2dy;
     out[1] = -(d1dx + d2dx);
-    out[2] = 0.68 * Math.sin(sx * 1.15 - sy * 0.92 + t1 * 1.15) * Math.cos(sz * 1.4 - t2 * 0.5);
+    out[2] = 0.75 * Math.sin(sx * 1.15 - sy * 0.92 + t1 * 1.2) * Math.cos(sz * 1.4 - t2 * 0.5);
   }
 
   function fieldNoise(px, py, scale) {
@@ -218,30 +216,29 @@ export function createDayHalftone(options) {
               return;
             }
 
-            // Perspective projection relative to canvas center (z = 0 is the cotton rag paper).
+            // Perspective projection relative to sculptural center (z = 0 is the cotton rag paper).
             float focal = 2.65;
             float persp = focal / max(0.55, focal - pz);
             vec2 center = u_res * vec2(0.58, 0.48);
             vec2 projPos = center + (pos2 - center) * persp;
             float projR = r * persp;
 
-            // Subtle optical depth-of-field bloom when floating off z = 0;
-            // snaps to razor-sharp letterpress precision on the paper plane.
+            // Optical depth-of-field bloom when dots lift off z = 0 during whirls or cursor wake;
+            // razor-sharp letterpress dots when seated on z = 0.
             float depthOff = abs(pz);
             float dofBlur = depthOff * 2.85;
             projR += dofBlur * 0.34;
-            float dofFade = 1.0 / (1.0 + depthOff * 1.15);
+            float dofFade = 1.0 / (1.0 + depthOff * 1.12);
 
-            // Calligraphic velocity elongation in chaotic 3D flight.
+            // Calligraphic velocity stretch during whirls and cursor wake.
             float spd = length(vel);
             vec2 dir = spd > 2.0 ? (vel / spd) : vec2(1.0, 0.0);
             vec2 perp = vec2(-dir.y, dir.x);
-            float stretch = 1.0 + min(2.45, spd * 0.0034);
+            float stretch = 1.0 + min(2.65, spd * 0.0038);
             float rPerp = projR / pow(stretch, 0.35);
-            float halfLen = rPerp * (stretch - 1.0) * 0.94;
+            float halfLen = rPerp * (stretch - 1.0) * 0.96;
 
-            // Live typography reading aura: gently thins ink right behind Ruth / headline / CTA
-            // so the rising forearm & swirling chaos never compromise text contrast.
+            // Live typography reading aura protecting Ruth / headline / CTA.
             float auraScale = 1.0;
             if (u_auraOn > 0.5) {
               vec2 dAura = (projPos - u_aura.xy) / u_aura.zw;
@@ -349,16 +346,11 @@ export function createDayHalftone(options) {
     return height > width * 1.08;
   }
 
-  // Exact mapping from quantized dot amplitude v in [0, 1] -> crisp circular radius.
-  // Preserves the iconic bold orthogonal 0-deg dots while keeping hairline micro-gaps
-  // between deep shadow dots so every individual circle reads razor sharp.
   function radiusFromValue(v, pitchPx, isMobilePortrait) {
     if (v <= 0.195) {
-      // Iconic subtle full-sheet register pinpoint matrix on warm cotton paper.
       return isMobilePortrait ? 0 : pitchPx * (0.068 + 0.055 * (v / 0.195));
     }
-    const r = pitchPx * Math.min(0.468, v * 0.502);
-    return r;
+    return pitchPx * Math.min(0.468, v * 0.502);
   }
 
   function updateReadingAura() {
@@ -391,8 +383,6 @@ export function createDayHalftone(options) {
   function computeCover() {
     const iw = 1638, ih = 924;
     if (isPortraitViewport()) {
-      // Portrait mobile framing: show Justitia's full head, blindfold, hair bun, lips,
-      // chin, and upper collarbone cleanly framed above "Ruth" at crisp orthogonal dot scale.
       const desiredHeadSpan = width * 1.08;
       const sourceHeadSpan = iw * 0.49;
       const scale = Math.max(desiredHeadSpan / sourceHeadSpan, (height * 0.67) / ih);
@@ -425,7 +415,7 @@ export function createDayHalftone(options) {
     cover = { x: offset(tokens[0], width - cw), y: offset(tokens[1], height - ch), width: cw, height: ch };
   }
 
-  function buildParticles(preserveSettled = false) {
+  function buildParticles(preservePhase = false) {
     if (!grid) return;
     computeCover();
     updateReadingAura();
@@ -435,11 +425,6 @@ export function createDayHalftone(options) {
     const cellW = cover.width / cols;
     const cellH = cover.height / rows;
     dotPitch = Math.min(cellW, cellH);
-
-    // Focal epicenter near blindfold / nose bridge for sculptural wave emergence.
-    const focusX = cover.x + cover.width * 0.565;
-    const focusY = cover.y + cover.height * 0.36;
-    const maxDist = Math.hypot(width, height) * 0.68;
 
     const list = [];
     for (let r = 0; r < rows; r++) {
@@ -451,9 +436,6 @@ export function createDayHalftone(options) {
         const idx = r * cols + c;
         const v = data[idx] / 255;
 
-        // Portrait mobile: keep cells above the bottom fade so Justitia's rising left
-        // hand materializes cleanly during Act II, while keeping resting background
-        // pinpoint cells at radius 0 (spotless cotton paper around the portrait).
         let fade = 1;
         if (isPortrait) {
           const edgeDrop = Math.abs(px / width - 0.52) * height * 0.075;
@@ -482,134 +464,50 @@ export function createDayHalftone(options) {
     vz = new Float32Array(count);
     baseR = new Float32Array(count);
     curR = new Float32Array(count);
-    delay = new Float32Array(count);
-    span = new Float32Array(count);
     swirlSign = new Float32Array(count);
     mass = new Float32Array(count);
     seed = new Float32Array(count);
-    prom = new Float32Array(count);
     instanceData = new Float32Array(count * 8);
 
     const minDim = Math.min(width, height);
-    const vortices = isPortrait
-      ? [
-          { vx: width * 0.26, vy: height * 0.22, str: 1.12, rad: minDim * 0.56 },
-          { vx: width * 0.78, vy: height * 0.34, str: -1.04, rad: minDim * 0.52 },
-          { vx: width * 0.48, vy: height * 0.50, str: 0.85, rad: minDim * 0.44 },
-        ]
-      : [
-          { vx: width * 0.54, vy: height * 0.26, str: 1.18, rad: minDim * 0.54 },
-          { vx: width * 0.82, vy: height * 0.58, str: -1.08, rad: minDim * 0.50 },
-          { vx: width * 0.42, vy: height * 0.74, str: 0.92, rad: minDim * 0.46 },
-        ];
-    const curlScale = 2.35 / Math.max(340, minDim);
-    const cVec = new Float32Array(3);
-    const shouldStartSettled = preserveSettled || reduced.matches || preview || !optedIn;
-
     for (let i = 0; i < count; i++) {
       const o = i * 7;
       const idx = list[o], px = list[o + 1], py = list[o + 2], r = list[o + 3];
       const fig = list[o + 4], gc = list[o + 5], gr = list[o + 6];
 
-      const s0 = hash2(gc + 131, gr - 59);
-      const s1 = hash2(gc - 277, gr + 419);
-      const s2 = hash2(gc + 911, gr + 173);
-      const s3 = hash2(gc * 3 + 17, gr * 5 - 41);
-
       cellIdx[i] = idx;
       isFigure[i] = fig;
-      tx[i] = px;
-      ty[i] = py;
-      baseR[i] = r;
-      curR[i] = r;
-      seed[i] = s0;
+      // Always start cleanly registered on the exact original 0-deg orthogonal halftone grid!
+      tx[i] = px; ty[i] = py;
+      x[i] = px; y[i] = py; z[i] = 0;
+      vx[i] = 0; vy[i] = 0; vz[i] = 0;
+      baseR[i] = r; curR[i] = r;
+      seed[i] = hash2(gc + 131, gr - 59);
 
       const normR = clamp(r / (dotPitch * 0.47), 0, 1);
-      prom[i] = fig ? clamp(0.25 + 0.75 * normR, 0, 1) : 0;
-      mass[i] = 0.74 + 0.54 * normR;
-
+      mass[i] = 0.76 + 0.50 * normR;
       const flockNoise = fieldNoise(px, py, 2.9 / Math.max(320, minDim));
       swirlSign[i] = flockNoise >= 0.5 ? 1 : -1;
-
-      const distNorm = clamp(Math.hypot(px - focusX, py - focusY) / maxDist, 0, 1);
-      const waveNoise = fieldNoise(px + 95, py - 55, 2.15 / Math.max(320, minDim));
-
-      if (fig) {
-        // Bold shadow contours emerge first (0.24s..1.1s); midtones sweep in (0.9s..1.85s).
-        delay[i] = clamp(0.24 + distNorm * 0.74 + waveNoise * 0.50 - normR * 0.30 + s1 * 0.22, 0.18, 1.82);
-        span[i] = 1.48 + (1 - normR) * 0.48 + s2 * 0.34;
-      } else {
-        // Background register dot matrix prints cleanly as a subtle orthogonal wave right behind the lock.
-        delay[i] = clamp(1.85 + distNorm * 1.15 + waveNoise * 0.35, 1.75, 3.25);
-        span[i] = 0.65;
-      }
-
-      if (shouldStartSettled || !fig) {
-        x[i] = px; y[i] = py; z[i] = 0;
-        vx[i] = 0; vy[i] = 0; vz[i] = 0;
-      } else {
-        // 3D backward advection through curl + counter-rotating baroque torus vortices
-        // so frame 0 opens with a breathtaking 3D floating ink constellation!
-        let cxp = px, cyp = py, czp = (s3 - 0.48) * 1.55;
-        const advectScale = minDim * (0.28 + 0.42 * (1 - 0.22 * normR) + 0.28 * s1);
-        const subSteps = 7;
-        const stepXY = advectScale / subSteps;
-        const bandAngle = Math.floor(s2 * 3) * 2.094 + s0 * 0.9;
-
-        for (let st = 0; st < subSteps; st++) {
-          curl3At(cxp, cyp, czp, 1.9 - st * 0.24 + s2 * 0.5, curlScale, cVec);
-          let fx = cVec[0] * 1.3 + Math.cos(bandAngle) * 0.40;
-          let fy = cVec[1] * 1.3 + Math.sin(bandAngle) * 0.40;
-          for (let v = 0; v < vortices.length; v++) {
-            const vor = vortices[v];
-            const dx = cxp - vor.vx, dy = cyp - vor.vy;
-            const d2 = dx * dx + dy * dy + 1100;
-            const fall = Math.exp(-d2 / (vor.rad * vor.rad));
-            const inv = vor.str * fall / Math.sqrt(d2);
-            fx += (-dy * inv) * 1.12 + (dx * inv) * 0.32;
-            fy += (dx * inv) * 1.12 + (dy * inv) * 0.32;
-          }
-          const mag = Math.hypot(fx, fy) || 1;
-          cxp += (fx / mag) * stepXY;
-          cyp += (fy / mag) * stepXY;
-          czp += cVec[2] * 0.14;
-        }
-
-        const theta = s0 * Math.PI * 2;
-        const rogue = s2 > 0.87 ? minDim * (0.18 + 0.30 * s1) : 0;
-        const jitter = (26 + 74 * s1) * (minDim / 900) + rogue;
-        cxp += Math.cos(theta) * jitter;
-        cyp += Math.sin(theta) * jitter;
-        czp = clamp(czp, -0.92, 0.92);
-
-        // Soft elastic reflection (zero artificial vertical edge pileup).
-        const leftFloor = isPortrait ? -minDim * 0.05 : width * 0.18;
-        const rightCeil = width + minDim * 0.05;
-        const topFloor = -minDim * 0.04;
-        const botCeil = isPortrait ? height * 0.78 : height + minDim * 0.05;
-        if (cxp < leftFloor) cxp = leftFloor + (leftFloor - cxp) * (0.45 + 0.55 * s0) + s1 * minDim * 0.22;
-        if (cxp > rightCeil) cxp = rightCeil - (cxp - rightCeil) * (0.45 + 0.55 * s1) - s0 * minDim * 0.14;
-        if (cyp < topFloor) cyp = topFloor + (topFloor - cyp) * (0.45 + 0.55 * s0) + s2 * minDim * 0.14;
-        if (cyp > botCeil) cyp = botCeil - (cyp - botCeil) * (0.45 + 0.55 * s1) - s0 * minDim * 0.14;
-
-        x[i] = cxp; y[i] = cyp; z[i] = czp;
-
-        // Initial 3D curl velocity so constellation is smoothly alive from frame 0.
-        curl3At(cxp, cyp, czp, 0, curlScale, cVec);
-        const initSpeed = (82 + 130 * s0) * (minDim / 900);
-        vx[i] = cVec[0] * initSpeed;
-        vy[i] = cVec[1] * initSpeed;
-        vz[i] = cVec[2] * 0.45;
-      }
     }
 
-    if (shouldStartSettled) {
-      phase = 'settled';
-      elapsed = 5.0;
-    } else {
-      phase = 'assembling';
+    if (!preservePhase) {
+      if (reduced.matches || preview || !optedIn) {
+        phase = 'settled';
+        liftCompleted = true;
+      } else if (liftTrack) {
+        phase = 'lifting';
+        liftElapsed = 0;
+        liftCompleted = false;
+      } else {
+        phase = 'waiting-lift';
+        liftElapsed = 0;
+        liftCompleted = false;
+      }
       elapsed = 0;
-      liftElapsed = 0;
+      settledElapsed = 0;
+      whirl.active = false;
+      whirlCount = 0;
+      nextWhirlAt = 4.2;
     }
 
     if (gl && glInstBuf) {
@@ -619,7 +517,7 @@ export function createDayHalftone(options) {
     host.dataset.halftoneDots = String(count);
   }
 
-  // Smooth Catmull-Rom cubic interpolation of 6fps blindfold-lift keyframes -> 60/120fps vector dots.
+  // Smooth 60/120fps Catmull-Rom cubic interpolation of the original blindfold-lift track.
   function sampleLiftRadii(tSec) {
     if (!liftTrack) return false;
     const { cols, rows, nFrames, fps, frames } = liftTrack;
@@ -627,7 +525,6 @@ export function createDayHalftone(options) {
     const isPortrait = isPortraitViewport();
     const fPos = tSec * fps;
     if (fPos >= nFrames - 1) {
-      // Completed full lift cycle; return cleanly to exact resting Frame 0 radii.
       for (let i = 0; i < count; i++) curR[i] = baseR[i];
       return true;
     }
@@ -650,7 +547,6 @@ export function createDayHalftone(options) {
       if (p0 === p1 && p1 === p2 && p2 === p3) {
         v = p1 / 63;
       } else {
-        // Catmull-Rom spline clamped to avoid overshoot rings.
         const cr = 0.5 * (
           (2 * p1) +
           (-p0 + p2) * u +
@@ -660,7 +556,6 @@ export function createDayHalftone(options) {
         v = clamp(cr / 63, 0, 1);
       }
 
-      const prevR = curR[i];
       let nextR = radiusFromValue(v, dotPitch, isPortrait);
       if (isPortrait) {
         const edgeDrop = Math.abs(tx[i] / width - 0.52) * height * 0.075;
@@ -668,181 +563,302 @@ export function createDayHalftone(options) {
         nextR *= Math.sqrt(fade);
       }
       curR[i] = nextR;
-
-      // Kinetic print elasticity: dots whose radius actively changes along the rising
-      // hand or lifted blindfold receive a whisper-subtle spring breath.
-      const dr = nextR - prevR;
-      if (Math.abs(dr) > 0.08 && Math.abs(x[i] - tx[i]) < 4) {
-        const push = clamp(dr * 3.8, -14, 14);
-        vy[i] -= push;
-        vz[i] += clamp(Math.abs(dr) * 0.14, 0, 0.25);
-      }
     }
     return false;
+  }
+
+  function startWhirl() {
+    // Rotate through 3 distinct sublime chaotic motifs so every occasional whirl feels fresh:
+    //   0: Traveling Silk Cyclone (sweeping localized 3D vortex across the portrait)
+    //   1: Baroque Counter-Vortex Breath (twin orbiting 3D eddies)
+    //   2: Full-Sculpture Diagonal Gust (brief poetic full-figure 3D dissolution & lock)
+    const motif = whirlCount % 3;
+    whirlCount++;
+    whirl = {
+      active: true,
+      motif,
+      age: 0,
+      duration: motif === 2 ? 5.2 : 4.7,
+      dir: (whirlCount & 1) ? 1 : -1,
+      seed: hash2(whirlCount * 37 + 11, whirlCount * 73 + 5),
+    };
+    phase = 'whirl';
+    host.dataset.halftoneWhirls = String(whirlCount);
+    reflect();
   }
 
   function stepPhysics(dt) {
     if (!count) return;
     const minDim = Math.min(width, height);
-    const curlScale = 2.35 / Math.max(340, minDim);
+    const curlScale = 2.45 / Math.max(340, minDim);
     const cVec = new Float32Array(3);
-    const hasPointer = ptrEnergy > 0.002;
-    const ptrRadius = isPortraitViewport() ? 98 : 165;
-    const ptrRadSq = ptrRadius * ptrRadius;
 
-    if (ptrEnergy > 0) ptrEnergy = Math.max(0, ptrEnergy * Math.exp(-dt * 3.0) - 0.001);
-    ptrVx *= Math.exp(-dt * 6.0);
-    ptrVy *= Math.exp(-dt * 6.0);
-    if (rippleAge < 3.5) rippleAge += dt;
-
-    // Phase progression: assembling (0..4.15s) -> hold (0.45s) -> lifting (12.6s) -> settled.
-    if (phase === 'hold') {
-      if (elapsed >= 4.55) {
-        if (liftTrack) {
-          phase = 'lifting';
-          liftElapsed = 0;
-          reflect();
-        } else {
-          phase = 'settled';
-          scheduleIdleSleep();
-          reflect();
-        }
+    // Act I: Original blindfold-lift animation plays undisturbed from start to finish.
+    if (phase === 'waiting-lift') {
+      if (liftTrack) {
+        phase = 'lifting';
+        liftElapsed = 0;
+        reflect();
+      } else if (elapsed > 5.0) {
+        // Fallback if lift track unavailable (e.g. offline/unsupported): unlock settled state.
+        liftCompleted = true;
+        phase = 'settled';
+        settledElapsed = 0;
+        nextWhirlAt = 4.2;
+        scheduleIdleSleep();
+        reflect();
       }
-    } else if (phase === 'lifting') {
+      return;
+    }
+
+    if (phase === 'lifting') {
       liftElapsed += dt;
       const done = sampleLiftRadii(liftElapsed);
       if (done) {
+        liftCompleted = true;
         phase = 'settled';
+        settledElapsed = 0;
+        nextWhirlAt = 4.2; // First sublime chaotic particle whirl ~4.2s after head turns back!
         scheduleIdleSleep();
+        reflect();
+      }
+      return;
+    }
+
+    // Act II (after head turns back): interactive 3D mouse wake + occasional chaotic whirls!
+    settledElapsed += dt;
+    breatheTime += dt;
+
+    if (ptrEnergy > 0) ptrEnergy = Math.max(0, ptrEnergy * Math.exp(-dt * 2.9) - 0.001);
+    ptrVx *= Math.exp(-dt * 5.8);
+    ptrVy *= Math.exp(-dt * 5.8);
+    if (rippleAge < 3.5) rippleAge += dt;
+
+    // Schedule occasional automatic chaotic whirls (deferring politely while user moves cursor).
+    if (!whirl.active && settledElapsed >= nextWhirlAt) {
+      if (ptrEnergy > 0.08) {
+        nextWhirlAt = settledElapsed + 3.5;
+      } else {
+        startWhirl();
+      }
+    }
+
+    if (whirl.active) {
+      whirl.age += dt;
+      if (whirl.age >= whirl.duration) {
+        whirl.active = false;
+        phase = 'settled';
+        // Next occasional whirl in 13.5s - 20.5s.
+        nextWhirlAt = settledElapsed + 13.5 + hash2(whirlCount * 19 + 3, Math.round(settledElapsed * 10)) * 7.0;
         reflect();
       }
     }
 
-    const inIntro = phase === 'assembling';
-    const introDoneTime = elapsed >= 4.15;
-    let maxKinetic = 0;
-
-    const steps = dt > 0.022 ? 2 : 1;
-    const h = dt / steps;
-    const hasRipple = rippleAge < 1.6;
+    const hasPointer = ptrEnergy > 0.002;
+    const hasRipple = rippleAge < 1.8;
+    const ptrRadius = isPortraitViewport() ? 102 : 172;
+    const ptrRadSq = ptrRadius * ptrRadius;
     const ripFront = rippleAge * minDim * 0.58;
     const ripBand = minDim * 0.13;
 
+    // Precompute active whirl kinematics once per frame.
+    const isPortrait = isPortraitViewport();
+    const wActive = whirl.active;
+    const wAge = whirl.age;
+    const wMotif = whirl.motif;
+    const wDir = whirl.dir;
+    const wSeed = whirl.seed;
+
+    // Motif 0: Sweeping 3D silk cyclone trajectory across Justitia's sculptural silhouette.
+    let cycX = 0, cycY = 0, cycRad = 1, cycEnv = 0;
+    if (wActive && wMotif === 0) {
+      const u = clamp(wAge / 3.1, 0, 1);
+      const tCur = wDir > 0 ? u : (1 - u);
+      const xStart = isPortrait ? width * 0.18 : width * 0.44;
+      const xEnd = isPortrait ? width * 0.86 : width * 0.90;
+      const yStart = isPortrait ? height * 0.48 : height * 0.82;
+      const yEnd = isPortrait ? height * 0.10 : height * 0.16;
+      cycX = xStart + (xEnd - xStart) * tCur + Math.sin(tCur * Math.PI * 1.8 + wSeed * 3.0) * minDim * 0.14;
+      cycY = yStart + (yEnd - yStart) * tCur + Math.cos(tCur * Math.PI * 1.4) * minDim * 0.08;
+      cycRad = minDim * (isPortrait ? 0.34 : 0.27);
+      cycEnv = Math.sin(Math.PI * u) * (u < 1 ? 1 : 0);
+    }
+
+    // Motif 1: Twin counter-rotating baroque eddies.
+    let e1x = 0, e1y = 0, e2x = 0, e2y = 0, edRad = 1, edEnv = 0;
+    if (wActive && wMotif === 1) {
+      const u = clamp(wAge / 2.55, 0, 1);
+      edEnv = Math.sin(Math.PI * u) * Math.pow(1 - u * 0.35, 0.6) * (u < 1 ? 1 : 0);
+      edRad = minDim * (isPortrait ? 0.36 : 0.29);
+      const orbit = wAge * 0.9 * wDir + wSeed * 6.28;
+      const cx1 = isPortrait ? width * 0.56 : width * 0.66;
+      const cy1 = isPortrait ? height * 0.26 : height * 0.34;
+      const cx2 = isPortrait ? width * 0.44 : width * 0.74;
+      const cy2 = isPortrait ? height * 0.42 : height * 0.68;
+      e1x = cx1 + Math.cos(orbit) * minDim * 0.07;
+      e1y = cy1 + Math.sin(orbit) * minDim * 0.06;
+      e2x = cx2 - Math.cos(orbit * 1.15) * minDim * 0.08;
+      e2y = cy2 + Math.sin(orbit * 1.15) * minDim * 0.06;
+    }
+
+    // Motif 2: Diagonal sweeping wind dissolution gust across entire sculpture.
+    let gustFront = 0, gustBand = 1, gustEnv = 0;
+    if (wActive && wMotif === 2) {
+      const u = clamp(wAge / 2.65, 0, 1);
+      gustFront = (wDir > 0 ? (-0.25 + u * 1.65) : (1.40 - u * 1.65)) * (width + height);
+      gustBand = minDim * 0.36;
+      gustEnv = Math.sin(Math.PI * u) * (u < 1 ? 1 : 0);
+    }
+
+    const steps = dt > 0.022 ? 2 : 1;
+    const h = dt / steps;
+    const needsPhysics = wActive || hasPointer || hasRipple;
+
     for (let st = 0; st < steps; st++) {
-      const tNow = elapsed - dt + h * (st + 1);
+      const tNow = settledElapsed - dt + h * (st + 1);
       for (let i = 0; i < count; i++) {
         let px = x[i], py = y[i], pz = z[i];
         let vxi = vx[i], vyi = vy[i], vzi = vz[i];
         const dx = tx[i] - px, dy = ty[i] - py, dz = -pz;
 
-        if (!inIntro) {
-          // Crisp damped 3D spring back onto z = 0 orthogonal Swiss registration.
-          const kHome = 21.0;
-          const damp = 6.6;
-          let ax = dx * kHome - vxi * damp;
-          let ay = dy * kHome - vyi * damp;
-          let az = dz * 24.0 - vzi * 7.4;
+        // Fast skip for resting dots when no whirl/pointer/ripple is active.
+        if (!needsPhysics && dx === 0 && dy === 0 && dz === 0 && vxi === 0 && vyi === 0 && vzi === 0) {
+          continue;
+        }
 
-          // Silky interactive 3D magnetic cursor curl wake.
-          if (hasPointer) {
-            const rx = px - ptrX, ry = py - ptrY;
+        const fig = isFigure[i];
+        // Home spring loosens softly during active chaotic excursion so dots carve wide,
+        // graceful calligraphic orbits before snapping crisply back into orthogonal lock.
+        let kHome = 18.5;
+        let damp = 6.1;
+        let ax = 0, ay = 0, az = 0;
+
+        // 1. Occasional automatic chaotic whirl forces (focused cleanly on figure dots).
+        if (wActive && fig) {
+          let localChaos = 0;
+          if (wMotif === 0 && cycEnv > 0.005) {
+            const rx = px - cycX, ry = py - cycY;
             const d2 = rx * rx + ry * ry;
-            if (d2 < ptrRadSq && d2 > 0.5) {
+            if (d2 < cycRad * cycRad && d2 > 0.5) {
               const dist = Math.sqrt(d2);
-              const u = 1 - dist / ptrRadius;
-              const fall = u * u * ptrEnergy;
+              const fall = Math.pow(1 - dist / cycRad, 1.45) * cycEnv;
+              localChaos = fall;
               const inv = 1 / dist;
               const nx = rx * inv, ny = ry * inv;
-              const swirl = swirlSign[i] * 520;
-              ax += (nx * 780 - ny * swirl + ptrVx * 2.2) * fall / mass[i];
-              ay += (ny * 780 + nx * swirl + ptrVy * 2.2) * fall / mass[i];
-              az += (3.6 * u * ptrEnergy) / mass[i]; // lifts dots gently out of the paper toward the viewer!
+              const swirl = wDir * (1080 + 360 * seed[i]);
+              ax += (-ny * swirl + nx * 380) * fall / mass[i];
+              ay += (nx * swirl + ny * 380) * fall / mass[i];
+              az += (5.8 * (seed[i] - 0.34) + 2.6) * fall / mass[i];
+            }
+          } else if (wMotif === 1 && edEnv > 0.005) {
+            for (let eIdx = 0; eIdx < 2; eIdx++) {
+              const ex = eIdx === 0 ? e1x : e2x;
+              const ey = eIdx === 0 ? e1y : e2y;
+              const sign = eIdx === 0 ? wDir : -wDir;
+              const rx = px - ex, ry = py - ey;
+              const d2 = rx * rx + ry * ry;
+              if (d2 < edRad * edRad && d2 > 0.5) {
+                const dist = Math.sqrt(d2);
+                const fall = Math.pow(1 - dist / edRad, 1.35) * edEnv;
+                if (fall > localChaos) localChaos = fall;
+                const inv = 1 / dist;
+                const nx = rx * inv, ny = ry * inv;
+                ax += (-ny * sign * 960 + nx * 340) * fall / mass[i];
+                ay += (nx * sign * 960 + ny * 340) * fall / mass[i];
+                az += (5.4 * (seed[i] - 0.42) + 1.8 * sign) * fall / mass[i];
+              }
+            }
+          } else if (wMotif === 2 && gustEnv > 0.005) {
+            const proj = px * 0.72 + py * 0.69;
+            const gd = (proj - gustFront) / gustBand;
+            const fall = Math.exp(-gd * gd) * gustEnv;
+            if (fall > 0.02) {
+              localChaos = fall;
+              curl3At(px, py, pz, tNow * 1.4 + seed[i] * 0.5, curlScale, cVec);
+              const amp = 1150 * (minDim / 900) * fall / mass[i];
+              ax += (cVec[0] * amp + wDir * 240 * fall);
+              ay += (cVec[1] * amp - 180 * fall);
+              az += (cVec[2] * 7.8 + 2.4 * (seed[i] - 0.45)) * fall / mass[i];
             }
           }
 
-          // Bare-paper click acoustic dispersion ripple.
-          if (hasRipple) {
-            const rx = px - rippleX, ry = py - rippleY;
-            const dist = Math.hypot(rx, ry);
-            const bandDiff = Math.abs(dist - ripFront);
-            if (bandDiff < ripBand && dist > 1) {
-              const env = (1 - bandDiff / ripBand) * Math.exp(-rippleAge * 2.1);
-              const nx = rx / dist, ny = ry / dist;
-              const swirl = swirlSign[i] * 540;
-              ax += (nx * 960 - ny * swirl) * env / mass[i];
-              ay += (ny * 960 + nx * swirl) * env / mass[i];
-              az += 4.2 * env * (seed[i] - 0.35);
+          if (localChaos > 0.02) {
+            // Add secondary fine 3D curl turbulence & soften home spring inside active eddy.
+            curl3At(px, py, pz, tNow * 1.35 + seed[i] * 0.4, curlScale * 1.35, cVec);
+            const turb = 520 * (minDim / 900) * localChaos / mass[i];
+            ax += cVec[0] * turb;
+            ay += cVec[1] * turb;
+            az += cVec[2] * 3.8 * localChaos;
+            kHome = 18.5 * (1 - 0.76 * clamp(localChaos, 0, 1));
+            damp = 6.1 * (1 - 0.62 * clamp(localChaos, 0, 1));
+          } else {
+            // Gentle logarithmic Coriolis spiral as displaced dots sweep home!
+            const offSq = dx * dx + dy * dy;
+            if (offSq > 16) {
+              const coriolis = swirlSign[i] * 2.8 * clamp(Math.sqrt(offSq) / 140, 0, 1);
+              ax += -dy * coriolis;
+              ay += dx * coriolis;
             }
           }
+        }
 
-          vxi += ax * h; vyi += ay * h; vzi += az * h;
-          px += vxi * h; py += vyi * h; pz += vzi * h;
-
-          const dSq = dx * dx + dy * dy + dz * dz * 100;
-          const vSq = vxi * vxi + vyi * vyi + vzi * vzi * 100;
-          if (!hasPointer && !hasRipple && dSq < 0.0008 && vSq < 0.02) {
-            px = tx[i]; py = ty[i]; pz = 0; vxi = 0; vyi = 0; vzi = 0;
-          } else if (vSq + dSq * 4 > maxKinetic) {
-            maxKinetic = vSq + dSq * 4;
+        // 2. Interactive 3D magnetic mouse cursor wake (unlocked after head turns back!).
+        if (hasPointer) {
+          const rx = px - ptrX, ry = py - ptrY;
+          const d2 = rx * rx + ry * ry;
+          if (d2 < ptrRadSq && d2 > 0.5) {
+            const dist = Math.sqrt(d2);
+            const u = 1 - dist / ptrRadius;
+            const fall = u * u * ptrEnergy * (fig ? 1.0 : 0.42);
+            const inv = 1 / dist;
+            const nx = rx * inv, ny = ry * inv;
+            const swirl = swirlSign[i] * 560;
+            ax += (nx * 820 - ny * swirl + ptrVx * 2.3) * fall / mass[i];
+            ay += (ny * 820 + nx * swirl + ptrVy * 2.3) * fall / mass[i];
+            az += (4.0 * u * ptrEnergy * (fig ? 1.0 : 0.35)) / mass[i];
           }
-        } else if (isFigure[i]) {
-          // Act I: 3D chaotic constellation -> helical Coriolis spiral -> orthogonal lock.
-          const p = smoother((tNow - delay[i]) / span[i]);
-          const invP = 1 - p;
+        }
 
-          const curlAmp = (265 * Math.pow(invP, 1.48)) * (minDim / 900);
-          let ax = 0, ay = 0, az = 0;
-          if (curlAmp > 0.4) {
-            curl3At(px, py, pz, tNow * 1.08 + seed[i] * 0.35, curlScale, cVec);
-            ax += cVec[0] * curlAmp;
-            ay += cVec[1] * curlAmp;
-            az += cVec[2] * 1.45 * Math.pow(invP, 1.35);
+        // 3. Bare-paper click acoustic dispersion shockwave.
+        if (hasRipple) {
+          const rx = px - rippleX, ry = py - rippleY;
+          const dist = Math.hypot(rx, ry);
+          const bandDiff = Math.abs(dist - ripFront);
+          if (bandDiff < ripBand && dist > 1) {
+            const env = (1 - bandDiff / ripBand) * Math.exp(-rippleAge * 2.0) * (fig ? 1.0 : 0.35);
+            const nx = rx / dist, ny = ry / dist;
+            const swirl = swirlSign[i] * 560;
+            ax += (nx * 980 - ny * swirl) * env / mass[i];
+            ay += (ny * 980 + nx * swirl) * env / mass[i];
+            az += 4.5 * env * (seed[i] - 0.35);
           }
+        }
 
-          // Decaying 3D helical Coriolis swirl around orthogonal lattice home.
-          const arcBell = Math.sin(Math.PI * p) * Math.pow(invP, 0.50);
-          const omega = swirlSign[i] * (5.6 + 3.1 * seed[i]) * arcBell;
-          ax += -dy * omega;
-          ay += dx * omega;
+        // Restoring damped 3D spring back onto exact (tx, ty, 0) Swiss orthogonal grid.
+        ax += dx * kHome - vxi * damp;
+        ay += dy * kHome - vyi * damp;
+        az += dz * (wActive ? 14.0 : 22.0) - vzi * (wActive ? 5.2 : 7.0);
 
-          const kSpring = (29.0 + 23.0 * prom[i]) * Math.pow(p, 1.68) / mass[i];
-          const damp = 1.50 + 11.8 * Math.pow(p, 1.30);
-          ax += dx * kSpring - vxi * damp;
-          ay += dy * kSpring - vyi * damp;
+        vxi += ax * h; vyi += ay * h; vzi += az * h;
+        px += vxi * h; py += vyi * h; pz += vzi * h;
 
-          // Pull z smoothly onto the z = 0 paper plane as dot approaches registration.
-          const kz = (26.0 + 18.0 * prom[i]) * Math.pow(p, 1.55);
-          const dampZ = 1.8 + 10.6 * Math.pow(p, 1.25);
-          az += dz * kz - vzi * dampZ;
-
-          vxi += ax * h; vyi += ay * h; vzi += az * h;
-          px += vxi * h; py += vyi * h; pz += vzi * h;
-          maxKinetic = 100;
+        const dSq = dx * dx + dy * dy + dz * dz * 100;
+        const vSq = vxi * vxi + vyi * vyi + vzi * vzi * 100;
+        if (!wActive && !hasPointer && !hasRipple && dSq < 0.001 && vSq < 0.025) {
+          px = tx[i]; py = ty[i]; pz = 0; vxi = 0; vyi = 0; vzi = 0;
         }
 
         x[i] = px; y[i] = py; z[i] = pz;
         vx[i] = vxi; vy[i] = vyi; vz[i] = vzi;
       }
     }
-
-    if (inIntro && introDoneTime) {
-      // Snap any microscopic residual drift so transition into blindfold-lift is razor crisp.
-      for (let i = 0; i < count; i++) {
-        if (Math.hypot(tx[i] - x[i], ty[i] - y[i]) < 2.2) {
-          x[i] = tx[i]; y[i] = ty[i]; z[i] = 0;
-          vx[i] = 0; vy[i] = 0; vz[i] = 0;
-        }
-      }
-      phase = 'hold';
-      reflect();
-    }
   }
 
   function packInstances() {
-    const t = elapsed;
     const bt = breatheTime;
     const isStatic = reduced.matches || preview || !optedIn;
     const waveFreq = 1 / Math.max(420, Math.min(width, height));
+    const breathing = !isStatic && liftCompleted;
 
     for (let i = 0; i < count; i++) {
       const o = i * 8;
@@ -853,27 +869,11 @@ export function createDayHalftone(options) {
 
       let rad = rNow;
       let alpha = fig ? 0.985 : 0.72;
-      let focus = 1.0;
 
-      if (!isStatic && phase === 'assembling') {
-        if (fig) {
-          const entry = smooth((t - seed[i] * 0.16) / 0.24);
-          const spd = Math.hypot(vxi, vyi);
-          const flight = clamp(spd / 300, 0, 1);
-          const settleF = smooth((t - delay[i]) / span[i]);
-          rad = rNow * (0.78 + 0.22 * settleF) * (1 - 0.10 * flight);
-          alpha = entry * (0.64 + 0.345 * settleF);
-          focus = settleF;
-        } else {
-          // Iconic background pinpoint register matrix sweeps cleanly into print registration.
-          const bgReveal = smooth((t - delay[i]) / span[i]);
-          rad = rNow * (0.3 + 0.7 * bgReveal);
-          alpha = 0.72 * bgReveal;
-        }
-      } else if (!isStatic && phase === 'settled') {
+      if (breathing && phase === 'settled') {
         const wave = Math.sin((px * 0.65 + py * 0.76) * waveFreq * 4.0 - bt * 0.54 + seed[i] * 1.4);
-        rad = rNow * (1 + (fig ? 0.018 : 0.01) * wave);
-        alpha = (fig ? 0.975 : 0.72) + 0.02 * wave;
+        rad = rNow * (1 + (fig ? 0.016 : 0.008) * wave);
+        alpha = (fig ? 0.978 : 0.72) + 0.018 * wave;
       }
 
       instanceData[o] = px;
@@ -883,7 +883,7 @@ export function createDayHalftone(options) {
       instanceData[o + 4] = vyi;
       instanceData[o + 5] = rad;
       instanceData[o + 6] = alpha;
-      instanceData[o + 7] = focus;
+      instanceData[o + 7] = 1.0;
     }
   }
 
@@ -908,7 +908,7 @@ export function createDayHalftone(options) {
     gl.bindBuffer(gl.ARRAY_BUFFER, glInstBuf);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData);
 
-    const stride = 32; // 8 floats * 4 bytes
+    const stride = 32;
     gl.enableVertexAttribArray(glLoc.posv);
     gl.vertexAttribPointer(glLoc.posv, 4, gl.FLOAT, false, stride, 0);
     gl.enableVertexAttribArray(glLoc.meta);
@@ -955,7 +955,7 @@ export function createDayHalftone(options) {
       cover: { ...cover },
       time: elapsed,
       visible: 1,
-      held: phase === 'settled',
+      held: liftCompleted,
     });
   }
 
@@ -968,7 +968,7 @@ export function createDayHalftone(options) {
     if (!active) return;
     host.dataset.renderer = `halftone-${backend}`;
     host.dataset.halftonePhase = phase;
-    host.dataset.materialIdle = phase === 'settled'
+    host.dataset.materialIdle = liftCompleted
       ? (permitted() ? 'running' : 'paused')
       : (permitted() ? phase : 'paused');
     host.dataset.motion = !optedIn || reduced.matches || preview ? 'static' : permitted() ? 'running' : 'static';
@@ -976,13 +976,13 @@ export function createDayHalftone(options) {
 
   function scheduleIdleSleep() {
     clearTimeout(sleepTimer);
-    if (!active || phase !== 'settled' || disposed || paused || sleeping) return;
+    if (!active || !liftCompleted || disposed || paused || sleeping) return;
     sleepTimer = setTimeout(() => {
-      if (active && phase === 'settled' && !disposed) {
+      if (active && liftCompleted && !disposed && !whirl.active) {
         sleeping = true;
         sync();
       }
-    }, 90_000);
+    }, 120_000);
   }
 
   function wake() {
@@ -991,7 +991,7 @@ export function createDayHalftone(options) {
       sleeping = false;
       sync();
     }
-    if (phase === 'settled') scheduleIdleSleep();
+    if (liftCompleted) scheduleIdleSleep();
   }
 
   function stop() {
@@ -1004,7 +1004,7 @@ export function createDayHalftone(options) {
     stop();
     reflect();
     if (permitted()) {
-      if (phase === 'settled') scheduleIdleSleep();
+      if (liftCompleted) scheduleIdleSleep();
       rafId = requestAnimationFrame(tick);
     }
   }
@@ -1017,28 +1017,28 @@ export function createDayHalftone(options) {
       return;
     }
     if (!lastNow) lastNow = now;
-    const needsFast = phase !== 'settled' || ptrEnergy > 0.005 || rippleAge < 2.2;
-    const minStep = needsFast ? 0 : (1000 / 20 - 0.5);
+    const needsFast = phase !== 'settled' || whirl.active || ptrEnergy > 0.005 || rippleAge < 2.2;
+    const minStep = needsFast ? 0 : (1000 / 24 - 0.5);
     const diff = now - lastNow;
     if (diff >= minStep) {
       const dt = Math.min(diff, 50) / 1000;
       lastNow = now;
       elapsed += dt;
-      if (phase === 'settled') breatheTime += dt;
       stepPhysics(dt);
       draw();
     }
     rafId = requestAnimationFrame(tick);
   }
 
-  function resize(preserveSettled = true) {
+  function resize(preservePhase = true) {
     width = Math.max(1, Math.round(host.clientWidth));
     height = Math.max(1, Math.round(host.clientHeight));
     dpr = Math.min(devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.round(width * dpr));
     canvas.height = Math.max(1, Math.round(height * dpr));
     if (grid) {
-      buildParticles(preserveSettled);
+      buildParticles(preservePhase);
+      if (phase === 'lifting' && liftTrack) sampleLiftRadii(liftElapsed);
       draw();
     }
   }
@@ -1048,13 +1048,15 @@ export function createDayHalftone(options) {
     resizeFrame = requestAnimationFrame(() => {
       resizeFrame = 0;
       if (!active || disposed || !host.clientWidth || !host.clientHeight) return;
-      resize(phase === 'settled');
+      resize(true);
       sync();
     });
   }
 
+  // Interactive mouse wake & bare-paper click ripple stay dormant until the blindfold lift
+  // finishes and Justitia's head turns back to rest!
   function onPointerMove(e) {
-    if (!active || disposed || reduced.matches || waitlistOpen()) return;
+    if (!active || disposed || !liftCompleted || reduced.matches || waitlistOpen()) return;
     const rect = host.getBoundingClientRect();
     const nx = e.clientX - rect.left;
     const ny = e.clientY - rect.top;
@@ -1074,8 +1076,7 @@ export function createDayHalftone(options) {
   }
 
   function onPointerDown(e) {
-    if (!active || disposed || reduced.matches || waitlistOpen() || phase === 'assembling') return;
-    // Only emit subtle acoustic ripple when clicking bare cotton paper (never links/buttons).
+    if (!active || disposed || !liftCompleted || reduced.matches || waitlistOpen()) return;
     if (e.target.closest('a, button, input, form, .masthead, .waitlist, .ruth-home')) return;
     const rect = host.getBoundingClientRect();
     rippleX = e.clientX - rect.left;
@@ -1136,17 +1137,28 @@ export function createDayHalftone(options) {
     canvas.hidden = false;
 
     try {
+      // Begin fetching the blindfold-lift track immediately in parallel with the static grid
+      // (skipped cleanly under prefers-reduced-motion: reduce).
+      const liftPromise = (!reduced.matches && !preview && optedIn && !liftTrack)
+        ? loadLiftTrack()
+        : null;
+
       if (!grid) grid = await loadStaticGrid();
       if (disposed || !active) return false;
+
       resize(!fresh);
       host.classList.add('ready');
       sync();
 
-      // Stream the 268 KB blindfold-lift keyframe track asynchronously during Act I
-      // (never downloaded under prefers-reduced-motion: reduce!).
-      if (!reduced.matches && !preview && optedIn && !liftTrack) {
-        loadLiftTrack().then((track) => {
-          if (!disposed && track) liftTrack = track;
+      if (liftPromise) {
+        liftPromise.then((track) => {
+          if (disposed || !track) return;
+          liftTrack = track;
+          if (active && phase === 'waiting-lift') {
+            phase = 'lifting';
+            liftElapsed = 0;
+            sync();
+          }
         });
       }
       return true;
@@ -1164,7 +1176,7 @@ export function createDayHalftone(options) {
 
   function onReducedChange() {
     if (!active || disposed || !grid) return;
-    resize(reduced.matches);
+    resize(false);
     sync();
   }
 
